@@ -16,5 +16,6 @@ jobs:
       - uses: denoland/setup-deno@v2
         with:
           deno-version: v2.x
+      - run: deno install # materialize node_modules (phaser) so tsc can resolve types
       - run: deno task dts # regenerate the bundled mod.d.ts from JSDoc
-      - run: deno publish
+      - run: deno publish --allow-dirty # ship the freshly-generated mod.d.ts

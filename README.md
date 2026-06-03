@@ -5,9 +5,6 @@ A point-and-click adventure engine built on Phaser 3.
 Caper provides the reusable systems for a Humongous-style adventure game: walking, one-click interaction, declarative
 props, inventory, NPC/cast behavior, weather, cutscenes, transitions, UI helpers, and engine-owned state primitives.
 
-The engine owns no game content. A game supplies characters, items, cast, art keys, scene configs, and domain rules
-through registries and configuration at boot.
-
 ## Install
 
 Caper is published to [JSR](https://jsr.io/@caper/engine) and depends on Phaser 3 as a runtime dependency.

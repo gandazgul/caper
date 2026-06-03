@@ -13,4 +13,5 @@ jobs:
       - uses: denoland/setup-deno@v2
         with:
           deno-version: v2.x
+      - run: deno install # materialize node_modules (phaser) so tsc can resolve types
       - run: deno task ci
