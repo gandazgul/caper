@@ -1,26 +1,26 @@
-export { AdventureScene } from "./src/AdventureScene.js";
-export { CastDirector } from "./src/CastDirector.js";
-export { castRegistry, registerCast } from "./src/CastRegistry.js";
-export { CharacterRegistry, characters } from "./src/CharacterRegistry.js";
-export { CharacterSwitcher } from "./src/CharacterSwitcher.js";
-export { content, ContentRegistry } from "./src/ContentRegistry.js";
-export { createCritters } from "./src/CritterHelper.js";
-export { Cutscene, CutsceneCancelled } from "./src/Cutscene.js";
-export { CutsceneRunner } from "./src/CutsceneRunner.js";
-export { DebugOverlay } from "./src/DebugOverlay.js";
-export { EngineAssetRegistry, engineAssets } from "./src/EngineAssets.js";
-export { FullscreenButton } from "./src/FullscreenButton.js";
-export { HotspotManager } from "./src/HotspotManager.js";
-export { IdleCharacter } from "./src/IdleCharacter.js";
-export { InventoryLayer } from "./src/InventoryLayer.js";
-export { NPC } from "./src/NPC.js";
-export { NightLayer } from "./src/NightLayer.js";
-export { exitApproaches, PropEngine } from "./src/PropEngine.js";
-export { SceneEditor } from "./src/SceneEditor.js";
-export { Store, store } from "./src/Store.js";
-export { SubsceneStack } from "./src/SubsceneStack.js";
-export { showSuccessMessage } from "./src/SuccessMessage.js";
-export { DialogueBubble } from "./src/DialogueBubble.js";
+export { AdventureScene } from "./src/scene/AdventureScene.js";
+export { CastDirector } from "./src/cast/CastDirector.js";
+export { castRegistry, registerCast } from "./src/cast/CastRegistry.js";
+export { CharacterRegistry, characters } from "./src/characters/CharacterRegistry.js";
+export { CharacterSwitcher } from "./src/characters/CharacterSwitcher.js";
+export { content, ContentRegistry } from "./src/inventory/ContentRegistry.js";
+export { createCritters } from "./src/environment/CritterHelper.js";
+export { Cutscene, CutsceneCancelled } from "./src/cutscene/Cutscene.js";
+export { CutsceneRunner } from "./src/cutscene/CutsceneRunner.js";
+export { DebugOverlay } from "./src/ui/DebugOverlay.js";
+export { EngineAssetRegistry, engineAssets } from "./src/assets/EngineAssets.js";
+export { FullscreenButton } from "./src/ui/FullscreenButton.js";
+export { HotspotManager } from "./src/interaction/HotspotManager.js";
+export { IdleCharacter } from "./src/movement/IdleCharacter.js";
+export { InventoryLayer } from "./src/inventory/InventoryLayer.js";
+export { NPC } from "./src/cast/NPC.js";
+export { NightLayer } from "./src/environment/NightLayer.js";
+export { exitApproaches, PropEngine } from "./src/interaction/PropEngine.js";
+export { SceneEditor } from "./src/ui/SceneEditor.js";
+export { Store, store } from "./src/state/Store.js";
+export { SubsceneStack } from "./src/scene/SubsceneStack.js";
+export { showSuccessMessage } from "./src/cutscene/SuccessMessage.js";
+export { DialogueBubble } from "./src/cutscene/DialogueBubble.js";
 export {
     BACK_BUTTON_POSITION,
     createBackButton,
@@ -32,10 +32,10 @@ export {
     drawTrashIcon,
     exitReplay,
     UI_DEPTH,
-} from "./src/UIHelper.js";
-export { WalkController } from "./src/WalkController.js";
-export { WearableRegistry, wearables } from "./src/Wearables.js";
-export { WeatherLayer } from "./src/WeatherLayer.js";
+} from "./src/ui/UIHelper.js";
+export { WalkController } from "./src/movement/WalkController.js";
+export { WearableRegistry, wearables } from "./src/characters/Wearables.js";
+export { WeatherLayer } from "./src/environment/WeatherLayer.js";
 export {
     collectSeasonAssetKeys,
     loadAssetKeys,
@@ -45,10 +45,10 @@ export {
     registerAssetKeys,
     registerTrimmedAtlas,
     seasonLoadSet,
-} from "./src/assetLoading.js";
-export { evaluateCondition } from "./src/conditions.js";
-export { createAdventureGame } from "./src/createAdventureGame.js";
-export { buildCutsceneContext } from "./src/cutsceneActor.js";
-export { bakeCircularCrop, resolveCharacterPortrait } from "./src/portraits.js";
-export { randomInt } from "./src/random.js";
-export { transitionIn, TRANSITIONS, transitionTo } from "./src/transitions.js";
+} from "./src/assets/assetLoading.js";
+export { evaluateCondition } from "./src/core/conditions.js";
+export { createAdventureGame } from "./src/scene/createAdventureGame.js";
+export { buildCutsceneContext } from "./src/cutscene/cutsceneActor.js";
+export { bakeCircularCrop, resolveCharacterPortrait } from "./src/characters/portraits.js";
+export { randomInt } from "./src/core/random.js";
+export { transitionIn, TRANSITIONS, transitionTo } from "./src/scene/transitions.js";
