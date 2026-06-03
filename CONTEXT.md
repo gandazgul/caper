@@ -1,326 +1,198 @@
-# Caper Engine — Context Overview
+# Caper — Context Overview
 
-A **point-and-click adventure engine** built on [Phaser 3](https://phaser.io/) (v3.86+). Ships the "batteries" for the
-genre — walking, one-click interaction, inventory, weather, NPCs with ambient behaviors, cutscenes, declarative props,
-transitions, UI helpers.
+A **point-and-click adventure engine** built on [Phaser 3](https://phaser.io/) that provides reusable systems for
+Humongous-style adventure games: walking, one-click interaction, declarative props, inventory, NPC/cast behavior,
+weather, cutscenes, transitions, UI helpers, and engine-owned state primitives.
 
-**Language:** JavaScript with JSDoc types — no TypeScript _source_. `deno check` validates; `tsc` compiles the JSDoc
-into a bundled `mod.d.ts` so JSR publishes with fast types (no `--allow-slow-types`). See
-[Types & publishing pipeline](#types--publishing-pipeline).\
-**Testing:** Deno test framework, `@std/assert`\
-**Formatting:** deno fmt with indentWidth=4, lineWidth=120, semicolons on\
-**Licensing:** MIT
+The engine ships no game content (no character names, scene names, or art keys). All game-specific knowledge is
+supplied at boot via typed registries and configuration — a strict one-way dependency boundary (ADR 0005).
 
----
+## Language
 
-## Language & Key Concepts
+Extract and formalize domain terminology from the codebase.
 
-### Core Domain Terminology
+### Key Concepts
 
-| Term                  | Definition                                                                                                                                                                                                                                             | Aliases to avoid             |
-| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------- |
-| **Prop**              | A declarative interactive object in a scene. State-machine-driven: multiple states with `when` conditions (DSL), art (frame/atlas/anim), interactions (onClick/onDrop).                                                                                | "object", "entity"           |
-| **State Store**       | The engine's reactive state singleton (`Store.js`). Three typed buckets: `values` (scalars/flags), `collections` (Sets), `items` (per-item string map). Auto-persists to localStorage.                                                                 | "data manager", "registry"   |
-| **Cast**              | The declarative NPC roster. Per-character, per-season rules defining ambient behavior (wander/patrol/follow/static) and reactions (see/click/hover/leave + arbitrary bus events).                                                                      | "NPC list"                   |
-| **Active Character**  | The currently player-controlled playable character. Tracked in the Store under `activeCharacter`. Spawned as a `WalkController` by `AdventureScene`.                                                                                                   | "player character"           |
-| **WalkController**    | Owns the active character's sprite, movement (tween-based walking along a walkable polygon), animation states (walk/still/fidget/reach), perspective Y-scaling, and wearable sync.                                                                     | "player controller"          |
-| **Walkable**          | A polygon (array of `{x, y}` points) defining where the character can walk. Clicks outside are snapped to the nearest edge. Pathfinding uses visibility graph + Dijkstra.                                                                              | "nav mesh"                   |
-| **Hotspot**           | A clickable zone (`HotspotManager`) with bounds, approach point, type (pickup/look/exit/subscene/use-with), and cursor. Click → walk → `hotspot:arrived` event → effects.                                                                              | "click zone", "trigger"      |
-| **Condition DSL**     | Pure serializable data for gating prop states and NPC reactions. AND across object keys, OR across arrays, combinators (allOf/anyOf/not). Leaf ops: eq/ne/gt/gte/lt/lte/has/not. Special sentinels: `$self` (prop's id), `$dragged` (dropped item id). | "conditions"                 |
-| **Effect**            | A declarative verb object in a prop's onClick/onDrop array. Types: set, addTo, removeFrom, tween, destroy, pickup, goToScene, pushSubscene, showThought, emit, playReach, setItemState.                                                                | "action"                     |
-| **Cutscene**          | An async function over cancellable promises. `Cutscene.js` provides the cancel token primitive; `CutsceneRunner` handles NPC suspend/resume/player-lock lifecycle. Cast reactions expose `director.cutscene(fn)`.                                      | "sequence", "cinematic"      |
-| **Replay Sandbox**    | Mini-game isolation via `store.beginReplay()`/`store.endReplay()`. Snapshots current state, runs mini-game, restores on exit. `transitionTo` redirects to `exitReplay` during replays.                                                                 | "mini-game mode"             |
-| **Ambient Behavior**  | An NPC's autonomous routine: `WanderBehavior` (come-and-go random walks), `PatrolBehavior` (waypoint loop with activities), `FollowBehavior` (trail player at lag), `CompanionBehavior` (tight lockstep), `static`/`none`.                             | "AI", "routine"              |
-| **Boot Registration** | The one-time setup phase where the game populates engine registries (characters, content, cast, engineAssets, wearables, store) before `new Phaser.Game(...)`.                                                                                         | "init", "setup"              |
-| **Approach Point**    | `{x, y, facing}` — where the character walks to before interacting with a hotspot or drop target. `"in-place"` skips the walk and interacts immediately.                                                                                               | "interact point"             |
-| **Wearable**          | A persistent or manual sprite attached to a character (backpack, held item). Registered in the `WearableRegistry` with per-character, per-direction offsets. Auto-synced by `WalkController.wearables` and `NPC.wearables`.                            | "accessory"                  |
-| **Perspective**       | Y-based scaling and depth-sorting for outdoor 3/4-view scenes. Characters lower on screen render bigger and in front. Config: `{ nearY, farY, nearScale?, farScale? }`.                                                                                | "parallax", "foreshortening" |
-
----
+| Term | Definition | Aliases / Notes |
+|------|------------|-----------------|
+| **Capability slice** | A `src/` subdirectory that owns everything for one engine capability — types, runtime code, and the boot-time registry | Module, package |
+| **Registry** | A Phaser-idiomatic singleton the game populates at boot (`register()`) and the engine queries at runtime (`get()`/`resolve()`) | e.g. `characters`, `content`, `castRegistry`, `engineAssets`, `wearables` |
+| **AdventureScene** | The engine's base Phaser Scene class that composes all engine systems (hotspots, walk, inventory, weather, props, cast, debug, editor) | Composed via `super.create(data)` |
+| **Hotspot** | A clickable zone in a scene with a type (`pickup`, `look`, `exit`, `subscene`, `use-with`), bounds, approach point, and cursor | Registered via `HotspotManager` |
+| **Prop** | A declarative scene object with art + ordered states, each gated by a `when` condition; renders + binds interaction reactively | Managed by `PropEngine` |
+| **PropState** | One visual/behavioral state of a Prop — frame, position, effects, click/drop handlers | Selection: first state whose `when` passes |
+| **Store** | The engine's generic reactive state container: three typed buckets (`values`, `collections`, `items`), change events, localStorage persistence, replay sandboxing | Engine singleton `store` |
+| **Condition** | A pure serializable data DSL for querying game state — ops: `eq`/`ne`/`gt`/`gte`/`lt`/`lte`/`has`/`not`, combinators: `allOf`/`anyOf`/`not` | Used by props, cast reactions, wearables |
+| **Cutscene** | A cancellable async sequence of `walkTo`/`say`/`play` primitives over a `Cutscene` cancel token | Orchestrated by `CutsceneRunner` |
+| **CutsceneActor** | A per-NPC wrapper that exposes awaitable `walkTo`, `say`, `play`, `facePlayer` methods bound to a cancel token | Built by `buildCutsceneContext()` / `actorFor()` |
+| **CastDirector** | Per-scene orchestrator that spawns NPCs from the cast registry, runs ambient behaviors, wires reactions, and runs cutscenes | One per `AdventureScene` |
+| **WalkController** | Owns the active character sprite: walkable polygon, linear walking, fidget idle, direction animation | `this.walk` on AdventureScene |
+| **EngineScene** | The duck-typed interface contract engine modules rely on — the union of capabilities an AdventureScene provides | `EngineScene` typedef in `src/scene/EngineScene.js` |
+| **Event bus** | A `Phaser.Events.EventEmitter` (`this.bus`) for cross-system communication without coupling | Events: `seasonchange`, `weatherchange`, `timechange`, `ambientchange`, `hotspot:arrived`, `subscene:open`/`close` |
+| **RenderableItem** | The minimal shape for a renderable inventory item: `{ id, frame?, scale?, rotation? }` | Typedef in `src/inventory/itemDef.js` |
+| **Transition** | Named fade presets (`room`, `quick`, `dim`, `dramatic`, `night`, `cinematic`, `arrival`) with configurable duration/color | Managed in `src/scene/transitions.js` |
+| **Replay sandbox** | A snapshot/restore system on the Store that isolates mini-game state changes from the main save | `store.snapshot()` / `store.restore()` |
+| **NPC** | A dynamic non-player character with sprite, fidget, walk-to, speak, behavior (wander/patrol/follow), and hotspot zone | Managed by `CastDirector` |
+| **IdleCharacter** | The playable character that ISN'T currently active — ambles via WanderBehavior and greets on click | Engine-generic, reads from `characters` registry |
+| **WanderBehavior** | Come-and-go state machine: wandering → leaving → absent → return | Drives a `WanderHost` (NPC or WalkController) |
+| **Wearable** | A visual attachment to a character sprite — backpack, held item, etc. — with per-character offset tables and a condition DSL | Managed by `WearableManager` |
+| **Subscene** | A zoom-in overlay on a scene: background swap + back arrow + optional custom content, pushable onto a stack | `SubsceneStack` |
+| **WeatherLayer** | Overlays procedural rain/snow (Graphics lines) and/or falling leaves (sprites) | `this.weather` on AdventureScene |
+| **NightLayer** | Evening/night lighting overlay: tint, lit windows, moon | Per-scene optional |
+| **CritterHelper** | Static utility for spawning decorative ambient critters (butterfly, bird, ground) | Uses `summer-atlas` by default |
+| **DialogueBubble** | A cloud-bubble Container with optional icons + text, auto-destroying | Supports `thought` and `speech` variants |
+| **ContentRegistry** | Engine registry mapping inventory item IDs to atlas/frame/scale specs | `content.registerItems()` / `content.getItem()` |
+| **CharacterRegistry** | Engine registry mapping character IDs to render configs (sprite, animations, outfits) | `characters.register()` / `characters.resolve()` / `characters.render()` |
+| **CastRegistry** | Engine registry mapping NPC IDs to per-season ambient behaviors + reactions | `registerCast()` / `castRegistry` |
+| **EngineAssetRegistry** | Engine registry for art keys of built-in widgets (thought bubble, back button, leaves, critter, inventory atlas) | `engineAssets.configure()` / `engineAssets.get()` |
+| **Asset loading convention** | Key-based URL derivation: `bg_<name>` → `/scenes/<name>.jpg`, `sprite_<name>` → `/objects/<name>.png` (+ JSON), `object_<name>` → `/objects/<name>.png`, `character_<name>` → `/characters/<name>.png` | `deriveAsset()` in `src/assets/assetLoading.js` |
+| **Boot sequence** | 1. Game calls `createAdventureGame({ register, config })` → 2. `register()` fires to populate all registries → 3. `new Phaser.Game(config)` boots scenes | See ADR 0005 |
+| **Tracer-bullet vertical slice** | Development philosophy: build a working end-to-end feature across all layers before full implementation | Reference in project context |
 
 ## Key Files
 
-### Root
-
-| File                  | Purpose                                                                                                              |
-| --------------------- | ------------------------------------------------------------------------------------------------------------------- |
-| `mod.js`              | Public API — re-exports all engine symbols. `"exports"` target in deno.json. Carries `// @ts-self-types="./mod.d.ts"`. |
-| `mod.d.ts`            | **Generated, committed.** Self-contained bundled types (`deno task dts`). The types JSR/npm consumers get.           |
-| `deno.json`           | Package config: exports, tasks (check/types/dts/dts:check/test/lint/fmt/ci), imports, compiler options.             |
-| `tsconfig.json`       | `tsc` config (mirrors deno.json) — type-checks JSDoc and emits per-file `.d.ts` to `types/`.                        |
-| `tsconfig.bundle.json`| Config for `dts-bundle-generator` — rolls `types/` into the single `mod.d.ts`.                                     |
-| `scripts/`            | `fix-phaser-dts.ts` — strips the bundler's bogus `import("phaser").Phaser.` from `mod.d.ts`.                        |
-| `.gitignore`          | node_modules/, dist/, types/ (per-file `.d.ts`, regenerated), .DS_Store                                              |
-
-### `src/scene/` — Scene lifecycle
-
-| File                     | Purpose                                                                                                                                                                                                                        |
-| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `AdventureScene.js`      | Base scene class. Composes all engine systems in `create()`: WalkController, HotspotManager, InventoryLayer, WeatherLayer, SubsceneStack, DebugOverlay, SceneEditor, PropEngine, CastDirector. Game subclasses override hooks. |
-| `createAdventureGame.js` | Engine bootstrap factory. Runs game's `register()` callback, then `new Phaser.Game()`. The front door for boot.                                                                                                                |
-| `EngineScene.js`         | Boot / menu / credits scene base. Manages transitions between engine-level scenes.                                                                                                                                             |
-| `SubsceneStack.js`       | Zoom-in sub-scenes (close-up views of props).                                                                                                                                                                                  |
-| `transitions.js`         | Scene transition presets (room/dim/dramatic/night/cinematic/quick/arrival). `transitionTo()` and `transitionIn()` with fade in/out. Replay sandbox redirection.                                                                |
-
-### `src/movement/` — Active character, NPC movement, pathfinding
-
-| File                | Purpose                                                                                                                                                    |
-| ------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `WalkController.js` | Active character movement + animation. Tween-based walking, direction state machine, fidget timer, reach animation, wearable syncing, perspective scaling. |
-| `pathfinding.js`    | `pointInPolygon`, `snapToPolygon`, `findPath` (visibility graph + Dijkstra). Returns waypoints around obstacles.                                           |
-| `IdleCharacter.js`  | Autonomous idle character (inactive sibling) — wanders when you're the other sibling.                                                                      |
-| `Fidget.js`         | Attachable idle fidget animation for any sprite.                                                                                                           |
-
-### `src/movement/behaviors/` — Ambient NPC behaviors
-
-| File                   | Purpose                                                                                                                                                 |
-| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `WanderBehavior.js`    | Come-and-go wandering state machine. Present/absent cycles, random walks, exit-based entrance, return check timer.                                      |
-| `PatrolBehavior.js`    | Fixed-waypoint patrol loops with per-waypoint activity animations (raking, gardening). Door retreat for weather.                                        |
-| `FollowBehavior.js`    | Loose follow: re-paths toward player at a lag distance on a timer.                                                                                      |
-| `CompanionBehavior.js` | Tight lockstep "conga line" trailing. Per-frame offset behind target, matching facing.                                                                  |
-| `walker.js`            | Walker/WanderHost contracts. `npcWanderHost()` and `walkControllerWanderHost()` adapters. `getRandomWalkablePoint()` and `randomExitSpawn()` utilities. |
-
-### `src/cast/` — NPCs, cast registry, director
-
-| File              | Purpose                                                                                                                           |
-| ----------------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| `NPC.js`          | Dynamic NPC sprite management. WalkTo/stopWalking, hotspots, fidget, speak, wearable sync. Presence tracking to avoid duplicates. |
-| `CastDirector.js` | Per-scene cast orchestrator: spawns NPCs for active season/weather, wires ambient behaviors and reactions, manages cutscenes.     |
-| `CastRegistry.js` | NPC cast: per-season ambient + reactions. Populated at boot via `registerCast({...})`.                                            |
-
-### `src/cutscene/` — Cutscenes, dialogue bubbles
-
-| File                | Purpose                                                                                               |
-| ------------------- | ----------------------------------------------------------------------------------------------------- |
-| `Cutscene.js`       | Cancellable promise primitive (Phaser-free, unit-testable).                                           |
-| `CutsceneRunner.js` | One-at-a-time cutscene lifecycle: suspend NPCs → run → resume. Handles preemption and error cleanup.  |
-| `cutsceneActor.js`  | Builds the `d` context object for cutscene functions (per-NPC methods, player walker, scene helpers). |
-| `DialogueBubble.js` | Cloud-bubble Container with optional icons + text. Used by NPC responses and character thoughts.      |
-| `SuccessMessage.js` | "Success!" overlay for puzzle completion.                                                             |
-
-### `src/interaction/` — Click interaction, prop engine
-
-| File                | Purpose                                                                                                                                         |
-| ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
-| `HotspotManager.js` | Clickable zone registration/unregistration. Emits hotspot:hover/unhover/click/arrived via bus. Direction-aware exit cursors.                    |
-| `PropEngine.js`     | Declarative prop state machine. Reconciles on every Store change. Handles sprite rendering, hotspot registration, drag/drop, effect sequencing. |
-
-### `src/characters/` — Character config, outfits, portraits
-
-| File                   | Purpose                                                                                                                          |
-| ---------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
-| `CharacterRegistry.js` | Character render configs (sprite key, animation set, scale, outfits). Populated at boot via `characters.register("id", config)`. |
-| `CharacterSwitcher.js` | UI for switching between multiple playable characters.                                                                           |
-| `portraits.js`         | Character portrait resolution and circular crop.                                                                                 |
-| `Wearables.js`         | Wearable item definitions + per-character offsets. Populated at boot via `wearables.registerAll({...})`.                         |
-
-### `src/inventory/` — Items and inventory bar
-
-| File                 | Purpose                                                                                                                         |
-| -------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
-| `InventoryLayer.js`  | Bottom-of-screen inventory strip. Auto-hides when empty. Stackable items with shadow + count badge. Drag-to-use from inventory. |
-| `ContentRegistry.js` | Inventory item sprite specs (atlas + frame + scale). Populated at boot via `content.registerItems({...})`.                      |
-| `itemDef.js`         | Inventory item definition helper.                                                                                               |
-
-### `src/environment/` — Weather, night, critters
-
-| File               | Purpose                                                                                     |
-| ------------------ | ------------------------------------------------------------------------------------------- |
-| `WeatherLayer.js`  | Procedural rain (light/heavy), snow, and falling leaves (sprite-based with spin/sway/tilt). |
-| `NightLayer.js`    | Night-time darkening overlay.                                                               |
-| `CritterHelper.js` | Procedural firefly/bug sprite spawner with random twinkle paths.                            |
-
-### `src/state/` — Game state
-
-| File       | Purpose                                                                                                                                           |
-| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `Store.js` | Reactive state singleton with 3 buckets, change events, localStorage persistence, replay sandbox. Populated at boot via `store.configure({...})`. |
-
-### `src/assets/` — Asset loading and engine art keys
-
-| File              | Purpose                                                                                                                                                       |
-| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `EngineAssets.js` | Art keys for built-in engine widgets (thought bubbles, back button, leaves, critter, inventory atlas). Populated at boot via `engineAssets.configure({...})`. |
-| `assetLoading.js` | Convention-based asset loading: key → URL (bg_ → /scenes/, sprite_ → /objects/, etc.). `loadImageOnce`/`loadSpritesheetOnce` guard on texture cache.          |
-
-### `src/core/` — Pure logic (Phaser-free)
-
-| File             | Purpose                                                                                                                           |
-| ---------------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| `conditions.js`  | Condition DSL evaluator. Pure, serializable, no functions. Used by PropEngine and CastDirector.                                   |
-| `perspective.js` | Y-based perspective scale computation for outdoor scenes.                                                                         |
-| `random.js`      | Deterministic PRNG (SplitMix32). `setGlobalSeed(seed)` for reproducible runs. `randomInt(min, max)` replaces Phaser.Math.Between. |
-
-### `src/ui/` — UI widgets
-
-| File                  | Purpose                                                                |
-| --------------------- | ---------------------------------------------------------------------- |
-| `UIHelper.js`         | Back button, chunky button, icon drawing functions. UI_DEPTH constant. |
-| `DebugOverlay.js`     | Walkable polygon + hotspot visualizer.                                 |
-| `SceneEditor.js`      | In-game spatial editor (keyboard shortcuts).                           |
-| `FullscreenButton.js` | Fullscreen toggle button.                                              |
-
-### Documentation
-
-| File                   | Purpose                                                                                 |
-| ---------------------- | --------------------------------------------------------------------------------------- |
-| `docs/index.md`        | Technical documentation index with architecture diagram and concepts map.               |
-| `docs/architecture.md` | Engine/game boundary, registry overview, boot sequence, system composition, game hooks. |
-| `docs/store.md`        | Full Store API documentation.                                                           |
-| `docs/characters.md`   | Character registry, animation sets, outfits, active character.                          |
-| `docs/npc-and-cast.md` | NPC class, cast declarative system, behaviors, reactions.                               |
-| `docs/props.md`        | Declarative prop framework, state machine, conditions DSL, effects.                     |
-| `docs/interaction.md`  | One-click interaction model, walk controller, hotspots, cursors, drag-from-inventory.   |
-| `docs/cutscenes.md`    | Cutscene system, CutsceneRunner, actor context, cancellable sequences.                  |
-| `docs/inventory.md`    | Inventory strip, item lookup, drag-to-use.                                              |
-| `docs/weather.md`      | Weather layers, precipitation modes, ambient effects.                                   |
-| `docs/transitions.md`  | Scene transitions, presets, replay sandbox.                                             |
-| `docs/assets.md`       | Key-convention asset loading, EngineAssets, boot sequence.                              |
-| `docs/ui-helpers.md`   | Buttons, debug overlay, scene editor.                                                   |
-| `docs/hello-world.md`  | Step-by-step guide to building a new game on the engine.                                |
-
-### ADRs (docs/adr/)
-
-| ADR  | Title                                 | What it decided                                                                     |
-| ---- | ------------------------------------- | ----------------------------------------------------------------------------------- |
-| 0001 | Humongous-style one-click interaction | No verb selection — one click walks and/or interacts.                               |
-| 0002 | Declarative prop framework            | Props as state machines with conditions DSL and effects.                            |
-| 0003 | Dynamic weather & ambient system      | Procedural rain/snow + sprite-based leaves. No interaction.                         |
-| 0004 | Declarative NPC cast                  | Per-season ambient behaviors + reactions, cast registry.                            |
-| 0005 | Engine / game boundary                | **Central ADR.** Engine never imports game code. Registries at boot. Generic Store. |
-| 0006 | Character outfits                     | Outfits as full sprite-set swaps via Store `${id}Outfit` keys.                      |
-
----
+| File | Purpose |
+|------|---------|
+| `mod.js` | Package entry point — re-exports all public API symbols from every capability slice |
+| `mod.d.ts` | Bundled type declarations (auto-generated from JSDoc via `deno task dts`) |
+| `deno.json` | Deno project config: tasks, imports (Phaser 3, std/assert, std/fs), fmt/lint rules, publish config |
+| `src/scene/AdventureScene.js` | **Engine base scene** — composes all engine systems, hooks for game override (`getActiveCharacterId`, `handleSeasonTransition`, `isExitDisabled`) |
+| `src/scene/createAdventureGame.js` | **Bootstrap factory** — runs `register()` then creates `Phaser.Game` |
+| `src/state/Store.js` | **Reactive state store** — values/collections/items buckets, persistence, change events, batching, replay sandbox |
+| `src/core/conditions.js` | **Declarative conditions DSL** — pure data query language over the Store |
+| `src/interaction/PropEngine.js` | **Declarative prop engine** — renders/updates props reactively from state changes |
+| `src/interaction/HotspotManager.js` | **Hotspot input routing** — click zones, cursor switching, hover events |
+| `src/movement/WalkController.js` | **Character locomotion** — walkable polygon, linear walking, animation state machine |
+| `src/movement/pathfinding.js` | **Nav helpers** — point-in-polygon, snap-to-polygon, visibility-graph + Dijkstra pathfinding |
+| `src/cast/CastDirector.js` | **NPC orchestrator** — spawns cast, runs ambient behaviors, wires reactions, runs cutscenes |
+| `src/cast/CastRegistry.js` | **Cast registry types** — CastEntry, Ambient, Reaction, SceneCastOverride type definitions + live registry |
+| `src/cast/NPC.js` | **NPC class** — sprite, walk-to, speak, fidget, hotspot zone, behavior attachment |
+| `src/cutscene/Cutscene.js` | **Cutscene cancel token** — cancellable async primitive with `wait()` bridging callbacks to promises |
+| `src/cutscene/CutsceneRunner.js` | **Cutscene orchestrator** — one-at-a-time execution with suspend/resume and preemption |
+| `src/cutscene/cutsceneActor.js` | **Cutscene actor builder** — wraps NPCs as awaitable `walkTo`/`say`/`play` actors |
+| `src/characters/CharacterRegistry.js` | **Character config registry** — sprite + animations + outfits + portrait settings |
+| `src/characters/Wearables.js` | **Wearable attachments** — per-character offset tables, condition-gated visibility |
+| `src/inventory/InventoryLayer.js` | **Inventory UI** — bottom-of-screen item strip with drag support |
+| `src/inventory/ContentRegistry.js` | **Item art registry** — inventory id → atlas/frame/scale |
+| `src/scene/transitions.js` | **Scene transitions** — fade presets, `transitionTo`/`transitionIn`, replay exit |
+| `src/scene/SubsceneStack.js` | **Sub-scene management** — push/pop zoom-in overlays |
+| `src/environment/WeatherLayer.js` | **Weather effects** — procedural rain/snow, falling leaves |
+| `src/environment/NightLayer.js` | **Night lighting** — tint, lit windows, moon |
+| `src/environment/CritterHelper.js` | **Ambient critters** — butterfly, bird, ground creatures |
+| `src/movement/IdleCharacter.js` | **Idle playable character** — autonomous wanderer when another character is active |
+| `src/movement/behaviors/WanderBehavior.js` | **Come-and-go wander state machine** |
+| `src/movement/behaviors/walker.js` | **Walker/WanderHost contract** + shared utility functions |
+| `src/assets/assetLoading.js` | **Convention-based asset loading** — key → URL derivation, guarded loaders, seasonal key collection |
+| `src/assets/EngineAssets.js` | **Engine widget art key registry** — thought bubble, back button, leaves, critter, inventory atlas |
+| `src/ui/UIHelper.js` | **Shared UI utilities** — chunky buttons, icon drawing, depth constant |
+| `src/ui/DebugOverlay.js` | **Debug visualizer** — walkable polygon, hotspot bounds, approach arrows |
+| `src/ui/SceneEditor.js` | **In-game editor** — drag handles for walkable polygon, hotspots, props; copy-to-clipboard |
+| `src/ui/FullscreenButton.js` | **Fullscreen toggle UI button** |
+| `src/ui/FullscreenButton.js` | Fullscreen toggle |
+| `src/cutscene/DialogueBubble.js` | **Speech/thought bubble** — cloud container with icons + text, icon type registry |
+| `src/cutscene/SuccessMessage.js` | **Success banner** — styled confirmation text with scale animation |
+| `docs/index.md` | **Documentation entry point** — module map, architecture, ADR index |
+| `docs/architecture.md` | **Architecture & registries** — boot sequence, engine/game boundary, event bus reference |
+| `docs/adr/` | **Architecture Decision Records** — 6 ADRs covering interaction model, prop framework, weather, NPC cast, engine boundary, character outfits |
+| `README.md` | **Project overview** — install, usage, development, publishing, module map |
+| `LICENSE` | MIT License |
+| `.github/workflows/publish.yml` | **CI/CD** — publish to JSR on `v*` tag push |
 
 ## Patterns & Conventions
 
-### Engine/Game Boundary (ADR 0005)
-
-- **Engine never imports game code.** This is a lint-enforced one-way dependency.
-- Game supplies knowledge at boot via registries: `characters.register()`, `content.registerItems()`, `registerCast()`,
-  `engineAssets.configure()`, `store.configure()`, `wearables.registerAll()`.
-- Every registry follows the Phaser-idiomatic pattern: **populate at boot, query by key at runtime**.
-
-### Types & publishing pipeline
-
-The source stays JavaScript+JSDoc, but the package ships real types and publishes to JSR **without
-`--allow-slow-types`**. `deno task dts` builds the artifact:
-
-1. `tsc -p tsconfig.json` type-checks the JSDoc and emits per-file `.d.ts` into `types/` (gitignored).
-2. `dts-bundle-generator` rolls `types/mod.d.ts` into one **self-contained** `mod.d.ts` (no cross-module imports;
-   phaser stays an external import).
-3. `scripts/fix-phaser-dts.ts` strips the bundler's bogus `import("phaser").Phaser.` → `import("phaser").`
-   (phaser's `export = Phaser` confuses the rollup for nested namespaces).
-
-`mod.js` carries `// @ts-self-types="./mod.d.ts"`, so Deno/JSR read the bundle for the entrypoint's types.
-
-- **Why a bundle (not per-file `.d.ts`):** Deno fast-check treats a per-file `@ts-self-types` `.d.ts` as type-only,
-  so cross-module _value_ imports (functions) fail. A single self-contained bundle has no cross-module imports to fail.
-- **`mod.d.ts` is committed** — the `@ts-self-types` pragma needs it present for `deno check` in dev.
-- **Drift gate:** `deno task dts:check` regenerates and `git diff --exit-code mod.d.ts`, so CI fails if the committed
-  bundle is stale. Determinism relies on the tool versions pinned in `deno.lock`.
-- **Publish:** `deno task dts && deno publish` (the `v*`-tag workflow does this).
-
 ### Coding Conventions
 
-- **Language:** JavaScript with JSDoc types. No TypeScript _source_ — `deno check` (`checkJs: true`, `strict: true`)
-  validates annotations; `tsc` additionally compiles them to `.d.ts` (see [Types & publishing pipeline](#types--publishing-pipeline)).
-- **Modules:** ES modules (`.js` extension). All imports use full relative paths with `.js` suffix.
-- **Singletons:** Registry-like classes are instantiated at module scope and exported as singletons (`store`,
-  `characters`, `content`, `castRegistry`, `engineAssets`).
-- **Exports:** Re-exported through `mod.js` — the public API surface.
-- **Constants:** `Object.freeze()` for config objects, cursors maps, etc.
-- **Depth layers:** `UI_DEPTH` constant (from UIHelper.js) for consistent z-ordering.
-- **Error classes:** Custom error types like `CutsceneCancelled` (extends Error).
-- **Async:** Cutscenes use async/await over cancellable promises. No nested `delayedCall` chains.
+- **Language**: JavaScript with extensive JSDoc type annotations (`@typedef`, `@param`, `@returns`, `@property`)
+- **Runtime/Module**: Deno (ES modules, `.js` extensions in all imports, `npm:` and `jsr:` import specifiers)
+- **Formatting** (from `deno.json`): 4-space indent, 120 line width, semicolons required, double quotes
+- **Linting** (from `deno.json`): excludes `no-window-prefix` and `no-slow-types` rules
+- **Compiler options**: strict mode, but `strictNullChecks: false`, `strictPropertyInitialization: false`, `noImplicitOverride: false`
+
+### Architecture Patterns
+
+1. **Engine/Game Boundary (ADR 0005)**: The engine never imports game code. All game knowledge enters through boot-time registries populated in a `register()` callback passed to `createAdventureGame()`. This is a strict one-way dependency.
+
+2. **Capability Slices**: Each `src/` subdirectory owns one complete capability — runtime code, types, and its boot-time registry. Dependencies between slices are explicit; cross-slice communication goes through the Store or the Event Bus.
+
+3. **Registries**: Phaser-idiomatic pattern — populate at boot (`register()`, `configure()`, `registerItems()`), query by key at runtime (`get()`, `resolve()`, `has()`). Engine registers are singletons exported from their module.
+
+4. **Declarative Configuration**: Scene behavior is driven by `AdventureSceneConfig` objects — background keys, walkable polygons, props, weather modes, cast overrides, assets. Game scenes extend `AdventureScene` and pass config to `super(config)`.
+
+5. **Reactive State**: The `Store` drives reactivity. Engine widgets subscribe to changes via `store.onChange()`. `PropEngine.reconcile()` runs on every store change to update prop visibility/state/hotspots. The `evaluateCondition()` DSL queries the store declaratively.
+
+6. **Event Bus**: `this.bus` (`Phaser.Events.EventEmitter`) for cross-system communication. Major events: `seasonchange`, `weatherchange`, `timechange`, `hotspot:arrived`, `subscene:open`/`close`.
+
+7. **Game Hooks**: `AdventureScene` provides override points for game-specific behavior: `getActiveCharacterId()`, `handleSeasonTransition()`, `isExitDisabled()`. Default implementations exist for each.
 
 ### Data Flow
 
-1. **Boot:** Game calls `createAdventureGame({ register, config })` → `register()` populates registries →
-   `new Phaser.Game(config)` starts scenes.
-2. **Scene create:** `super.create(data)` in `AdventureScene` builds all systems: WalkController, HotspotManager,
-   InventoryLayer, WeatherLayer, SubsceneStack, DebugOverlay, SceneEditor, PropEngine, CastDirector.
-3. **Interaction:** Click → HotspotManager emitter → WalkController walks → `hotspot:arrived` → PropEngine.runEffects
-   (or CastDirector reaction).
-4. **State changes:** Store mutations trigger `onChange` subscriptions. PropEngine re-reconciles (re-selects states)
-   reactively. CastDirector re-evaluates ambient on season/weather/time changes.
-5. **Cross-system communication:** Via `this.bus` (Phaser.Events.EventEmitter). Events: seasonchange, weatherchange,
-   timechange, ambientchange, hotspot:arrived, hotspot:click, subscene:open, subscene:close.
+```
+User Click → HotspotManager → WalkController (walks to approach point)
+  → bus emits "hotspot:arrived" → PropEngine.handleArrived()
+  → PropEngine executes effects (store.set, store.addTo, transitionTo, etc.)
+  → Store change → reconcile() → Props self-update
+```
 
-### Event Bus Events
+### State Management
 
-| Event                 | When                             | Payload          | Consumers                   |
-| --------------------- | -------------------------------- | ---------------- | --------------------------- |
-| `seasonchange`        | Store chapter value changes      | season string    | CastDirector, WeatherLayer  |
-| `weatherchange`       | Store weatherMode changes        | weather string   | CastDirector                |
-| `timechange`          | Store timeOfDay changes          | "day" or "night" | CastDirector, NightLayer    |
-| `ambientchange`       | Ambient mode changes             | ambient string   | —                           |
-| `hotspot:arrived`     | WalkController reaches a hotspot | hotspot config   | PropEngine, game code       |
-| `hotspot:click`       | Player clicks a hotspot          | hotspot config   | WalkController              |
-| `subscene:open/close` | Subscene opens/closes            | —                | —                           |
-| `characterchange`     | Active character switches        | new id           | CastDirector, NPC reactions |
+- Three buckets: `values` (scalars/flags), `collections` (named Sets for inventory/world items), `items` (item visual state strings)
+- Engine-owned defaults: `currentScene`, `timeOfDay`, `inventory` Set, `world` Set
+- Game supplies schema via `store.configure({ saveKey, createFreshState, aliases, notifySubject })`
+- LocalStorage persistence via `_saveState()` / `_loadState()` — serializes Sets as arrays
+- Change batching via `store.batch()` — suspends notifications until the batch completes
+- Replay sandbox via `store.snapshot()` / `store.restore()` — isolates mini-game state mutations
+- `notifySubject`: the game can supply a facade object passed to subscribers instead of the raw Store
 
-### Testing Patterns
+### Conditions DSL
 
-- **Location:** `*.test.js` files alongside source files in `src/`.
-- **Framework:** Deno test (`Deno.test()` blocks) + `@std/assert`.
-- **Phaser mocking:** Manual mock objects (no global Phaser mock). Tests like `conditions.test.js` are pure logic.
-  `Cutscene.test.js` tests cancellation contract without Phaser. `CritterHelper.test.js` uses hand-written mock images.
-- **Tests run:** `deno task test` (`deno test --permit-no-files --allow-read src/`)
-- **CI:** `deno task ci` runs lint + fmt:check + check + dts:check + test
+- Pure serializable data — no functions — so the in-game editor can author and round-trip them
+- Shape: `{ key: constraint }` = AND across keys; `[A, B]` = OR; `{ allOf: [...] }`, `{ anyOf: [...] }`, `{ not: ... }`
+- Leaf constraints: `{ eq: v }`, `{ ne: v }`, `{ gt/gte/lt/lte: v }`, `{ has: id }`, `{ not: id }`, `{ count: n }`
+- Bare scalars are sugar: for collections = `has`, for values = `eq`
+- Special key `dropped` resolves against the dragged inventory item
+
+### Testing
+
+- **Framework**: Deno's built-in test runner (`Deno.test()`)
+- **Assertions**: `@std/assert` (`assertEquals`)
+- **Location**: Test files are co-located with source as `*.test.js` files in `src/`
+- **Files**: 5 test files found: `conditions.test.js`, `Cutscene.test.js`, `CutsceneRunner.test.js`, `CritterHelper.test.js`, `assetLoading.test.js`
+- **Coverage**: Tests exist for core logic (conditions, cutscene contract, critter helper, asset loading) but UI/system integration is untested
+- **CI task**: `deno task test` runs `deno test --permit-no-files --allow-read src/`
+
+### Build & CI Pipeline
+
+- **`deno task ci`** runs sequentially: lint → fmt:check → check (typecheck) → dts:check (regenerate `mod.d.ts` and verify it's clean) → test
+- **`deno task dts`**: Compiles JSDoc to `.d.ts` files via `tsc`, then bundles into single `mod.d.ts` via `dts-bundle-generator`
+- **Publishing**: Pushed to JSR on `v*` tag via GitHub Actions. Pre-publish run: `deno install` → `deno task dts:check` → `deno publish`
+- **`mod.d.ts`**: Lives at `// @ts-self-types="./mod.d.ts"` in `mod.js`. CI validates it's never stale.
 
 ### Error Handling
 
-- **Cutscene errors:** `CutsceneCancelled` is swallowed by `CutsceneRunner`. Other errors propagate after cleanup.
-- **Store persistence:** Silent try/catch for localStorage quota errors and private browsing mode.
-- **Prop effects:** tween/playReach errors don't break the effect chain — effects are async but errors propagate.
-- **Defensive checks:** `if (!sprite || !sprite.active)` checks before touching game objects, especially in update loops
-  and shutdown sequences.
+- **Cutscene cancellation**: `CutsceneCancelled` is thrown into pending awaits when a cutscene is preempted or the scene shuts down. `CutsceneRunner` swallows this specific error so cancellation is silent; other errors propagate.
+- **NPC teardown**: Best-effort cleanup in `Cutscene.cancel()` — failing `stopWalking` on a half-destroyed sprite must not block teardown (caught and ignored).
+- **Store persistence**: `localStorage` access wrapped in try/catch for private browsing / quota errors. Unknown save shapes silently boot fresh (no migration).
+- **Safe defaults**: All registries have empty initial states. Unconfigured registries return `undefined`/`null`/empty. The engine doesn't crash if a game omits optional registrations.
 
-### Conditional Behavior Contract
+### Module Dependencies
 
-Behaviors (WanderBehavior, PatrolBehavior, FollowBehavior) share a common interface:
+- **`scene/` depends on**: `interaction/`, `movement/`, `inventory/`, `environment/`, `cast/`, `characters/`, `assets/`, `state/`, `ui/`
+- **`interaction/` depends on**: `core/` (conditions), `state/` (store), `scene/` (transitions), `cutscene/` (DialogueBubble)
+- **`movement/` depends on**: `core/` (perspective, random), `state/` (store), `characters/`, `cutscene/` (DialogueBubble), `interaction/` (PropEngine for exit approaches)
+- **`cast/` depends on**: `core/` (conditions), `state/` (store), `movement/` (behaviors, fidget, pathfinding), `cutscene/` (runner, actor), `characters/`
+- **`cutscene/` depends on**: `characters/` (portraits), `assets/` (EngineAssets), `state/` (store)
+- **`characters/` depends on**: `state/` (store)
+- **`environment/` depends on**: `assets/` (EngineAssets), `state/` (store), `core/` (random)
+- **`inventory/` depends on**: `state/` (store), `ui/` (UIHelper)
+- **`assets/` depends on**: nothing internal
+- **`state/` depends on**: nothing internal
+- **`core/` depends on**: `state/` (store — conditions uses it)
+- **`ui/` depends on**: `state/` (store), `scene/` (transitions), `assets/` (EngineAssets)
 
-- `holdForGreeting()` — stop and hold still so player can reach a stationary target
-- `interrupt(action)` — run an action (speak), resume behavior after timeout
-- `pause()` / `resume()` — suspend/resume for cutscenes
-- `destroy()` — cleanup timers
+### Heavily Coupled Subsystems (Impact Hotspots)
 
-### WalkController / NPC Walker Contract
-
-Both `WalkController` and `NPC` satisfy the `Walker` interface:
-
-```js
-{
-    sprite: Phaser.GameObjects.Sprite,
-    walkTo(target, onArrive?, opts?),  // tween-based
-    stopWalking(),                      // cancel tween, settle to still
-}
-```
-
-Behaviors consume this contract through the `WanderHost` adapter (in `walker.js`), which adds spawn/despawn lifecycle.
-
-### Save & Persistence
-
-- Auto-saves to `localStorage` on every Store change (debounced via batching).
-- Load is automatic in `store.configure()`.
-- Replay sandbox snapshots the full state; `endReplay()` restores it.
-- `store.hasSave()` checks for existing save.
-- `store.reset()` clears to fresh state.
-
-### Naming Conventions
-
-- **Private fields:** underscore prefix (`_state`, `_changeSubs`).
-- **Event handlers:** underscore prefix + handler suffix (`_onPointerDown`, `_onArrived`).
-- **Config shape:** Scene config keys use camelCase (`backgroundsBySeason`, `activeCharacter`).
-- **Registry methods:** `register()` / `configure()` / `get()` / `resolve()`.
-- **Direction constants:** `"front"`/`"back"`/`"side"` for directions, `"up"`/`"down"`/`"left"`/`"right"` for facing.
-
-### Key Architectural Constraints
-
-- Engine must never import game code.
-- Registries must be populated before any scene creates.
-- Props are reactive (re-evaluated on every Store change) — effects should only mutate state, never directly change art.
-- Cutscenes must unwind silently on scene shutdown (pending awaits reject, NPC behavior resumes).
-- The Store's three-bucket design is schema-agnostic — domain rules belong in the Game's wrapper, not in Store.js.
+1. **AdventureScene ↔ All systems**: The base scene creates and wires every subsystem. Changes to the scene lifecycle, event bus, or system composition ripple everywhere.
+2. **PropEngine ↔ Store + evaluateCondition**: The entire reactive prop system depends on the Store's change events and the conditions DSL. Changes to either have wide blast radius.
+3. **CastDirector ↔ NPC + behaviors + CutsceneRunner**: NPC orchestration ties together spawning, ambient behaviors, reactions, and cutscenes. Tightly intertwined.
+4. **WalkController ↔ Wearables + perspective + pathfinding**: Character rendering depends on wearable offsets, perspective scale, and walkable polygon navigation.
+5. **Store ↔ Everything**: Nearly every module imports the Store. It's the single most-coupled module in the codebase.

@@ -13,6 +13,7 @@ export { EngineAssetRegistry, engineAssets } from "./src/assets/EngineAssets.js"
 export { FullscreenButton } from "./src/ui/FullscreenButton.js";
 export { HotspotManager } from "./src/interaction/HotspotManager.js";
 export { IdleCharacter } from "./src/movement/IdleCharacter.js";
+export { CompanionBehavior } from "./src/movement/behaviors/CompanionBehavior.js";
 export { WanderBehavior } from "./src/movement/behaviors/WanderBehavior.js";
 export { InventoryLayer } from "./src/inventory/InventoryLayer.js";
 export { NPC } from "./src/cast/NPC.js";

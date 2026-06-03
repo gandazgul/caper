@@ -3388,6 +3388,115 @@ export type IdleCharacterOptions = {
 	} | null;
 };
 /**
+ * @typedef {object} CompanionOptions
+ * @property {any} [target] - the thing to trail (defaults to `scene.walk`, the
+ *   active character). Must expose `sprite`, `currentDirection`, `facingLeft`.
+ * @property {(dir: "side" | "back" | "front") => { anim?: string | null, still: string }} animFor -
+ *   resolve the walk-animation key (optional) + still-frame key for a facing
+ *   direction.
+ * @property {(dir: "side" | "back" | "front", target: any) => { x: number, y: number, flipX: boolean }} offset -
+ *   per-direction trail offset behind the target + facing flip.
+ * @property {(dist: number, isMoving: boolean) => number} [lerp] - smoothing
+ *   factor each frame. Default: 0.12 moving (0.2 if far), 0.1 idle.
+ * @property {number} [moveThreshold] - px past which the companion is "moving"
+ *   (plays its walk anim). Default 15.
+ * @property {number} [depthOffset] - drawn at `target.sprite.depth - depthOffset`.
+ *   Default 1.
+ * @property {(ctx: { dir: string, flipX: boolean, isMoving: boolean }) => void} [onFrame] -
+ *   optional per-frame hook after the move (e.g. position a companion-held sprite).
+ */
+/**
+ * Tight lockstep "conga line" trailing — the companion locks a fixed offset
+ * behind a target each frame, matching its facing animation. Shared by
+ * single-follower companions and multi-follower "train" formations (was
+ * duplicated per-frame across game companion helpers).
+ *
+ * This is intentionally distinct from {@link import("./FollowBehavior.js").FollowBehavior},
+ * which is a LOOSE trail (re-paths via walkTo on a timer). Companions move as a
+ * locked unit; FollowBehavior ambles after you.
+ */
+export class CompanionBehavior {
+	/**
+	 * @param {import("../../cast/NPC.js").NPC} npc
+	 * @param {CompanionOptions} opts
+	 */
+	constructor(npc: NPC, opts: CompanionOptions);
+	npc: NPC;
+	/** @type {any} */
+	scene: any;
+	target: any;
+	animFor: (dir: "side" | "back" | "front") => {
+		anim?: string | null;
+		still: string;
+	};
+	offset: (dir: "side" | "back" | "front", target: any) => {
+		x: number;
+		y: number;
+		flipX: boolean;
+	};
+	lerpFn: (dist: number, isMoving: boolean) => number;
+	moveThreshold: number;
+	depthOffset: number;
+	onFrame: (ctx: {
+		dir: string;
+		flipX: boolean;
+		isMoving: boolean;
+	}) => void;
+	walkable: any;
+	_onUpdate: () => void;
+	tick(): void;
+	destroy(): void;
+}
+export type CompanionOptions = {
+	/**
+	 * - the thing to trail (defaults to `scene.walk`, the
+	 * active character). Must expose `sprite`, `currentDirection`, `facingLeft`.
+	 */
+	target?: any;
+	/**
+	 * -
+	 * resolve the walk-animation key (optional) + still-frame key for a facing
+	 * direction.
+	 */
+	animFor: (dir: "side" | "back" | "front") => {
+		anim?: string | null;
+		still: string;
+	};
+	/**
+	 * -
+	 * per-direction trail offset behind the target + facing flip.
+	 */
+	offset: (dir: "side" | "back" | "front", target: any) => {
+		x: number;
+		y: number;
+		flipX: boolean;
+	};
+	/**
+	 * - smoothing
+	 * factor each frame. Default: 0.12 moving (0.2 if far), 0.1 idle.
+	 */
+	lerp?: (dist: number, isMoving: boolean) => number;
+	/**
+	 * - px past which the companion is "moving"
+	 * (plays its walk anim). Default 15.
+	 */
+	moveThreshold?: number;
+	/**
+	 * - drawn at `target.sprite.depth - depthOffset`.
+	 * Default 1.
+	 */
+	depthOffset?: number;
+	/**
+	 * -
+	 * optional per-frame hook after the move (e.g. position a companion-held sprite).
+	 */
+	onFrame?: (ctx: {
+		dir: string;
+		flipX: boolean;
+		isMoving: boolean;
+	}) => void;
+};
+/**
  * Drop-in night styling: dark-blue multiply overlay (covers background +
  * weather leaves), a crescent moon, additive glow patches for lit windows, and
  * a swarm of lantern-fly particles. Cheap, in-engine — no new art assets
