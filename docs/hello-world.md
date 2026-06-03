@@ -1,4 +1,4 @@
-# Hello World — Building a Game on the AdventureEngine
+# Hello World — Building a Game on the Caper
 
 This guide walks through creating a minimal point-and-click game from scratch. By the end you'll have a player character
 who can walk around a room, pick up an item, and exit to another scene.
@@ -17,7 +17,7 @@ Every game needs a single entry point that populates the engine's registries and
 ```js
 // src/main.js
 import Phaser from "phaser";
-import { createAdventureGame } from "@adventure-engine/createAdventureGame.js";
+import { createAdventureGame } from "@caper/engine";
 import { registerGameContent } from "./registerContent.js";
 import { MyRoomScene } from "./MyRoomScene.js";
 
@@ -40,11 +40,11 @@ Create a registration file that the engine calls once at boot. This is where you
 
 ```js
 // src/registerContent.js
-import { store } from "@adventure-engine/Store.js";
-import { characters } from "@adventure-engine/CharacterRegistry.js";
-import { content } from "@adventure-engine/ContentRegistry.js";
-import { engineAssets } from "@adventure-engine/EngineAssets.js";
-import { wearables } from "@adventure-engine/Wearables.js";
+import { store } from "@caper/engine";
+import { characters } from "@caper/engine";
+import { content } from "@caper/engine";
+import { engineAssets } from "@caper/engine";
+import { wearables } from "@caper/engine";
 
 export function registerGameContent() {
     // ─── Engine widget art ─────────────────────────────────────────────
@@ -112,8 +112,8 @@ and cast.
 
 ```js
 // src/MyRoomScene.js
-import { AdventureScene } from "@adventure-engine/AdventureScene.js";
-import { transitionIn } from "@adventure-engine/transitions.js";
+import { AdventureScene } from "@caper/engine";
+import { transitionIn } from "@caper/engine";
 
 export class MyRoomScene extends AdventureScene {
     constructor() {

@@ -5,9 +5,9 @@ knowledge reaches the engine through typed registries populated at boot.
 
 ## The boundary rule
 
-No engine file may import from game code. This is a one-way dependency contract enforced during extraction to prevent
-regressions. Engine-internal relative specifiers are fine (e.g. a behavior importing `../NPC.js`). Escaping to game code
-(e.g. `../content/items.js`) is a violation.
+No engine file may import from game code. This is a one-way dependency that keeps the engine reusable across games.
+Engine-internal relative specifiers are fine (e.g. a behavior importing `../NPC.js`). Importing from game code (e.g.
+`../content/items.js`) would cross the boundary.
 
 ## Registries at a glance
 

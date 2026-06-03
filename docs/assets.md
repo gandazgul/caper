@@ -41,7 +41,7 @@ class MyScene extends AdventureScene {
 ## Loading functions
 
 ```js
-import { loadAssetKeys, loadImageOnce, loadSpritesheetOnce } from "@adventure-engine/assetLoading.js";
+import { loadAssetKeys, loadImageOnce, loadSpritesheetOnce } from "@caper/engine";
 
 // Load by convention keys (guards against duplicates):
 loadAssetKeys(scene, ["bg_myroom", "sprite_props"]);
@@ -64,7 +64,7 @@ intro, and the scene itself only downloads once.
 The engine pre-computes which assets each season needs:
 
 ```js
-import { collectSeasonAssetKeys, seasonLoadSet } from "@adventure-engine/assetLoading.js";
+import { collectSeasonAssetKeys, seasonLoadSet } from "@caper/engine";
 
 // All keys for a given season:
 const keys = collectSeasonAssetKeys(sceneManager, "summer");
@@ -81,7 +81,7 @@ The engine owns several built-in visuals (thought bubbles, back button, falling 
 owns no art. The game supplies the actual texture/atlas keys at boot:
 
 ```js
-import { engineAssets } from "@adventure-engine/EngineAssets.js";
+import { engineAssets } from "@caper/engine";
 
 engineAssets.configure({
     thoughtBubble: { atlas: "ui-atlas", frame: "thought-bubble" },

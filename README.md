@@ -40,6 +40,26 @@ const game = createAdventureGame({
 
 See the [public API](mod.js) for the full list of exports.
 
+## Module map
+
+`src/` is organized into capability slices. The folders are internal — everything is re-exported from the package root
+(`@caper/engine`) — but each slice is "everything for one capability," including the boot-time registry the game fills.
+
+| Slice (`src/`) | What it owns                             | Modules                                                                                |
+| -------------- | ---------------------------------------- | -------------------------------------------------------------------------------------- |
+| `core/`        | cross-cutting primitives                 | `conditions`, `random`, `perspective`                                                  |
+| `scene/`       | the shell a game extends + boots         | `AdventureScene`, `EngineScene`, `createAdventureGame`, `SubsceneStack`, `transitions` |
+| `movement/`    | locomotion & navigation                  | `WalkController`, `pathfinding`, `Fidget`, `IdleCharacter`, `behaviors/`               |
+| `interaction/` | the one-click verb loop + props          | `HotspotManager`, `PropEngine`                                                         |
+| `inventory/`   | carried items                            | `InventoryLayer`, `itemDef`, `ContentRegistry`                                         |
+| `cast/`        | NPCs + the ensemble director             | `NPC`, `CastDirector`, `CastRegistry`                                                  |
+| `characters/`  | playable characters, switching, outfits  | `CharacterRegistry`, `CharacterSwitcher`, `Wearables`, `portraits`                     |
+| `cutscene/`    | scripted sequences + on-screen speech    | `Cutscene`, `CutsceneRunner`, `cutsceneActor`, `DialogueBubble`, `SuccessMessage`      |
+| `environment/` | the ambient world                        | `WeatherLayer`, `NightLayer`, `CritterHelper`                                          |
+| `state/`       | persistent reactive store                | `Store`                                                                                |
+| `assets/`      | load conventions + engine asset registry | `assetLoading`, `EngineAssets`                                                         |
+| `ui/`          | shared chrome + dev tools                | `UIHelper`, `FullscreenButton`, `DebugOverlay`, `SceneEditor`                          |
+
 ## Documentation
 
 Start with [docs/index.md](docs/index.md).

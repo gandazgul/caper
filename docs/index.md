@@ -1,4 +1,4 @@
-# AdventureEngine — Technical Documentation
+# Caper — Technical Documentation
 
 An extensible, game-agnostic **point-and-click adventure engine** built on [Phaser 3](https://phaser.io/). The engine
 ships the "batteries" for the genre — walking, one-click interaction, inventory, weather, NPCs with ambient behaviors,
@@ -8,8 +8,8 @@ All game-specific knowledge is supplied at boot via typed registries and configu
 ## Table of Contents
 
 - [Architecture overview](#architecture-overview)
-- [How the seam works](#how-the-seam-works)
-- [Concepts map](#concepts-map)
+- [Engine/game boundary](#enginegame-boundary)
+- [Module map](#module-map)
 - [ADRs](#adrs)
 
 ## Architecture overview
@@ -36,35 +36,20 @@ All game-specific knowledge is supplied at boot via typed registries and configu
                            │ one-way dependency
                            ▼
 ┌────────────────────────────────────────────────────────────┐
-│  ENGINE LAYER AdventureEngine (ADR 0005)                    │
-│                                                             │
-│  No game imports. Shaped by registries at boot.             │
-│                                                             │
-│  Base scene systems (AdventureScene):                       │
-│    WalkController  HotspotManager  InventoryLayer           │
-│    WeatherLayer    NightLayer      SubsceneStack            │
-│    PropEngine      CastDirector    DebugOverlay             │
-│                                                             │
-│  Primitive modules:                                         │
-│    NPC          ThoughtBubble    Fidget       Wearables     │
-│    Cutscene     CutsceneRunner   cutsceneActor              │
-│                                                             │
-│  Declarative data:                                          │
-│    Store        ContentRegistry  CharacterRegistry          │
-│    CastRegistry EngineAssets     conditions.js              │
-│                                                             │
-│  Behaviors (NPC locomotion):                                │
-│    WanderBehavior   PatrolBehavior                          │
-│    FollowBehavior   CompanionBehavior  walker.js            │
-│                                                             │
-│  Infrastructure:                                            │
-│    transitions.js  assetLoading.js   perspective.js         │
-│    pathfinding.js  random.js        UIHelper.js             │
-│                                                             │
+│  ENGINE LAYER  Caper (ADR 0005)                            │
+│                                                            │
+│  No game imports. Each capability slice owns its           │
+│  boot-time registry. See the Module map below.             │
+│                                                            │
+│  Capability slices (src/):                                 │
+│    core/         scene/        movement/                   │
+│    interaction/  inventory/    cast/                       │
+│    characters/   cutscene/     environment/                │
+│    state/        assets/       ui/                         │
 └────────────────────────────────────────────────────────────┘
 ```
 
-## How the seam works
+## Engine/game boundary
 
 The engine declares **interfaces** — the shapes of data it needs. The game fills them at boot. The engine never
 hardcodes a game-specific value.
@@ -80,23 +65,25 @@ hardcodes a game-specific value.
 
 See [architecture.md](architecture.md) for details.
 
-## Concepts map
+## Module map
 
-| Topic                                        | Description                                          | File                                                   |
-| -------------------------------------------- | ---------------------------------------------------- | ------------------------------------------------------ |
-| [Architecture & registries](architecture.md) | Engine/game boundary, all registries, boot sequence  | —                                                      |
-| [Hello World](hello-world.md)                | Step-by-step guide to build a new game on the engine | —                                                      |
-| [State (Store)](store.md)                    | Reactive state, persistence, replay sandbox          | `Store.js`                                             |
-| [Characters](characters.md)                  | Registry, outfits, active character, switching       | `CharacterRegistry.js`                                 |
-| [NPCs & Cast](npc-and-cast.md)               | NPC class, cast declarative system, behaviors        | `NPC.js`, `CastDirector.js`, `CastRegistry.js`         |
-| [Props](props.md)                            | Declarative props, conditions DSL, effects           | `PropEngine.js`, `conditions.js`                       |
-| [Interaction](interaction.md)                | One-click, WalkController, hotspots, cursors         | `WalkController.js`, `HotspotManager.js`               |
-| [Weather & Night](weather.md)                | Rain/snow, falling leaves, night overlay             | `WeatherLayer.js`, `NightLayer.js`                     |
-| [Cutscenes](cutscenes.md)                    | Async cutscene runner, actor context                 | `Cutscene.js`, `CutsceneRunner.js`, `cutsceneActor.js` |
-| [Inventory](inventory.md)                    | Strip, item lookup, drag-to-use                      | `InventoryLayer.js`, `ContentRegistry.js`              |
-| [Transitions](transitions.md)                | Scene transitions, presets, replay sandbox           | `transitions.js`                                       |
-| [Assets](assets.md)                          | Key-convention loading, EngineAssets, boot           | `assetLoading.js`, `EngineAssets.js`                   |
-| [UI Helpers](ui-helpers.md)                  | Buttons, debug overlay, scene editor                 | `UIHelper.js`, `DebugOverlay.js`, `SceneEditor.js`     |
+`src/` is organized into **capability slices** — each folder is "everything for one capability," including the boot-time
+registry the game fills. The folders are internal; everything is re-exported from the package root (`@caper/engine`).
+
+| Slice (`src/`) | Modules                                                                                | Docs                                                                                          |
+| -------------- | -------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| `core/`        | `conditions`, `random`, `perspective`                                                  | [Props (conditions DSL)](props.md)                                                            |
+| `scene/`       | `AdventureScene`, `EngineScene`, `createAdventureGame`, `SubsceneStack`, `transitions` | [Architecture](architecture.md), [Hello World](hello-world.md), [Transitions](transitions.md) |
+| `movement/`    | `WalkController`, `pathfinding`, `Fidget`, `IdleCharacter`, `behaviors/`               | [Interaction](interaction.md)                                                                 |
+| `interaction/` | `HotspotManager`, `PropEngine`                                                         | [Props](props.md), [Interaction](interaction.md)                                              |
+| `inventory/`   | `InventoryLayer`, `itemDef`, `ContentRegistry`                                         | [Inventory](inventory.md)                                                                     |
+| `cast/`        | `NPC`, `CastDirector`, `CastRegistry`                                                  | [NPCs & Cast](npc-and-cast.md)                                                                |
+| `characters/`  | `CharacterRegistry`, `CharacterSwitcher`, `Wearables`, `portraits`                     | [Characters](characters.md)                                                                   |
+| `cutscene/`    | `Cutscene`, `CutsceneRunner`, `cutsceneActor`, `DialogueBubble`, `SuccessMessage`      | [Cutscenes](cutscenes.md)                                                                     |
+| `environment/` | `WeatherLayer`, `NightLayer`, `CritterHelper`                                          | [Weather & Night](weather.md)                                                                 |
+| `state/`       | `Store`                                                                                | [State (Store)](store.md)                                                                     |
+| `assets/`      | `assetLoading`, `EngineAssets`                                                         | [Assets](assets.md)                                                                           |
+| `ui/`          | `UIHelper`, `FullscreenButton`, `DebugOverlay`, `SceneEditor`                          | [UI Helpers](ui-helpers.md)                                                                   |
 
 ## ADRs
 

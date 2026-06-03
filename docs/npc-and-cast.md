@@ -11,7 +11,7 @@ The engine provides two complementary systems for non-player characters:
 Create an NPC directly for scene-local characters:
 
 ```js
-import { NPC } from "@adventure-engine/NPC.js";
+import { NPC } from "@caper/engine";
 
 const npc = new NPC(this, {
     id: "shopkeeper",
@@ -56,7 +56,7 @@ spawns each character's seasonal ambient behavior, and wires reactions.
 ### Cast entry structure
 
 ```js
-import { registerCast } from "@adventure-engine/CastRegistry.js";
+import { registerCast } from "@caper/engine";
 
 registerCast({
     shopkeeper: {

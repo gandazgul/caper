@@ -9,7 +9,7 @@ awaitable NPC/player primitives — strongly typed, full control flow, no nested
 into cancellable promises.
 
 ```js
-import { Cutscene } from "@adventure-engine/Cutscene.js";
+import { Cutscene } from "@caper/engine";
 
 const cs = new Cutscene();
 

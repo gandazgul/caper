@@ -138,27 +138,19 @@ plus drop-targets.
 **Out (stays imperative, triggered via `emit`/`goToScene`):** mini-game scenes, autonomous NPC controllers, timed
 multi-actor cutscenes, weather and day/night tint.
 
-## Editor — two phases
+## Editor
 
-- **Phase 1 (ship this):** existing spatial handles (position, bounds, approach, per-state frame) **plus** lossless
-  round-trip of `when`/`onClick`/`activeWhen`/ `onDrop` — possible now only because nothing in a prop is a function. The
-  dev hand-writes logic once; the editor tunes everything spatial and preserves the rest. Today's
-  `formatProps`-drops-functions limitation evaporates.
-- **Phase 2 (later):** visual condition/effect builder — dropdowns over the small, closed vocabularies. Off the critical
-  path.
+Existing spatial handles (position, bounds, approach, per-state frame) **plus** lossless round-trip of
+`when`/`onClick`/`activeWhen`/`onDrop` — possible now only because nothing in a prop is a function. The dev hand-writes
+logic once; the editor tunes everything spatial and preserves the rest. Today's `formatProps`-drops-functions limitation
+evaporates.
 
-Content stays as **pure-data objects in scene modules** (matches the copy-to- clipboard-and-paste workflow), but the
+Content stays as **pure-data objects in scene modules** (matches the copy-to-clipboard-and-paste workflow), but the
 no-functions rule makes externalizing to JSON a mechanical lift for the framework vision.
 
-## Migration plan
+### Future work
 
-1. Build engine pieces: store, condition evaluator, prop renderer + state selection, interaction binder, effect runner
-   - lifecycle, drop binder, reactive loop, editor round-trip.
-2. Author new scenes directly as `props[]` data.
-3. Validate with a representative scene that covers season-gated pickups, slide-reveal (tween + `emit`),
-   visible-but-inactive props, a subscene, and an exit.
-4. Validate with a second stress-test scene that covers multi-state props, drops, NPC choreography, and the `emit`
-   bridge end to end.
+Visual condition/effect builder — dropdowns over the small, closed vocabularies. Off the critical path.
 
 ## Consequences
 

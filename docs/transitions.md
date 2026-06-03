@@ -22,7 +22,7 @@ Named presets are defined in `TRANSITIONS`:
 The main function for scene changes. Resolution order: per-call override > per-scene default > `"room"`.
 
 ```js
-import { transitionTo } from "@adventure-engine/transitions.js";
+import { transitionTo } from "@caper/engine";
 
 // By preset name:
 transitionTo(this, "ForestScene");                       // uses scene default or "room"
@@ -55,7 +55,7 @@ If a replay sandbox is active, `transitionTo` redirects to `exitReplay` — the 
 For leaving a mini-game launched from a replay sandbox:
 
 ```js
-import { exitReplay } from "@adventure-engine/transitions.js";
+import { exitReplay } from "@caper/engine";
 
 exitReplay(this);
 ```
@@ -68,7 +68,7 @@ This restores the pre-replay state snapshot and fades to the return scene (confi
 Call in a scene's `create()` to fade in on arrival:
 
 ```js
-import { transitionIn } from "@adventure-engine/transitions.js";
+import { transitionIn } from "@caper/engine";
 
 class MyScene extends AdventureScene {
     create(data) {

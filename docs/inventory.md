@@ -9,7 +9,7 @@ The engine resolves an item id — `"apple"`, `"key"`, `"fishing_rod"` — to a 
 `ContentRegistry`. The game populates this at boot:
 
 ```js
-import { content } from "@adventure-engine/ContentRegistry.js";
+import { content } from "@caper/engine";
 
 content.registerItems({
     apple: { atlas: "props-atlas", frame: "apple", scale: 0.8 },
@@ -53,7 +53,7 @@ this.inventory.setVisible(false); // hide (for puzzles that need the bottom of t
 ## Inventory operations
 
 ```js
-import { store } from "@adventure-engine/Store.js";
+import { store } from "@caper/engine";
 
 // Standard:
 store.addTo("inventory", "apple"); // add one
