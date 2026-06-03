@@ -38,4 +38,3 @@
 
 /** @type {RenderableItem} */
 export const RenderableItem = null;
-
