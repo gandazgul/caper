@@ -17,5 +17,5 @@ jobs:
         with:
           deno-version: v2.x
       - run: deno install # materialize node_modules (phaser) so tsc can resolve types
-      - run: deno task dts # regenerate the bundled mod.d.ts from JSDoc
-      - run: deno publish --allow-dirty # ship the freshly-generated mod.d.ts
+      - run: deno task dts:check # regenerate + fail the release if committed mod.d.ts is stale
+      - run: deno publish # tree is clean (dts:check verified it), so no --allow-dirty

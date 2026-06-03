@@ -1,6 +1,6 @@
 {
     "name": "@caper/engine",
-    "version": "0.1.0",
+    "version": "0.1.1",
     "license": "MIT",
     "nodeModulesDir": "auto",
     "exports": {
@@ -10,7 +10,9 @@
         "exclude": [
             "**/*.test.js",
             ".history/",
-            "CONTEXT.md"
+            "CONTEXT.md",
+            "tsconfig*.json",
+            "scripts/"
         ]
     },
     "tasks": {
