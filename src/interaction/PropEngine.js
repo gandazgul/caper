@@ -104,6 +104,7 @@ export class PropEngine {
     }
 
     build() {
+        /** @type {(h: any) => void} */
         this._onArrived = (/** @type {any} */ h) => this.handleArrived(h);
         this.scene.bus.on("hotspot:arrived", this._onArrived);
         this._unsub = store.onChange(() => this.reconcile());
@@ -114,12 +115,14 @@ export class PropEngine {
         // drag handler (a game's legacy drop targets) and a
         // declarative drop target can coexist; each handler claims its own
         // scope and snaps back only what it owns.
+        /** @type {(p: any, obj: any, x: number, y: number) => void} */
         this._onDrag = (
             /** @type {any} */ _p,
             /** @type {any} */ obj,
             /** @type {number} */ x,
             /** @type {number} */ y,
         ) => this._handleDrag(obj, x, y);
+        /** @type {(p: any, obj: any) => void} */
         this._onDragEnd = (/** @type {any} */ _p, /** @type {any} */ obj) => this._handleDragEnd(obj);
         this.scene.input.on("drag", this._onDrag);
         this.scene.input.on("dragend", this._onDragEnd);
@@ -364,7 +367,7 @@ export class PropEngine {
         return {
             prop,
             scene: this.scene,
-            engine: this,
+            engine: /** @type {PropEngine} */ (this),
             sprite: this.sprites.get(prop.id) ?? null,
             /** @type {{x:number,y:number} | null} */
             lastPos: null,

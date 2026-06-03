@@ -1,0 +1,21 @@
+{
+    "compilerOptions": {
+        "rootDir": ".",
+        "allowJs": true,
+        "checkJs": true,
+        "declaration": true,
+        "emitDeclarationOnly": true,
+        "declarationDir": "./types",
+        "target": "ESNext",
+        "module": "esnext",
+        "moduleResolution": "bundler",
+        "lib": ["esnext", "dom", "dom.iterable"],
+        "skipLibCheck": true,
+        "strict": true,
+        "strictNullChecks": false,
+        "strictPropertyInitialization": false,
+        "noImplicitOverride": false
+    },
+    "include": ["mod.js", "src/**/*.js"],
+    "exclude": ["src/**/*.test.js", "node_modules"]
+}

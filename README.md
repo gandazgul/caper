@@ -88,18 +88,25 @@ To work on a game and the engine side by side without publishing, map the packag
 ## Development
 
 ```bash
-deno task ci      # lint + fmt:check + check + test
+deno task ci      # lint + fmt:check + check + dts:check + test
 deno task test
+deno task dts     # regenerate the bundled mod.d.ts from JSDoc
 ```
+
+## Types
+
+The engine is authored in JavaScript with JSDoc. To ship real types (and satisfy JSR fast-check without
+`--allow-slow-types`), `deno task dts` compiles the JSDoc to declarations with `tsc`, rolls them into a single
+self-contained `mod.d.ts`, and `mod.js` points at it via `// @ts-self-types`. `deno task dts:check` (run in CI)
+regenerates it and fails if the committed `mod.d.ts` is stale, so types can never drift from the source.
 
 ## Publishing
 
 ```bash
-deno publish --allow-slow-types
+deno task dts && deno publish
 ```
 
-Requires the `@caper` scope on JSR. The engine is authored in JavaScript with JSDoc types, so JSR ships it with "slow
-types" (no generated `.d.ts`); `--allow-slow-types` acknowledges that.
+Requires the `@caper` scope on JSR. Pushing a `v*` tag runs this via `.github/workflows/publish.yml`.
 
 ## License
 

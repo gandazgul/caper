@@ -1,0 +1,16 @@
+{
+    "//": "Used only by `deno task dts` to roll the emitted ./types declarations into a single mod.d.ts.",
+    "compilerOptions": {
+        "allowJs": false,
+        "declaration": true,
+        "emitDeclarationOnly": true,
+        "noEmit": true,
+        "module": "esnext",
+        "moduleResolution": "bundler",
+        "target": "ESNext",
+        "lib": ["esnext", "dom", "dom.iterable"],
+        "skipLibCheck": true,
+        "strict": false
+    },
+    "include": ["types/**/*.d.ts"]
+}
