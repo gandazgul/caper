@@ -5,7 +5,8 @@ import { engineAssets } from "../assets/EngineAssets.js";
 /** @typedef {"none" | "falling-leaves"} AmbientMode */
 
 /**
- * One falling raindrop drawn as a line each frame.
+ * One falling precipitation particle drawn each frame.
+ * Rain uses short slanted lines; snow uses small soft dots.
  * @typedef {Object} Drop
  * @property {number} x
  * @property {number} y
@@ -13,6 +14,10 @@ import { engineAssets } from "../assets/EngineAssets.js";
  * @property {number} vy
  * @property {number} length
  * @property {number} alpha
+ * @property {number} [radius]
+ * @property {number} [wobbleAmp]
+ * @property {number} [wobbleFreq]
+ * @property {number} [wobblePhase]
  */
 
 /**
@@ -32,6 +37,8 @@ import { engineAssets } from "../assets/EngineAssets.js";
 
 const LIGHT_DROP_COUNT = 110;
 const HEAVY_DROP_COUNT = 320;
+const LIGHT_SNOW_COUNT = 150;
+const HEAVY_SNOW_COUNT = 420;
 const LEAF_COUNT = 18;
 
 const WEATHER_DEPTH = 5000;
@@ -64,6 +71,7 @@ export class WeatherLayer {
         this.tint = null;
         /** @type {Drop[]} */
         this.drops = [];
+        this._snow = false;
         this._heavy = false;
 
         // ── Ambient state (falling leaves) ────────────────────────────────
@@ -90,6 +98,8 @@ export class WeatherLayer {
         this.weatherMode = mode;
         if (mode === "light-rain" || mode === "heavy-rain") {
             this._startRain(mode === "heavy-rain");
+        } else if (mode === "snow" || mode === "heavy-snow") {
+            this._startSnow(mode === "heavy-snow");
         }
         this._ensureUpdateLoop();
     }
@@ -141,6 +151,28 @@ export class WeatherLayer {
         }
     }
 
+    /** @param {boolean} heavy */
+    _startSnow(heavy) {
+        this._heavy = heavy;
+        this._snow = true;
+        const count = heavy ? HEAVY_SNOW_COUNT : LIGHT_SNOW_COUNT;
+
+        const tintAlpha = heavy ? 0.18 : 0.08;
+        this.tint = this.scene.add.rectangle(0, 0, this.scene.scale.width, this.scene.scale.height, 0xb8d3ff, tintAlpha)
+            .setOrigin(0, 0)
+            .setDepth(WEATHER_DEPTH)
+            .setScrollFactor(0);
+
+        this.gfx = this.scene.add.graphics()
+            .setDepth(WEATHER_DEPTH + 1)
+            .setScrollFactor(0);
+
+        this.drops = new Array(count);
+        for (let i = 0; i < count; i++) {
+            this.drops[i] = this._makeSnowflake(true);
+        }
+    }
+
     /**
      * @param {boolean} initial - if true, seed positions across the full
      *   screen so rain doesn't pop in from the top all at once.
@@ -156,6 +188,29 @@ export class WeatherLayer {
         const x = Phaser.Math.Between(-80, this.scene.scale.width + 200);
         const y = initial ? Phaser.Math.Between(-40, this.scene.scale.height) : Phaser.Math.Between(-120, -20);
         return { x, y, vx: speedX, vy: speedY, length, alpha };
+    }
+
+    /**
+     * @param {boolean} initial - seed flakes across the screen so snow is
+     *   already falling when the scene appears.
+     * @returns {Drop}
+     */
+    _makeSnowflake(initial) {
+        const heavy = this._heavy;
+        const x = Phaser.Math.Between(-80, this.scene.scale.width + 80);
+        const y = initial ? Phaser.Math.Between(-40, this.scene.scale.height) : Phaser.Math.Between(-160, -20);
+        return {
+            x,
+            y,
+            vx: Phaser.Math.Between(heavy ? -55 : -35, heavy ? 35 : 25),
+            vy: Phaser.Math.Between(heavy ? 120 : 65, heavy ? 240 : 130),
+            length: 0,
+            alpha: Phaser.Math.FloatBetween(heavy ? 0.65 : 0.45, heavy ? 0.95 : 0.75),
+            radius: Phaser.Math.FloatBetween(heavy ? 1.5 : 1, heavy ? 3.3 : 2.3),
+            wobbleAmp: Phaser.Math.FloatBetween(heavy ? 8 : 5, heavy ? 24 : 16),
+            wobbleFreq: Phaser.Math.FloatBetween(0.8, 1.8),
+            wobblePhase: Phaser.Math.FloatBetween(0, Math.PI * 2),
+        };
     }
 
     // ─── Falling leaves ──────────────────────────────────────────────────
@@ -230,6 +285,24 @@ export class WeatherLayer {
                 g.lineTo(drop.x - ux * len, drop.y - uy * len);
                 g.strokePath();
             }
+        } else if (this.gfx && (this.weatherMode === "snow" || this.weatherMode === "heavy-snow")) {
+            const g = this.gfx;
+            g.clear();
+            for (const flake of this.drops) {
+                flake.wobblePhase = (flake.wobblePhase ?? 0) + (flake.wobbleFreq ?? 1) * seconds;
+                flake.x += flake.vx * seconds;
+                flake.y += flake.vy * seconds;
+                const wobble = Math.sin(flake.wobblePhase) * (flake.wobbleAmp ?? 0);
+                if (
+                    flake.y > this.scene.scale.height + 20 ||
+                    flake.x + wobble < -100 ||
+                    flake.x + wobble > this.scene.scale.width + 100
+                ) {
+                    Object.assign(flake, this._makeSnowflake(false));
+                }
+                g.fillStyle(0xffffff, flake.alpha);
+                g.fillCircle(flake.x + wobble, flake.y, flake.radius ?? 2);
+            }
         }
 
         // ── Ambient (falling leaves) ──────────────────────────────────
@@ -267,6 +340,7 @@ export class WeatherLayer {
             this.tint = null;
         }
         this.drops = [];
+        this._snow = false;
     }
 
     /** Tear down ambient only. */

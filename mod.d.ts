@@ -882,6 +882,7 @@ export class WeatherLayer {
 	tint: Phaser.GameObjects.Rectangle | null;
 	/** @type {Drop[]} */
 	drops: Drop[];
+	_snow: boolean;
 	_heavy: boolean;
 	/** @type {AmbientMode} */
 	ambientMode: AmbientMode;
@@ -897,12 +898,20 @@ export class WeatherLayer {
 	_ensureUpdateLoop(): void;
 	/** @param {boolean} heavy */
 	_startRain(heavy: boolean): void;
+	/** @param {boolean} heavy */
+	_startSnow(heavy: boolean): void;
 	/**
 	 * @param {boolean} initial - if true, seed positions across the full
 	 *   screen so rain doesn't pop in from the top all at once.
 	 * @returns {Drop}
 	 */
 	_makeDrop(initial: boolean): Drop;
+	/**
+	 * @param {boolean} initial - seed flakes across the screen so snow is
+	 *   already falling when the scene appears.
+	 * @returns {Drop}
+	 */
+	_makeSnowflake(initial: boolean): Drop;
 	_startLeaves(): void;
 	/**
 	 * @param {boolean} initial - seed across the full screen on first build
@@ -923,7 +932,8 @@ export class WeatherLayer {
 export type PrecipitationMode = "none" | "light-rain" | "heavy-rain" | "snow" | "heavy-snow";
 export type AmbientMode = "none" | "falling-leaves";
 /**
- * One falling raindrop drawn as a line each frame.
+ * One falling precipitation particle drawn each frame.
+ * Rain uses short slanted lines; snow uses small soft dots.
  */
 export type Drop = {
 	x: number;
@@ -932,6 +942,10 @@ export type Drop = {
 	vy: number;
 	length: number;
 	alpha: number;
+	radius?: number;
+	wobbleAmp?: number;
+	wobbleFreq?: number;
+	wobblePhase?: number;
 };
 /**
  * One falling leaf sprite, sway + spin animated per-frame.
@@ -1603,7 +1617,33 @@ export type WanderHost = Walker & {
 	despawn: () => void;
 	isSpawned: () => boolean;
 };
-declare class WanderBehavior {
+/**
+ * @typedef {object} WanderOptions
+ * @property {boolean} [startPresent] - force the initial present/absent roll.
+ * @property {{x: number, y: number} | null} [startPos] - when present-on-entry
+ *   (not from an exit), stand here instead of a random walkable point.
+ * @property {number} [presentChance] - chance of being present on attach. Default 1 (always present).
+ * @property {[number, number] | null} [walksRange] - wanders before leaving the scene. `null` = perpetual (never leaves).
+ * @property {[number, number]} [wanderDelayRange] - ms paused between wanders. Default [3000, 6000].
+ * @property {number} [returnInterval] - ms between return-check rolls while absent. Default 18000.
+ * @property {number} [returnChance] - chance to return on each check. Default 0.33.
+ * @property {{x: number, y: number, w: number, h: number}} [area] - explicit roam bounds. When set, random
+ *   destinations are picked inside this rect (no walkable snap) — use it when the character's roam zone differs
+ *   from the player walkable polygon (e.g. a foreground shore strip). Defaults to the scene walkable.
+ * @property {boolean} [startAtExit] - spawn from a random scene exit. Default = can-leave.
+ * @property {boolean} [walkInOnSpawn] - walk to a random point immediately on spawn (vs pausing first). Default false.
+ * @property {string | null} [idleFrame] - texture shown while paused between wanders. Default = host still frame.
+ * @property {number} [interruptResumeMs] - ms before the routine resumes after a click greeting. Default 2600.
+ * @property {boolean} [autoStart] - run the state machine on construction. Default true.
+ */
+/**
+ * The come-and-go wander machine, generalized out of the six controllers that
+ * each hand-rolled it. Drives a {@link import("./walker.js").WanderHost} through
+ * `wandering` → `leaving` → `absent`, picking random walkable points, and
+ * (optionally) leaving the scene after a few walks before checking back on a
+ * timer. Knows nothing about sprites except through the host.
+ */
+export class WanderBehavior {
 	/**
 	 * @param {import("./walker.js").WanderHost} host
 	 * @param {WanderOptions} [opts]
@@ -3555,6 +3595,73 @@ export function buildCutsceneContext(scene: any, cs: Cutscene, present: Map<stri
  * @return {number}
  */
 export function randomInt(...args: number[]): number;
+/**
+ * Shared "renderable item" shape used across a game's item collections (props,
+ * equipment, scene-specific objects). Every collection extends this with its own
+ * positional / domain
+ * fields, but the visual fields are uniform: pick a frame, set a scale,
+ * optionally rotate.
+ *
+ * Pattern for a new collection — declare a typedef that intersects this
+ * with the scene-specific fields, e.g.:
+ *   `import("./itemDef.js").RenderableItem & { x: number, y: number }`
+ */
+export type RenderableItem = {
+	/**
+	 * - registry key
+	 */
+	id: string;
+	/**
+	 * - atlas frame name. Defaults to `id` if omitted.
+	 */
+	frame?: string;
+	/**
+	 * - display scale, default 1
+	 */
+	scale?: number;
+	/**
+	 * - rotation in DEGREES (Phaser setAngle), default 0
+	 */
+	rotation?: number;
+};
+/**
+ * Shared "renderable item" shape used across a game's item collections (props,
+ * equipment, scene-specific objects). Every collection extends this with its own
+ * positional / domain
+ * fields, but the visual fields are uniform: pick a frame, set a scale,
+ * optionally rotate.
+ *
+ * Pattern for a new collection — declare a typedef that intersects this
+ * with the scene-specific fields, e.g.:
+ *   `import("./itemDef.js").RenderableItem & { x: number, y: number }`
+ *
+ * @typedef {object} RenderableItem
+ * @property {string} id - registry key
+ * @property {string} [frame] - atlas frame name. Defaults to `id` if omitted.
+ * @property {number} [scale] - display scale, default 1
+ * @property {number} [rotation] - rotation in DEGREES (Phaser setAngle), default 0
+ */
+/**
+ * A `RenderableItem` placed in a scene at a specific position. Add a list
+ * of these to `AdventureSceneConfig.propItems` and the base scene renders
+ * them automatically (no per-scene loop needed). Subclasses can grab the
+ * resulting sprite via `this.propSprites.get(id)` for later manipulation
+ * (destroy on pickup, toggle visibility, etc.).
+ *
+ * @typedef {RenderableItem & {
+ *   atlas: string,
+ *   x: number,
+ *   y: number,
+ *   depth?: number,
+ *   flipX?: boolean,
+ *   origin?: { x?: number, y?: number },
+ *   shouldRender?: () => boolean,
+ *   seasons?: string[],
+ *   hideIfPickedUp?: boolean,
+ * }} PropItem
+ */
+/** @type {RenderableItem} */
+export const RenderableItem: RenderableItem;
 /**
  * Engine — content registry (ADR 0005).
  *

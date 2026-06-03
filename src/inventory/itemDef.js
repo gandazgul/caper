@@ -35,3 +35,7 @@
  *   hideIfPickedUp?: boolean,
  * }} PropItem
  */
+
+/** @type {RenderableItem} */
+export const RenderableItem = null;
+

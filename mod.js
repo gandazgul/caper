@@ -13,6 +13,7 @@ export { EngineAssetRegistry, engineAssets } from "./src/assets/EngineAssets.js"
 export { FullscreenButton } from "./src/ui/FullscreenButton.js";
 export { HotspotManager } from "./src/interaction/HotspotManager.js";
 export { IdleCharacter } from "./src/movement/IdleCharacter.js";
+export { WanderBehavior } from "./src/movement/behaviors/WanderBehavior.js";
 export { InventoryLayer } from "./src/inventory/InventoryLayer.js";
 export { NPC } from "./src/cast/NPC.js";
 export { NightLayer } from "./src/environment/NightLayer.js";
@@ -52,4 +53,5 @@ export { createAdventureGame } from "./src/scene/createAdventureGame.js";
 export { buildCutsceneContext } from "./src/cutscene/cutsceneActor.js";
 export { bakeCircularCrop, resolveCharacterPortrait } from "./src/characters/portraits.js";
 export { randomInt } from "./src/core/random.js";
+export { RenderableItem } from "./src/inventory/itemDef.js";
 export { transitionIn, TRANSITIONS, transitionTo } from "./src/scene/transitions.js";
