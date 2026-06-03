@@ -6,30 +6,28 @@ import { engineAssets } from "./EngineAssets.js";
 
 /**
  * One falling raindrop drawn as a line each frame.
- * @typedef {{
- *   x: number,
- *   y: number,
- *   vx: number,
- *   vy: number,
- *   length: number,
- *   alpha: number,
- * }} Drop
+ * @typedef {Object} Drop
+ * @property {number} x
+ * @property {number} y
+ * @property {number} vx
+ * @property {number} vy
+ * @property {number} length
+ * @property {number} alpha
  */
 
 /**
  * One falling leaf sprite, sway + spin animated per-frame.
- * @typedef {{
- *   sprite: Phaser.GameObjects.Image,
- *   baseX: number,
- *   y: number,
- *   vy: number,
- *   driftX: number,
- *   swayAmp: number,
- *   swayFreq: number,
- *   swayPhase: number,
- *   spin: number,
- *   tiltAmp: number,
- * }} Leaf
+ * @typedef {Object} Leaf
+ * @property {Phaser.GameObjects.Image} sprite
+ * @property {number} baseX
+ * @property {number} y
+ * @property {number} vy
+ * @property {number} driftX
+ * @property {number} swayAmp
+ * @property {number} swayFreq
+ * @property {number} swayPhase
+ * @property {number} spin
+ * @property {number} tiltAmp
  */
 
 const LIGHT_DROP_COUNT = 110;

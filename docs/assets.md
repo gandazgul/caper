@@ -5,12 +5,12 @@ where the file lives, so the engine can derive the URL from the key.
 
 ## Key conventions
 
-| Key pattern        | Type  | URL derived                                    |
-| ------------------ | ----- | ---------------------------------------------- |
-| `bg_<name>`        | Image | `/scenes/<name>.jpg`                           |
-| `sprite_<name>`    | Atlas | `/objects/<name>.png` + `/objects/<name>.json` |
-| `object_<name>`    | Image | `/objects/<name>.png`                          |
-| `character_<name>` | Image | `/characters/<name>.png`                       |
+| Key pattern        | Type  | URL derived                                                        |
+| ------------------ | ----- | ------------------------------------------------------------------ |
+| `bg_<name>`        | Image | `/scenes/<name>.jpg` by default; accepts explicit jpg/png/webp/svg |
+| `sprite_<name>`    | Atlas | `/objects/<name>.png` + `/objects/<name>.json`; accepts png/webp   |
+| `object_<name>`    | Image | `/objects/<name>.png` by default; accepts explicit png/webp/svg    |
+| `character_<name>` | Image | `/characters/<name>.png` by default; accepts explicit png/webp/svg |
 
 Anything that doesn't match a prefix (globally-loaded assets like `inventory-atlas`, `ui-atlas`, spritesheets that need
 explicit frame sizes) is loaded explicitly by BootScene or the owning scene.
@@ -26,10 +26,11 @@ class MyScene extends AdventureScene {
             key: "MyScene",
             backgroundsBySeason: {
                 spring: "bg_myroom_spring", // → /scenes/myroom_spring.jpg
-                summer: "bg_myroom_summer", // → /scenes/myroom_summer.jpg
+                summer: "bg_myroom_summer.webp", // → /scenes/myroom_summer.webp
             },
             assets: [ // additional keys
                 "sprite_props", // → /objects/props.png + .json
+                "object_sign.svg", // → /objects/sign.svg
                 "sprite_fall", // → /objects/fall.png + .json
             ],
         });

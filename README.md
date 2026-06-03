@@ -1,13 +1,44 @@
-# AdventureEngine
+# Caper
 
-A game-agnostic point-and-click adventure engine built on Phaser 3.
+A point-and-click adventure engine built on Phaser 3.
 
-AdventureEngine provides the reusable systems for a Humongous-style adventure game: walking, one-click interaction,
-declarative props, inventory, NPC/cast behavior, weather, cutscenes, transitions, UI helpers, and engine-owned state
-primitives.
+Caper provides the reusable systems for a Humongous-style adventure game: walking, one-click interaction, declarative
+props, inventory, NPC/cast behavior, weather, cutscenes, transitions, UI helpers, and engine-owned state primitives.
 
 The engine owns no game content. A game supplies characters, items, cast, art keys, scene configs, and domain rules
 through registries and configuration at boot.
+
+## Install
+
+Caper is published to [JSR](https://jsr.io/@caper/engine) and depends on Phaser 3 as a runtime dependency.
+
+**Deno:**
+
+```bash
+deno add jsr:@caper/engine
+```
+
+**Node / npm (Vite, webpack, etc.):**
+
+```bash
+npx jsr add @caper/engine
+npm install phaser
+```
+
+## Usage
+
+Everything is imported from the package entry point:
+
+```js
+import { AdventureScene, createAdventureGame } from "@caper/engine";
+
+const game = createAdventureGame({
+    scenes: [MyScene],
+    // ...game config
+});
+```
+
+See the [public API](mod.js) for the full list of exports.
 
 ## Documentation
 
@@ -22,31 +53,33 @@ Useful entry points:
 - [NPCs and Cast](docs/npc-and-cast.md)
 - [State Store](docs/store.md)
 
-## Local Usage With Deno
+## Local development against an unpublished checkout
 
-In a game project, map the package path in `deno.json`:
+To work on a game and the engine side by side without publishing, map the package in your game's `deno.json`:
 
 ```json
 {
     "imports": {
-        "@adventure-engine/": "../AdventureEngine/src/"
+        "@caper/engine": "../Caper/mod.js"
     }
 }
-```
-
-Then import engine modules by file:
-
-```js
-import { createAdventureGame } from "@adventure-engine/createAdventureGame.js";
-import { AdventureScene } from "@adventure-engine/AdventureScene.js";
 ```
 
 ## Development
 
 ```bash
-deno task check
+deno task ci      # lint + fmt:check + check + test
 deno task test
 ```
+
+## Publishing
+
+```bash
+deno publish --allow-slow-types
+```
+
+Requires the `@caper` scope on JSR. The engine is authored in JavaScript with JSDoc types, so JSR ships it with "slow
+types" (no generated `.d.ts`); `--allow-slow-types` acknowledges that.
 
 ## License
 

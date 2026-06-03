@@ -20,7 +20,7 @@ export { exitApproaches };
  * `NPC` and a `WalkController`-backed character both plug in.
  *
  * @typedef {Walker & {
- *   scene: import("phaser").Scene,
+ *   scene: Phaser.Scene,
  *   walkable: {x: number, y: number}[],
  *   getRandomPoint: () => {x: number, y: number},
  *   spawnAt: (x: number, y: number) => void,

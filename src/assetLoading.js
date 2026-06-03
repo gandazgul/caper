@@ -3,11 +3,15 @@
  * manifest. The texture/JSON key encodes where the file lives, so given a key
  * we can derive its URL:
  *
- *   bg_<name>         → image   /scenes/<name>.jpg
- *   sprite_<name>     → atlas   /objects/<name>.png  (+ /objects/<name>.json,
+ *   bg_<name>         → image   /scenes/<name>.jpg by default; may include
+ *                               .jpg, .jpeg, .png, .webp, or .svg
+ *   sprite_<name>     → atlas   /objects/<name>.png by default; may include
+ *                               .png or .webp (+ /objects/<name>.json,
  *                               spritecook frames registered onto the texture)
- *   object_<name>     → image   /objects/<name>.png
- *   character_<name>  → image   /characters/<name>.png
+ *   object_<name>     → image   /objects/<name>.png by default; may include
+ *                               .png, .webp, or .svg
+ *   character_<name>  → image   /characters/<name>.png by default; may include
+ *                               .png, .webp, or .svg
  *
  * Anything that doesn't match a prefix (globally loaded characters
  * and shared atlases like `inventory-atlas`/`ui-atlas`, plus spritesheets whose
@@ -55,6 +59,32 @@ export function loadJsonOnce(scene, key, url) {
     if (!scene.cache.json.exists(key)) scene.load.json(key, url);
 }
 
+const IMAGE_EXTENSIONS = new Set(["jpg", "jpeg", "png", "webp", "svg"]);
+const ATLAS_EXTENSIONS = new Set(["png", "webp"]);
+
+/**
+ * @param {string} name
+ * @returns {string}
+ */
+function extensionOf(name) {
+    const match = /\.([a-z0-9]+)$/i.exec(name);
+    return match?.[1]?.toLowerCase() ?? "";
+}
+
+/**
+ * @param {string} name
+ * @param {string} fallbackExtension
+ * @param {Set<string>} allowedExtensions
+ * @returns {{ file: string, stem: string }}
+ */
+function resolveAssetName(name, fallbackExtension, allowedExtensions) {
+    const ext = extensionOf(name);
+    if (ext && allowedExtensions.has(ext)) {
+        return { file: name, stem: name.slice(0, -ext.length - 1) };
+    }
+    return { file: `${name}.${fallbackExtension}`, stem: name };
+}
+
 /**
  * Resolve a convention key to what it takes to load it. Returns null for keys
  * that don't follow the convention (those are loaded explicitly elsewhere).
@@ -64,17 +94,20 @@ export function loadJsonOnce(scene, key, url) {
 export function deriveAsset(key) {
     if (typeof key !== "string") return null;
     if (key.startsWith("bg_")) {
-        return { kind: "image", url: `/scenes/${key.slice(3)}.jpg` };
+        const asset = resolveAssetName(key.slice(3), "jpg", IMAGE_EXTENSIONS);
+        return { kind: "image", url: `/scenes/${asset.file}` };
     }
     if (key.startsWith("sprite_")) {
-        const name = key.slice("sprite_".length);
-        return { kind: "atlas", url: `/objects/${name}.png`, jsonUrl: `/objects/${name}.json` };
+        const asset = resolveAssetName(key.slice("sprite_".length), "png", ATLAS_EXTENSIONS);
+        return { kind: "atlas", url: `/objects/${asset.file}`, jsonUrl: `/objects/${asset.stem}.json` };
     }
     if (key.startsWith("object_")) {
-        return { kind: "image", url: `/objects/${key.slice("object_".length)}.png` };
+        const asset = resolveAssetName(key.slice("object_".length), "png", IMAGE_EXTENSIONS);
+        return { kind: "image", url: `/objects/${asset.file}` };
     }
     if (key.startsWith("character_")) {
-        return { kind: "image", url: `/characters/${key.slice("character_".length)}.png` };
+        const asset = resolveAssetName(key.slice("character_".length), "png", IMAGE_EXTENSIONS);
+        return { kind: "image", url: `/characters/${asset.file}` };
     }
     return null;
 }

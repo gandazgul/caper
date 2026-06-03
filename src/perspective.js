@@ -1,10 +1,9 @@
 /**
- * @typedef {{
- *   nearY: number,
- *   farY: number,
- *   nearScale?: number,
- *   farScale?: number,
- * }} PerspectiveConfig
+ * @typedef {Object} PerspectiveConfig
+ * @property {number} nearY
+ * @property {number} farY
+ * @property {number} [nearScale]
+ * @property {number} [farScale]
  *
  * Y-based perspective for outdoor 3/4-view scenes:
  *   - `nearY` is the screen Y closest to the camera (full scale by default).

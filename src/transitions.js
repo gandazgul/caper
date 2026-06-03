@@ -14,7 +14,10 @@ import { engineAssets } from "./EngineAssets.js";
  * Color is the fade fill (0xRRGGBB); white = everyday room-to-room, black =
  * weightier/darker moments.
  *
- * @typedef {{ duration: number, color: number, fadeIn?: boolean }} TransitionPreset
+ * @typedef {Object} TransitionPreset
+ * @property {number} duration
+ * @property {number} color
+ * @property {boolean} [fadeIn]
  */
 
 /** @type {Record<string, TransitionPreset>} */

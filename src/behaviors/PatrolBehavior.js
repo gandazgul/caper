@@ -9,7 +9,11 @@ import Phaser from "phaser";
  */
 
 /**
- * @typedef {{ x: number, y: number, activity?: string, faceRight?: boolean }} PatrolWaypoint
+ * @typedef {Object} PatrolWaypoint
+ * @property {number} x
+ * @property {number} y
+ * @property {string} [activity]
+ * @property {boolean} [faceRight]
  */
 
 /**

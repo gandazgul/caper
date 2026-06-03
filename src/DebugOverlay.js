@@ -20,7 +20,9 @@ const DEBUG_DEPTH = 9000;
  * `suppress()` on push and `unsuppress()` on pop; on unsuppress, the prior
  * visibility is restored.
  *
- * @typedef {{ x: number, y: number }} Point
+ * @typedef {Object} Point
+ * @property {number} x
+ * @property {number} y
  */
 export class DebugOverlay {
     /**

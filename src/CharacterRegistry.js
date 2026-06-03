@@ -7,23 +7,17 @@
  * more than one playable character is registered, offers a switcher between
  * them. The engine knows no character names — only what's registered.
  *
- * @typedef {{
- *   spriteKey?: string,
- *   spriteScale?: number,
- *   animationSet?: import("./WalkController.js").AnimationSet,
- *   animationScales?: Record<string, number>,
- *   animationOrigins?: Record<string, { x?: number, y?: number }>,
- *   playable?: boolean,
- *   largeBubble?: boolean,
- *   outfits?: Record<string, CharacterConfig>,
- *   portraitSettings?: {
- *     scale?: number,
- *     texture?: string,
- *     offsetX?: number,
- *     offsetY?: number,
- *   },
- *   getPortrait?: (scene: Phaser.Scene) => string | null | undefined,
- * }} CharacterConfig
+ * @typedef {Object} CharacterConfig
+ * @property {string} [spriteKey]
+ * @property {number} [spriteScale]
+ * @property {import("./WalkController.js").AnimationSet} [animationSet]
+ * @property {Record<string, number>} [animationScales]
+ * @property {Record<string, { x?: number, y?: number }>} [animationOrigins]
+ * @property {boolean} [playable]
+ * @property {boolean} [largeBubble]
+ * @property {Record<string, CharacterConfig>} [outfits]
+ * @property {{ scale?: number, texture?: string, offsetX?: number, offsetY?: number }} [portraitSettings]
+ * @property {(scene: Phaser.Scene) => string | null | undefined} [getPortrait]
  *
  * An **outfit** is a partial `CharacterConfig` (typically `spriteKey` +
  * `animationSet` + scales/origins — a full sprite-set swap) that overrides the

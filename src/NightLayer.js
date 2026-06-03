@@ -4,16 +4,15 @@ import Phaser from "phaser";
 /** @typedef {Phaser.GameObjects.Sprite} Sprite */
 
 /**
- * @typedef {{
- *   x: number,
- *   y: number,
- *   w?: number,
- *   h?: number,
- *   color?: number,
- *   flicker?: boolean | number,
- *   type?: "rect" | "oval" | "glow",
- *   name?: string,
- * }} LitWindow
+ * @typedef {Object} LitWindow
+ * @property {number} x
+ * @property {number} y
+ * @property {number} [w]
+ * @property {number} [h]
+ * @property {number} [color]
+ * @property {boolean | number} [flicker]
+ * @property {"rect" | "oval" | "glow"} [type]
+ * @property {string} [name]
  *
  * - `name` is a free-text label with no runtime effect — it just helps you
  *   tell windows apart. The SceneEditor preserves it through copy-out.
@@ -29,40 +28,37 @@ import Phaser from "phaser";
  */
 
 /**
- * @typedef {{
- *   x: number,
- *   y: number,
- *   radius?: number,
- *   color?: number,
- *   glowScale?: number,
- * }} MoonConfig
+ * @typedef {Object} MoonConfig
+ * @property {number} x
+ * @property {number} y
+ * @property {number} [radius]
+ * @property {number} [color]
+ * @property {number} [glowScale]
  *
  * - `color` is the moon + glow tint (default warm cream `0xfff3c4`).
  * - `glowScale` multiplies the atmospheric halo size (default `1`).
  */
 
 /**
- * @typedef {{
- *   id?: string,
- *   atlas?: string,
- *   frame: string,
- *   x: number,
- *   y: number,
- *   depth?: number,
- *   scale?: number,
- *   seasons?: string[],
- * }} LitPropItemConfig
+ * @typedef {Object} LitPropItemConfig
+ * @property {string} [id]
+ * @property {string} [atlas]
+ * @property {string} frame
+ * @property {number} x
+ * @property {number} y
+ * @property {number} [depth]
+ * @property {number} [scale]
+ * @property {string[]} [seasons]
  */
 
 /**
- * @typedef {{
- *   moon?: MoonConfig | false,
- *   windows?: LitWindow[],
- *   litPropItems?: string[],
- *   flies?: boolean,
- *   tintColor?: number,
- *   flyBounds?: { x: number, y: number, w: number, h: number, frequency?: number },
- * }} NightLayerConfig
+ * @typedef {Object} NightLayerConfig
+ * @property {MoonConfig | false} [moon]
+ * @property {LitWindow[]} [windows]
+ * @property {string[]} [litPropItems]
+ * @property {boolean} [flies]
+ * @property {number} [tintColor]
+ * @property {{ x: number, y: number, w: number, h: number, frequency?: number }} [flyBounds]
  */
 
 // Moon and lantern flies sit above the WeatherLayer (rain tint 9000 / leaves

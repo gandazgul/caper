@@ -1,4 +1,6 @@
-/** @typedef {{ x: number, y: number }} Point */
+/** @typedef {Object} Point
+ * @property {number} x
+ * @property {number} y */
 
 /**
  * Lightweight 2D nav helpers for adventure-scene walking. The walkable region is

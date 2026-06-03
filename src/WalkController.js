@@ -6,7 +6,9 @@ import { WearableManager } from "./Wearables.js";
 import { store } from "./Store.js";
 import { characters } from "./CharacterRegistry.js";
 
-/** @typedef {{ x: number, y: number }} Point */
+/** @typedef {Object} Point
+ * @property {number} x
+ * @property {number} y */
 /** @typedef {"up" | "down" | "left" | "right"} Facing */
 /** @typedef {"front" | "back" | "side"} Direction */
 /** @typedef {"walk" | "still" | "fidget" | "reach"} MotionState */

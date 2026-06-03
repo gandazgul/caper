@@ -21,7 +21,10 @@
  * directly; the Game configures it at boot. Reads before `configure()` return
  * the engine-owned defaults.
  *
- * @typedef {{ values: Record<string, any>, collections: Record<string, Set<string>>, items: Record<string, string> }} RunState
+ * @typedef {Object} RunState
+ * @property {Record<string, any>} values
+ * @property {Record<string, Set<string>>} collections
+ * @property {Record<string, string>} items
  */
 
 /**

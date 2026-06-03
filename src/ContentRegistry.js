@@ -9,7 +9,10 @@
  * id → ItemSprite lookup with ordered resolver fallbacks for catalogs that
  * compute their specs (e.g. lake/fall lookups).
  *
- * @typedef {{ atlas: string, frame: string, scale: number }} ItemSprite
+ * @typedef {Object} ItemSprite
+ * @property {string} atlas
+ * @property {string} frame
+ * @property {number} scale
  */
 export class ContentRegistry {
     constructor() {

@@ -1,9 +1,17 @@
 {
-    "name": "@adventure-engine/core",
+    "name": "@caper/engine",
     "version": "0.1.0",
+    "license": "MIT",
     "nodeModulesDir": "auto",
     "exports": {
         ".": "./mod.js"
+    },
+    "publish": {
+        "exclude": [
+            "**/*.test.js",
+            ".history/",
+            "CONTEXT.md"
+        ]
     },
     "tasks": {
         "check": "deno check mod.js src/",
