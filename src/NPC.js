@@ -1,5 +1,5 @@
 import Phaser from "phaser";
-import { ThoughtBubble } from "./ThoughtBubble.js";
+import { DialogueBubble } from "./DialogueBubble.js";
 import { attachFidget } from "./Fidget.js";
 import { WearableManager } from "./Wearables.js";
 import { store } from "./Store.js";
@@ -90,7 +90,7 @@ export class NPC {
         // (every NPC, whether Director-managed or ad-hoc).
         this.sprite.setData("nightActor", true);
         // Tall speakers (flagged on the character registration) anchor their
-        // thought bubbles higher/wider — see ThoughtBubble.
+        // thought bubbles higher/wider — see DialogueBubble.
         if (characters.get(this.name)?.largeBubble) this.sprite.setData("bubbleLarge", true);
 
         this.updateScaleAndOrigin();
@@ -314,10 +314,11 @@ export class NPC {
         // so route through interrupt() to face the player, speak, then restore.
         const greet = () => {
             this.facePlayer();
-            if (this.chatter) this.speakRandom(this.chatter);
+            // Greeting the player aloud → speech bubble.
+            if (this.chatter) this.speakRandom(this.chatter, 2800, "speech");
             else {
                 const who = this.activeCharacterName();
-                this.speak(who ? `Hi ${who}!` : "Hi!");
+                this.speak(who ? `Hi ${who}!` : "Hi!", 2800, "speech");
             }
         };
         if (this._behavior) this._behavior.interrupt(greet);
@@ -447,9 +448,10 @@ export class NPC {
      * Speak a random line from the given list.
      * @param {string[]} lines
      * @param {number} [holdMs]
+     * @param {"thought" | "speech"} [variant] - bubble art (default "thought").
      */
-    speakRandom(lines, holdMs = 2800) {
-        return this.speak(Phaser.Utils.Array.GetRandom(lines), holdMs);
+    speakRandom(lines, holdMs = 2800, variant = "thought") {
+        return this.speak(Phaser.Utils.Array.GetRandom(lines), holdMs, variant);
     }
 
     // ─── Behavior attach points ─────────────────────────────────────────
@@ -486,16 +488,18 @@ export class NPC {
     }
 
     /**
-     * Display a thought bubble speaking text from this character.
+     * Show a dialogue bubble with text from this character.
      * @param {string} text
      * @param {number} [holdMs]
-     * @returns {ThoughtBubble | null}
+     * @param {"thought" | "speech"} [variant] - bubble art (default "thought").
+     * @returns {DialogueBubble | null}
      */
-    speak(text, holdMs = 2800) {
+    speak(text, holdMs = 2800, variant = "thought") {
         if (!this.sprite) return null;
-        this.bubble = ThoughtBubble.show(this.scene, {
+        this.bubble = DialogueBubble.show(this.scene, {
             character: this.sprite,
             text,
+            variant,
             autoDestroyMs: Math.max(800, holdMs - 200),
         });
         return this.bubble;

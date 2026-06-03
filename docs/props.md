@@ -33,11 +33,13 @@ matches, the prop is hidden.
 
 ```js
 states: [
-    { when: { world: { state: { eq: "empty" } } },  frame: "case_empty",
-      onDrop: { accepts: { dropped: { eq: "gem" } },
-                effects: [ { setItemState: { display_case: "filled" } } ] } },
+    {
+        when: { world: { state: { eq: "empty" } } },
+        frame: "case_empty",
+        onDrop: { accepts: { dropped: { eq: "gem" } }, effects: [{ setItemState: { display_case: "filled" } }] },
+    },
     { when: { world: { state: { eq: "filled" } } }, frame: "case_filled" },
-]
+];
 ```
 
 `world` and `inventory` are engine-owned collections available to every game. Seed initial item states in
@@ -49,13 +51,13 @@ Conditions are pure, serializable data — no functions. Every leaf is `key: { o
 
 ### Operators
 
-| Op | Meaning |
-|---|---|
-| `eq` | Equal |
-| `ne` | Not equal |
+| Op           | Meaning                 |
+| ------------ | ----------------------- |
+| `eq`         | Equal                   |
+| `ne`         | Not equal               |
 | `gt` / `gte` | Greater than / or equal |
-| `lt` / `lte` | Less than / or equal |
-| `has` | Collection membership |
+| `lt` / `lte` | Less than / or equal    |
+| `has`        | Collection membership   |
 
 ### Combinators
 
@@ -84,35 +86,35 @@ Each effect is an object with exactly one verb key. Effects run in order after t
 
 ### State mutations
 
-| Verb | Example | Effect |
-|---|---|---|
-| `set` | `{ set: { doorOpen: true } }` | Sets a Store value |
-| `addTo` | `{ addTo: { inventory: "apple" } }` | Adds to a collection |
-| `removeFrom` | `{ removeFrom: { world: "apple" } }` | Removes from a collection |
+| Verb           | Example                                        | Effect                     |
+| -------------- | ---------------------------------------------- | -------------------------- |
+| `set`          | `{ set: { doorOpen: true } }`                  | Sets a Store value         |
+| `addTo`        | `{ addTo: { inventory: "apple" } }`            | Adds to a collection       |
+| `removeFrom`   | `{ removeFrom: { world: "apple" } }`           | Removes from a collection  |
 | `setItemState` | `{ setItemState: { display_case: "filled" } }` | Sets per-item visual state |
 
 ### Visual effects
 
-| Verb | Example | Effect |
-|---|---|---|
-| `pickup` | `{ pickup: { id: "apple" } }` | Picks up the prop: reach animation, remove from scene, fly to inventory, add item |
-| `playReach` | `{ playReach: true }` | Plays the character's reach animation |
-| `tween` | `{ tween: { x: 600, duration: 500 } }` | Tweens the prop sprite |
-| `destroy` | `{ destroy: true }` | Destroys the prop sprite |
-| `showThought` | `{ showThought: { text: "Nice!" } }` | Shows a thought bubble on the character |
+| Verb          | Example                                | Effect                                                                            |
+| ------------- | -------------------------------------- | --------------------------------------------------------------------------------- |
+| `pickup`      | `{ pickup: { id: "apple" } }`          | Picks up the prop: reach animation, remove from scene, fly to inventory, add item |
+| `playReach`   | `{ playReach: true }`                  | Plays the character's reach animation                                             |
+| `tween`       | `{ tween: { x: 600, duration: 500 } }` | Tweens the prop sprite                                                            |
+| `destroy`     | `{ destroy: true }`                    | Destroys the prop sprite                                                          |
+| `showThought` | `{ showThought: { text: "Nice!" } }`   | Shows a thought bubble on the character                                           |
 
 ### Scene transitions
 
-| Verb | Example | Effect |
-|---|---|---|
-| `goToScene` | `{ goToScene: "Forest" }` | Transitions to another scene |
+| Verb                    | Example                                                                                  | Effect                                       |
+| ----------------------- | ---------------------------------------------------------------------------------------- | -------------------------------------------- |
+| `goToScene`             | `{ goToScene: "Forest" }`                                                                | Transitions to another scene                 |
 | `goToScene` (with data) | `{ goToScene: { target: "Forest", transition: "cinematic", data: { fromDoor: true } } }` | Scene transition with custom preset and data |
-| `pushSubscene` | `{ pushSubscene: { ... } }` | Opens a zoom-in subscene |
+| `pushSubscene`          | `{ pushSubscene: { ... } }`                                                              | Opens a zoom-in subscene                     |
 
 ### Bridge to imperative code
 
-| Verb | Example | Effect |
-|---|---|---|
+| Verb   | Example                   | Effect                                                |
+| ------ | ------------------------- | ----------------------------------------------------- |
 | `emit` | `{ emit: "startPuzzle" }` | Emits an event on the scene bus; game code subscribes |
 
 ## Drop targets (inventory → prop)
@@ -142,7 +144,7 @@ A prop can accept inventory items dropped onto it:
   books, control panels).
 
 ```js
-approach: "in-place"
+approach: "in-place";
 ```
 
 ## Reactive rendering
@@ -157,7 +159,11 @@ registers interactive elements with ARIA roles, live regions for state changes, 
 
 ```js
 // In game configuration
-{ set: { accessibilityMode: true } }
+{
+    set: {
+        accessibilityMode: true;
+    }
+}
 ```
 
 In this mode, props expose `aria-label`, `role="button"`, `tabindex="0"`, and screen-reader announcements on state

@@ -23,9 +23,9 @@ Imperative point-and-click scenes tend to develop three coupled problems:
    separate objects linked only by convention (`data.itemId` matching, or bounds drawn around a sprite's position).
    Scene code then has to cross-reference them to suppress stale pickup zones.
 2. **Behavior and visibility are imperative.** "When it renders" is a `shouldRender: () => boolean` **function**; "what
-   clicking does" is a `handleArrived`/`onPickup` switch plus bespoke methods (`advanceState`, `slideTween`);
-   tweens); "when the hotspot is active" is imperative `register()`/`unregister()` calls. Some scenes are thousands of
-   lines as a result.
+   clicking does" is a `handleArrived`/`onPickup` switch plus bespoke methods (`advanceState`, `slideTween`); tweens);
+   "when the hotspot is active" is imperative `register()`/`unregister()` calls. Some scenes are thousands of lines as a
+   result.
 3. **The editor can't author logic.** It moves/resizes handles and copies JS literals, but `formatProps` **silently
    drops functions**, so `shouldRender` can't round-trip. Logic must live in code, defeating editor authorship.
 
@@ -85,10 +85,9 @@ Conventions:
   (`world: { "display_case.state": {...} }`) addresses another item.
 - Bare number = `eq`; thresholds use explicit `{ gte: 3 }`.
 
-Derived completions are **not** quantified at condition time — they are
-**computed-and-stored** as flags via effects, keeping the DSL
-pure and serializable. Gameplay-only gates (season transitions, exit win-conditions) stay as plain code reading the
-primitives.
+Derived completions are **not** quantified at condition time — they are **computed-and-stored** as flags via effects,
+keeping the DSL pure and serializable. Gameplay-only gates (season transitions, exit win-conditions) stay as plain code
+reading the primitives.
 
 ### Effects (verbs) + lifecycle
 
@@ -115,20 +114,20 @@ point is authored; `cursor` is a semantic affordance hint per ADR 0001.
 ### Drop-targets
 
 A prop interaction, not a special case: `onDrop: { accepts: <condition>,
-effects: [...] }` with the same lifecycle.
-Drop targets use this same path — point-and-click "use X with Y" interactions without a special-case subsystem.
+effects: [...] }` with the same lifecycle. Drop
+targets use this same path — point-and-click "use X with Y" interactions without a special-case subsystem.
 
 ### Reactive rendering
 
 The engine subscribes to `store.onChange` and, on any change, **re-evaluates every prop**: re-selects its state,
 re-applies frame/transform/visibility, re-checks `activeWhen` to arm/disarm its zone. Effects mutate the store; props
-self-update. No manual destroy/recreate anywhere. Re-evaluation is gated against
-in-flight tweens/walks so a sprite isn't re-rendered mid-animation.
+self-update. No manual destroy/recreate anywhere. Re-evaluation is gated against in-flight tweens/walks so a sprite
+isn't re-rendered mid-animation.
 
 ### The `emit` bridge
 
-`emit: "eventName"` fires a scene event; the scene registers `on(event)` and scripts the bespoke bit (an NPC relocates to
-the table, launch a mini-game). This affords any behavior while keeping the prop fully declarative. In principle the
+`emit: "eventName"` fires a scene event; the scene registers `on(event)` and scripts the bespoke bit (an NPC relocates
+to the table, launch a mini-game). This affords any behavior while keeping the prop fully declarative. In principle the
 whole game could be `emit` + handlers; the declarative verbs exist precisely so it doesn't have to be.
 
 ## Scope boundary
@@ -136,8 +135,8 @@ whole game could be `emit` + handlers; the declarative verbs exist precisely so 
 **In:** every _prop_ interaction — decoration, pickup, look, exit, subscene-open, toggle, reveal/slide, multi-state —
 plus drop-targets.
 
-**Out (stays imperative, triggered via `emit`/`goToScene`):** mini-game scenes, autonomous NPC controllers,
-timed multi-actor cutscenes, weather and day/night tint.
+**Out (stays imperative, triggered via `emit`/`goToScene`):** mini-game scenes, autonomous NPC controllers, timed
+multi-actor cutscenes, weather and day/night tint.
 
 ## Editor — two phases
 
@@ -154,7 +153,7 @@ no-functions rule makes externalizing to JSON a mechanical lift for the framewor
 ## Migration plan
 
 1. Build engine pieces: store, condition evaluator, prop renderer + state selection, interaction binder, effect runner
-   + lifecycle, drop binder, reactive loop, editor round-trip.
+   - lifecycle, drop binder, reactive loop, editor round-trip.
 2. Author new scenes directly as `props[]` data.
 3. Validate with a representative scene that covers season-gated pickups, slide-reveal (tween + `emit`),
    visible-but-inactive props, a subscene, and an exit.

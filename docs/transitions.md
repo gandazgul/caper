@@ -7,15 +7,15 @@ copy-pasted `fadeOut → camerafadeoutcomplete → scene.start`.
 
 Named presets are defined in `TRANSITIONS`:
 
-| Preset | Duration | Color | Use case |
-|---|---|---|---|
-| `"quick"` | 400ms | white | Mini-game back buttons |
-| `"room"` | 600ms | white | Default room-to-room (DEFAULT) |
-| `"arrival"` | 800ms | white | Longer destination reveal |
-| `"dim"` | 500ms | black | Quickest dark cut |
-| `"dramatic"` | 600ms | black | Weightier dark exit |
-| `"night"` | 700ms | black | Deeper dark |
-| `"cinematic"` | 800ms | black | Season-change intros |
+| Preset        | Duration | Color | Use case                       |
+| ------------- | -------- | ----- | ------------------------------ |
+| `"quick"`     | 400ms    | white | Mini-game back buttons         |
+| `"room"`      | 600ms    | white | Default room-to-room (DEFAULT) |
+| `"arrival"`   | 800ms    | white | Longer destination reveal      |
+| `"dim"`       | 500ms    | black | Quickest dark cut              |
+| `"dramatic"`  | 600ms    | black | Weightier dark exit            |
+| `"night"`     | 700ms    | black | Deeper dark                    |
+| `"cinematic"` | 800ms    | black | Season-change intros           |
 
 ## transitionTo
 
@@ -73,7 +73,7 @@ import { transitionIn } from "@adventure-engine/transitions.js";
 class MyScene extends AdventureScene {
     create(data) {
         super.create(data);
-        transitionIn(this);            // matches the outgoing transition style
+        transitionIn(this); // matches the outgoing transition style
         // or: transitionIn(this, "cinematic");
     }
 }

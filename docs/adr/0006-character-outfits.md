@@ -43,8 +43,8 @@ cast NPC, companion, one-off — render the same look, replacing the scattered p
   but the condition DSL reads flat `values` keys, so a map would block props/NPC reactions from gating on outfit without
   a DSL path extension. Flat keys integrate with the existing reactive systems and the save for free.
 - **Full sprite-set swap (chosen)** vs. overlay sprites. Outfits are genuinely different stills + walk sets, so they
-  replace the render config. Costume overlays stay a separate game system (single-pose overlays, no walk
-  sets) and are explicitly **not** outfits.
+  replace the render config. Costume overlays stay a separate game system (single-pose overlays, no walk sets) and are
+  explicitly **not** outfits.
 - **Outfits on the registry (chosen)** vs. a standalone outfit system. They are character render data; the registry is
   their home, and resolution layers on the spawn path the engine already owns.
 
@@ -54,6 +54,6 @@ cast NPC, companion, one-off — render the same look, replacing the scattered p
   `resolveCharacterRender(id)`, and the rebuild-on-change subscription in the engine base scene.
 - Outfit asset keys are declared on the character/outfit config so the engine preload includes them; the Game lists
   them.
-- Migrating existing contextual outfits and adding new outfits become Game-side registrations + `setOutfit`
-  calls; no engine change once the mechanism ships.
+- Migrating existing contextual outfits and adding new outfits become Game-side registrations + `setOutfit` calls; no
+  engine change once the mechanism ships.
 - Builds on [ADR 0005](./0005-engine-game-boundary.md) (CharacterRegistry, active-character spawn path).

@@ -1,7 +1,7 @@
 import { store } from "./Store.js";
 import { transitionTo } from "./transitions.js";
 import { evaluateCondition } from "./conditions.js";
-import { ThoughtBubble } from "./ThoughtBubble.js";
+import { DialogueBubble } from "./DialogueBubble.js";
 
 /**
  * Declarative prop engine (see docs/adr/0002-declarative-prop-framework.md).
@@ -631,7 +631,7 @@ export class PropEngine {
 
         if (eff.showThought) {
             const o = eff.showThought;
-            ThoughtBubble.show(this.scene, {
+            DialogueBubble.show(this.scene, {
                 character: this.scene.walk?.sprite,
                 text: o.text ?? "",
                 icons: o.icons,

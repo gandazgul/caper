@@ -96,10 +96,10 @@ export class HotspotManager {
             } else {
                 zone.input.cursor = defaultCursorFor(config);
             }
-            (/** @type {any} */ (this.scene).bus).emit("hotspot:hover", config);
+            /** @type {any} */ (this.scene).bus.emit("hotspot:hover", config);
         });
-        zone.on("pointerout", () => (/** @type {any} */ (this.scene).bus).emit("hotspot:unhover", config));
-        zone.on("pointerdown", () => (/** @type {any} */ (this.scene).bus).emit("hotspot:click", config));
+        zone.on("pointerout", () => /** @type {any} */ (this.scene).bus.emit("hotspot:unhover", config));
+        zone.on("pointerdown", () => /** @type {any} */ (this.scene).bus.emit("hotspot:click", config));
         this.zones.set(id, zone);
     }
 

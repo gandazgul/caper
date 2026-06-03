@@ -1,5 +1,4 @@
-// deno-lint-ignore no-unused-vars
-import { HotspotManager } from "./HotspotManager.js"; // eslint-disable-line no-unused-vars
+/** @typedef {import("./HotspotManager.js").HotspotManager} HotspotManager */
 
 const ENABLE_SPRITE_LABELS = false;
 const ENABLE_SPRITE_BOUNDS = false;

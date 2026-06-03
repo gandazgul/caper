@@ -5,12 +5,12 @@ where the file lives, so the engine can derive the URL from the key.
 
 ## Key conventions
 
-| Key pattern | Type | URL derived |
-|---|---|---|
-| `bg_<name>` | Image | `/scenes/<name>.jpg` |
-| `sprite_<name>` | Atlas | `/objects/<name>.png` + `/objects/<name>.json` |
-| `object_<name>` | Image | `/objects/<name>.png` |
-| `character_<name>` | Image | `/characters/<name>.png` |
+| Key pattern        | Type  | URL derived                                    |
+| ------------------ | ----- | ---------------------------------------------- |
+| `bg_<name>`        | Image | `/scenes/<name>.jpg`                           |
+| `sprite_<name>`    | Atlas | `/objects/<name>.png` + `/objects/<name>.json` |
+| `object_<name>`    | Image | `/objects/<name>.png`                          |
+| `character_<name>` | Image | `/characters/<name>.png`                       |
 
 Anything that doesn't match a prefix (globally-loaded assets like `inventory-atlas`, `ui-atlas`, spritesheets that need
 explicit frame sizes) is loaded explicitly by BootScene or the owning scene.
@@ -25,12 +25,12 @@ class MyScene extends AdventureScene {
         super({
             key: "MyScene",
             backgroundsBySeason: {
-                spring: "bg_myroom_spring",   // → /scenes/myroom_spring.jpg
-                summer: "bg_myroom_summer",    // → /scenes/myroom_summer.jpg
+                spring: "bg_myroom_spring", // → /scenes/myroom_spring.jpg
+                summer: "bg_myroom_summer", // → /scenes/myroom_summer.jpg
             },
-            assets: [                          // additional keys
-                "sprite_props",                 // → /objects/props.png + .json
-                "sprite_fall",                  // → /objects/fall.png + .json
+            assets: [ // additional keys
+                "sprite_props", // → /objects/props.png + .json
+                "sprite_fall", // → /objects/fall.png + .json
             ],
         });
     }
@@ -83,10 +83,10 @@ owns no art. The game supplies the actual texture/atlas keys at boot:
 import { engineAssets } from "@adventure-engine/EngineAssets.js";
 
 engineAssets.configure({
-    thoughtBubble: { atlas: "ui-atlas",      frame: "thought-bubble" },
-    backButton:    { atlas: "ui-atlas",      frame: "back-arrow" },
-    leaves:        { atlas: "sprite_fall",   frames: ["leaf1","leaf2","leaf3","leaf4"] },
-    critter:       { atlas: "critters-atlas", frame: "red_butterfly" },
+    thoughtBubble: { atlas: "ui-atlas", frame: "thought-bubble" },
+    backButton: { atlas: "ui-atlas", frame: "back-arrow" },
+    leaves: { atlas: "sprite_fall", frames: ["leaf1", "leaf2", "leaf3", "leaf4"] },
+    critter: { atlas: "critters-atlas", frame: "red_butterfly" },
     inventoryAtlas: "inventory-atlas",
     replayDefaultReturn: "MyRoom",
 });
@@ -94,14 +94,14 @@ engineAssets.configure({
 
 ### Slots
 
-| Slot | Shape | Used by |
-|---|---|---|
-| `thoughtBubble` | `{ atlas, frame }` | `ThoughtBubble.js` — cloud sprite |
-| `backButton` | `{ atlas, frame }` | `UIHelper.js` — back arrow |
-| `leaves` | `{ atlas, frames[] }` | `WeatherLayer.js` — falling leaf sprites |
-| `critter` | `{ atlas, frame }` | `CritterHelper.js` — default critter sprite |
-| `inventoryAtlas` | `string` | `AdventureScene.js` — default inventory bar atlas |
-| `replayDefaultReturn` | `string` | `transitions.js` — scene key for replay return |
+| Slot                  | Shape                 | Used by                                           |
+| --------------------- | --------------------- | ------------------------------------------------- |
+| `thoughtBubble`       | `{ atlas, frame }`    | `ThoughtBubble.js` — cloud sprite                 |
+| `backButton`          | `{ atlas, frame }`    | `UIHelper.js` — back arrow                        |
+| `leaves`              | `{ atlas, frames[] }` | `WeatherLayer.js` — falling leaf sprites          |
+| `critter`             | `{ atlas, frame }`    | `CritterHelper.js` — default critter sprite       |
+| `inventoryAtlas`      | `string`              | `AdventureScene.js` — default inventory bar atlas |
+| `replayDefaultReturn` | `string`              | `transitions.js` — scene key for replay return    |
 
 ## Boot sequence
 

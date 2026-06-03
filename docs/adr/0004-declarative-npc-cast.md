@@ -6,8 +6,8 @@ Status: **proposed** Date: 2026-05-30
 
 A recurring character's **global ambient behavior** becomes declarative data in a single **cast registry**, keyed by
 season — readable in one place per character. Everything beyond ambient (scripted choreography, puzzles, one-off
-appearances) stays **imperative code**, reached through engine-provided primitives. Season gating, locomotion,
-greeting, and quest hooks decompose into cast data + a small set of engine services.
+appearances) stays **imperative code**, reached through engine-provided primitives. Season gating, locomotion, greeting,
+and quest hooks decompose into cast data + a small set of engine services.
 
 This is the NPC sibling of [ADR 0002](./0002-declarative-prop-framework.md). It deliberately **diverges** from 0002 on
 one axis: props optimize for editor-authorability (everything serializable); the cast optimizes for **strong types + JS
@@ -17,16 +17,16 @@ a global reactive evaluation loop.
 
 ## Context
 
-Point-and-click NPC scenes tend to share primitive behavior — `walkTo`/`speak`/`wander()`/`patrol()` — but duplicate
-the integration logic around those primitives:
+Point-and-click NPC scenes tend to share primitive behavior — `walkTo`/`speak`/`wander()`/`patrol()` — but duplicate the
+integration logic around those primitives:
 
 1. **Season/weather/time gating** is hand-written per character. Each scene controller hard-codes which season and
    weather conditions show the character and which retreat them indoors.
 2. **One character's logic is spread across places.** Understanding a recurring character requires reading multiple
    controller files, the global NPC spawner, and per-scene `new NPC(...)` calls.
 3. **Greeting + quest reactions are bespoke per controller.** Each controller hand-rolls its own conditional ladder.
-4. **No cutscene primitive.** Choreography is nested `delayedCall` chains; each scene re-solves sequencing,
-   await, and cleanup.
+4. **No cutscene primitive.** Choreography is nested `delayedCall` chains; each scene re-solves sequencing, await, and
+   cleanup.
 
 The goal: **one declarative place per character for global ambient**, with imperative escape hatches that are
 _engine-provided primitives_ rather than copy-pasted glue. It is acceptable — by design — that a character's _per-scene_
@@ -49,9 +49,9 @@ emitting an event when that prop is taken; the engine merely routes the event st
 
 ## The cast registry
 
-One entry per recurring character. The **season key partitions the whole entry** — ambient, greet, and
-reactions all nest under the season — so three chapters later the engine never reconsiders a past chapter's conditions:
-that chapter's reaction list is not even in the lookup.
+One entry per recurring character. The **season key partitions the whole entry** — ambient, greet, and reactions all
+nest under the season — so three chapters later the engine never reconsiders a past chapter's conditions: that chapter's
+reaction list is not even in the lookup.
 
 ```js
 // cast.js
@@ -86,16 +86,16 @@ A reaction is `{ on: <trigger>, when?: <conditions>, every?: bool, run | say }`.
 for a given fired trigger the **first matching `when` wins** (`PropEngine` first-match semantics, reused). Greeting is
 not special — it is the reaction whose trigger is `see` / `click`.
 
-- **Triggers the engine detects natively (spatial/local):** `see` (active character within range), `click`, `hover`, `leave`.
-  Wired onto the sprite on spawn.
+- **Triggers the engine detects natively (spatial/local):** `see` (active character within range), `click`, `hover`,
+  `leave`. Wired onto the sprite on spawn.
 - **Triggers from the bus (open vocabulary):** any string the game emits — `enter`, a prop's `emit`, a drag-drop
   (`drop:key_item`), a quest event. The game owns their meaning.
 - **Evaluation is pull, not push.** A reaction's `when` is checked **only when its trigger fires** — never in a global
-  loop, never on every `store.onChange`. The `CastDirector` subscribes **only the current season's** reactions to
-  their triggers; on `seasonchange` it tears those down and wires the next season's. Cost = reactions in the current
-  chapter for characters currently on screen.
-- **Frequency.** `every: false` = first encounter only, backed by an engine-derived Store flag (the sprite is
-  rebuilt every room, so an instance bool won't survive). `every: true` = each encounter.
+  loop, never on every `store.onChange`. The `CastDirector` subscribes **only the current season's** reactions to their
+  triggers; on `seasonchange` it tears those down and wires the next season's. Cost = reactions in the current chapter
+  for characters currently on screen.
+- **Frequency.** `every: false` = first encounter only, backed by an engine-derived Store flag (the sprite is rebuilt
+  every room, so an instance bool won't survive). `every: true` = each encounter.
 
 ### Ambient
 
@@ -104,26 +104,26 @@ whose `when` (weather/time DSL) + `scope` + `activity`-availability hold, re-pic
 `weatherchange` / `timechange` bus event (the events the scene already listens for) — never a continuous scan.
 `behavior` is one of `wander` / `patrol` / `static` / `follow`, **or** a custom factory `(npc, ctx) => Behavior`.
 
-**Weather switch + scene geometry.** An outdoor character does an activity loop while dry and wanders inside
-while it rains — expressed as two rules. The dry rule is `behavior: "patrol", activity: "<name>"`; its **waypoints +
-doorPoint live in the scene** (`cast.<id>.activities.<name>` in the scene config), so the rule only applies where that
-geometry exists (yards) and is absent everywhere else without naming scenes. When weather flips dry→rain, the active
-rule changes: the director **retreats** the outdoor NPC to the nearest indoor-leading exit (the patrol `doorPoint`)
-rather than vanishing it; an indoor scene's rain rule then shows them wandering inside — continuity if the player
-follows. Behavior policy (the weather switch) is global in the registry; only the geometry is per-scene.
+**Weather switch + scene geometry.** An outdoor character does an activity loop while dry and wanders inside while it
+rains — expressed as two rules. The dry rule is `behavior: "patrol", activity: "<name>"`; its **waypoints + doorPoint
+live in the scene** (`cast.<id>.activities.<name>` in the scene config), so the rule only applies where that geometry
+exists (yards) and is absent everywhere else without naming scenes. When weather flips dry→rain, the active rule
+changes: the director **retreats** the outdoor NPC to the nearest indoor-leading exit (the patrol `doorPoint`) rather
+than vanishing it; an indoor scene's rain rule then shows them wandering inside — continuity if the player follows.
+Behavior policy (the weather switch) is global in the registry; only the geometry is per-scene.
 
 ## Scenes own everything else (imperatively, via cast helpers)
 
 The cast holds the _global_ default. A scene installs local behavior by calling director helpers in `create()`:
 
-- `director.get("shopkeeper")?.activityLoop({ waypoints, activities })` — installs a local routine **and auto-suspends the
-  global ambient** for this scene. This replaces the pattern of per-scene controller files with local geometry.
+- `director.get("shopkeeper")?.activityLoop({ waypoints, activities })` — installs a local routine **and auto-suspends
+  the global ambient** for this scene. This replaces the pattern of per-scene controller files with local geometry.
 - `director.suppress("shopkeeper")` — opt a character out of this scene.
 - `director.play(fn, opts)` — run a cutscene (below).
 
-**One-scene NPCs are NOT in the registry.** They are plain `new NPC(...)` created in their
-scene's `create()`, wiring the _same_ reaction API inline (`npc.reactions([...])`, `activityLoop()`). The reaction
-system belongs to the NPC/director primitive; the cast registry is one declaration site, scene-local NPCs are another.
+**One-scene NPCs are NOT in the registry.** They are plain `new NPC(...)` created in their scene's `create()`, wiring
+the _same_ reaction API inline (`npc.reactions([...])`, `activityLoop()`). The reaction system belongs to the
+NPC/director primitive; the cast registry is one declaration site, scene-local NPCs are another.
 
 ## The cutscene runner
 
@@ -151,17 +151,17 @@ async function giveReward(d) {     // d exposes each present cast member + playe
 
 ## Worked decomposition (proof the model holds)
 
-| Controller does…                         | …becomes                                                                         |
-| ---------------------------------------- | -------------------------------------------------------------------------------- |
-| Seasonal presence gate                   | `<id>.<season>.ambient` (cast lookup)                                            |
-| Scene-specific activity loop             | scene `director.get(id).activityLoop(waypoints)`                                  |
-| Rain/night retreat                       | `shelterOnRain` + `doorPoint`                                                    |
-| Click → greeting                         | reaction `{ on: "see"/"click", say: [...] }`                                     |
-| Click → quest item                       | reaction `{ on: "click", when, run }`                                            |
-| Companion follow-behind                  | `{ behavior: "follow" }`, scene/quest-invoked                                    |
-| Give item on drop                        | reaction `{ on: "drop:<item>", run }` (inventory emits the event)               |
-| Global NPC wander matrix                 | `<id>.<season>.ambient` entries                                                   |
-| Non-playable character idle wander       | `WanderBehavior` over its `WalkController`                                       |
+| Controller does…                   | …becomes                                                          |
+| ---------------------------------- | ----------------------------------------------------------------- |
+| Seasonal presence gate             | `<id>.<season>.ambient` (cast lookup)                             |
+| Scene-specific activity loop       | scene `director.get(id).activityLoop(waypoints)`                  |
+| Rain/night retreat                 | `shelterOnRain` + `doorPoint`                                     |
+| Click → greeting                   | reaction `{ on: "see"/"click", say: [...] }`                      |
+| Click → quest item                 | reaction `{ on: "click", when, run }`                             |
+| Companion follow-behind            | `{ behavior: "follow" }`, scene/quest-invoked                     |
+| Give item on drop                  | reaction `{ on: "drop:<item>", run }` (inventory emits the event) |
+| Global NPC wander matrix           | `<id>.<season>.ambient` entries                                   |
+| Non-playable character idle wander | `WanderBehavior` over its `WalkController`                        |
 
 ## Consequences
 

@@ -1,7 +1,7 @@
 import { WalkController } from "./WalkController.js";
 import { characters } from "./CharacterRegistry.js";
 import { store } from "./Store.js";
-import { ThoughtBubble } from "./ThoughtBubble.js";
+import { DialogueBubble } from "./DialogueBubble.js";
 import { WanderBehavior } from "./behaviors/WanderBehavior.js";
 import { walkControllerWanderHost } from "./behaviors/walker.js";
 
@@ -135,7 +135,7 @@ export class IdleCharacter {
         const text = this.opts.greeting?.(store.getActiveCharacter() ?? "", this.name);
         this.behavior.interrupt(() => {
             if (text) {
-                ThoughtBubble.show(this.scene, { character: this.sprite, text, autoDestroyMs: 2000 });
+                DialogueBubble.show(this.scene, { character: this.sprite, text, autoDestroyMs: 2000 });
             }
         });
     }

@@ -3,8 +3,7 @@
     "version": "0.1.0",
     "nodeModulesDir": "auto",
     "exports": {
-        ".": "./mod.js",
-        "./*": "./src/*"
+        ".": "./mod.js"
     },
     "tasks": {
         "check": "deno check mod.js src/",
@@ -32,7 +31,8 @@
     "lint": {
         "rules": {
             "exclude": [
-                "no-window-prefix"
+                "no-window-prefix",
+                "no-slow-types"
             ]
         }
     },

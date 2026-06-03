@@ -12,8 +12,8 @@ interactions. Cursor shape changes on hover to telegraph the interaction.
 ## Context
 
 The target audience is young or casual players who should be able to interact without reading a verb menu. The primary
-inspiration is the style of late-90s Humongous Entertainment adventure games, alongside other point-and-click and
-modern touch-first puzzle adventures.
+inspiration is the style of late-90s Humongous Entertainment adventure games, alongside other point-and-click and modern
+touch-first puzzle adventures.
 
 The point-and-click adventure genre offers a spectrum of input models:
 

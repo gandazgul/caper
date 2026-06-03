@@ -25,7 +25,7 @@ await cs.wait(
     },
 );
 
-cs.cancel();  // rejects all pending awaits with CutsceneCancelled
+cs.cancel(); // rejects all pending awaits with CutsceneCancelled
 ```
 
 ## CutsceneRunner
@@ -39,8 +39,8 @@ the actor context. It guarantees:
 
 ```js
 const runner = new CutsceneRunner({
-    suspend: (cast) => { /* pause NPC ambient */ },
-    resume: (cast) => { /* restore NPC ambient */ },
+    suspend: (cast) => {/* pause NPC ambient */},
+    resume: (cast) => {/* restore NPC ambient */},
     lockPlayer: () => scene.walk.lock(),
     unlockPlayer: () => scene.walk.unlock(),
     buildContext: (cs) => buildCutsceneContext(scene, cs, presentNPCs),
@@ -57,16 +57,16 @@ director.cutscene(async (d) => {
     await d.npc.facePlayer();
     await d.npc.say("A secret passage!");
     await d.hero.walkTo({ x: 400, y: 300 });
-    await d.wait(500);          // pause, cancellable
+    await d.wait(500); // pause, cancellable
 }, { lockPlayer: true, cast: ["npc"] });
 ```
 
 ### Options
 
-| Option | Default | Description |
-|---|---|---|
-| `lockPlayer` | false | Lock the player's walk controller during the cutscene |
-| `cast` | undefined | Which NPCs' ambient to suspend (default: all present) |
+| Option       | Default   | Description                                           |
+| ------------ | --------- | ----------------------------------------------------- |
+| `lockPlayer` | false     | Lock the player's walk controller during the cutscene |
+| `cast`       | undefined | Which NPCs' ambient to suspend (default: all present) |
 
 ## Actor context (the `d` object)
 
@@ -76,19 +76,19 @@ cancel token:
 ```js
 director.cutscene(async (d) => {
     // Per-NPC methods:
-    await d.shopkeeper.walkTo({ x: 400, y: 300 });   // returns promise
-    await d.shopkeeper.say("Hello!", 3000);            // speech + hold
-    await d.shopkeeper.facePlayer();                   // instant
-    await d.shopkeeper.play("wave-anim");              // animation, resolves on complete
-    d.shopkeeper.setFlipX(true);                       // instant
+    await d.shopkeeper.walkTo({ x: 400, y: 300 }); // returns promise
+    await d.shopkeeper.say("Hello!", 3000); // speech + hold
+    await d.shopkeeper.facePlayer(); // instant
+    await d.shopkeeper.play("wave-anim"); // animation, resolves on complete
+    d.shopkeeper.setFlipX(true); // instant
 
     // Player:
-    await d.player.forceMoveTo(500, 400);              // walk controller
+    await d.player.forceMoveTo(500, 400); // walk controller
 
     // Scene helpers:
-    await d.wait(1000);                                 // pause
-    d.give("item_id", "shopkeeper");                   // fly item to inventory from above NPC
-    d.give("item_id");                                  // fly from above player instead
+    await d.wait(1000); // pause
+    d.give("item_id", "shopkeeper"); // fly item to inventory from above NPC
+    d.give("item_id"); // fly from above player instead
 });
 ```
 

@@ -22,13 +22,13 @@ function actorFor(npc, scene, cs) {
                 (done) => npc.walkTo(target, done),
                 () => npc.stopWalking(),
             ),
-        /** @param {string} text @param {number} [holdMs] */
-        say: (text, holdMs = 2800) => {
+        /** @param {string} text @param {number} [holdMs] @param {"thought" | "speech"} [variant] */
+        say: (text, holdMs = 2800, variant = "thought") => {
             /** @type {Phaser.Time.TimerEvent | undefined} */
             let timer;
             return cs.wait(
                 (done) => {
-                    npc.speak(text, holdMs);
+                    npc.speak(text, holdMs, variant);
                     timer = scene.time.delayedCall(holdMs, done);
                 },
                 () => timer?.remove(false),

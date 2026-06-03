@@ -24,8 +24,8 @@ rained, the leaves stopped, or if leaves were rolling, it couldn't rain.
 The goal was to allow:
 
 1. **Simultaneous effects**: Rain and falling leaves occurring at once in the fall.
-2. **Scene-specific constraints**: A scene can have ambient effects in certain seasons but never precipitation (regardless of
-   the global weather roll).
+2. **Scene-specific constraints**: A scene can have ambient effects in certain seasons but never precipitation
+   (regardless of the global weather roll).
 3. **Indoor safety**: Indoor scenes should be immune to both precipitation and ambient effects without requiring
    repetitive "none" configurations.
 
@@ -69,8 +69,8 @@ ambient: {
 The base `AdventureScene` handles the resolution of these modes:
 
 - **Initial State**: In `create()`, it resolves the modes and instantiates the `WeatherLayer` with both.
-- **Reactive Updates**: It subscribes to `store.onChange`. If the season or global weather changes, it re-evaluates
-  the allowed modes and calls `weather.setWeatherMode()` or `weather.setAmbientMode()` accordingly.
+- **Reactive Updates**: It subscribes to `store.onChange`. If the season or global weather changes, it re-evaluates the
+  allowed modes and calls `weather.setWeatherMode()` or `weather.setAmbientMode()` accordingly.
 
 ### `WeatherLayer` Rendering
 
@@ -81,8 +81,8 @@ both channels independently, allowing the `gfx` (rain) and `sprites` (leaves) to
 
 NPCs and Critters react to the precipitation channel:
 
-- **Outdoor NPCs** check the global `weatherMode`. If it is raining/snowing, they execute a
-  `retreatIndoors()` routine (walking to a `doorPoint` and hiding).
+- **Outdoor NPCs** check the global `weatherMode`. If it is raining/snowing, they execute a `retreatIndoors()` routine
+  (walking to a `doorPoint` and hiding).
 - **Flying Critters** are set to `setVisible(false)` during precipitation.
 - **Ground Critters** remain visible, as some animals (like frogs) do not hide from rain.
 

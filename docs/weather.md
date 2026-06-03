@@ -10,19 +10,19 @@ channels. They can run simultaneously — rain with falling leaves in autumn, fo
 
 ### Precipitation modes
 
-| Mode | Description |
-|---|---|
-| `"none"` | No precipitation |
-| `"light-rain"` | Light rain, 110 drops, slight slant |
+| Mode           | Description                                  |
+| -------------- | -------------------------------------------- |
+| `"none"`       | No precipitation                             |
+| `"light-rain"` | Light rain, 110 drops, slight slant          |
 | `"heavy-rain"` | Heavy rain, 320 drops, steeper slant, tinted |
-| `"snow"` | Light snow |
-| `"heavy-snow"` | Heavy snow |
+| `"snow"`       | Light snow                                   |
+| `"heavy-snow"` | Heavy snow                                   |
 
 ### Ambient modes
 
-| Mode | Description |
-|---|---|
-| `"none"` | No ambient effect |
+| Mode               | Description                                                      |
+| ------------------ | ---------------------------------------------------------------- |
+| `"none"`           | No ambient effect                                                |
 | `"falling-leaves"` | Falling leaf sprites with independent sway, spin, and fall speed |
 
 ### Scene configuration
@@ -82,10 +82,10 @@ nightLayer: {
 
 Window types:
 
-| Type | Position | Shape |
-|---|---|---|
-| `"rect"` | Top-left corner | Sharp rectangle |
-| `"oval"` | Center | Soft oval |
+| Type     | Position        | Shape                                        |
+| -------- | --------------- | -------------------------------------------- |
+| `"rect"` | Top-left corner | Sharp rectangle                              |
+| `"oval"` | Center          | Soft oval                                    |
 | `"glow"` | Top-left corner | Radial soft gradient (for irregular windows) |
 
 `flicker` controls candle wobble: `true` = default amplitude, `0.5` = subtler, `2` = more pronounced.
@@ -117,6 +117,6 @@ this.weather.setAmbientMode("falling-leaves");
 store.setTimeOfDay("night");
 
 // Query state:
-store.getTimeOfDay();   // → "day" | "night"
-store.isNight();        // → boolean
+store.getTimeOfDay(); // → "day" | "night"
+store.isNight(); // → boolean
 ```

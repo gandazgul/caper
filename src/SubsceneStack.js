@@ -70,7 +70,7 @@ export class SubsceneStack {
 
         this.stack.push({ bg, back, config });
         if (config.onOpen) config.onOpen(this.scene);
-        (/** @type {any} */ (this.scene).bus).emit("subscene:open");
+        /** @type {any} */ (this.scene).bus.emit("subscene:open");
     }
 
     pop() {
@@ -79,7 +79,7 @@ export class SubsceneStack {
         if (top.config.onClose) top.config.onClose(this.scene);
         top.bg.destroy();
         top.back.destroy();
-        (/** @type {any} */ (this.scene).bus).emit("subscene:close");
+        /** @type {any} */ (this.scene).bus.emit("subscene:close");
     }
 
     /** @returns {boolean} */

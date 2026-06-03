@@ -1,7 +1,7 @@
 # State (Store)
 
-The engine provides a generic reactive state store with three typed buckets, change events, localStorage persistence, and
-a snapshot/restore sandbox for replays. It is the role Phaser's `DataManager` plays, with batteries.
+The engine provides a generic reactive state store with three typed buckets, change events, localStorage persistence,
+and a snapshot/restore sandbox for replays. It is the role Phaser's `DataManager` plays, with batteries.
 
 The Store knows nothing about domains or game state — only keys and values. Domain rules live in the game's wrapper.
 
@@ -10,7 +10,7 @@ The Store knows nothing about domains or game state — only keys and values. Do
 ### Values — scalars, flags, strings, numbers
 
 ```js
-store.get("chapter");        // → "spring"
+store.get("chapter"); // → "spring"
 store.set("hasKey", true);
 store.set("playerName", "Hero");
 ```
@@ -27,9 +27,9 @@ Games can add their own collections for domain concepts such as placed objects, 
 ```js
 store.addTo("inventory", "apple");
 store.removeFrom("inventory", "apple");
-store.has("inventory", "apple");     // → boolean
-store.list("inventory");             // → string[]
-store.size("inventory");             // → number
+store.has("inventory", "apple"); // → boolean
+store.list("inventory"); // → string[]
+store.size("inventory"); // → number
 ```
 
 ### Items — per-item visual state
@@ -38,7 +38,7 @@ A string map for item-level state (a door's locked/unlocked state, a display's e
 
 ```js
 store.setItemState("display_case", "filled");
-store.getItemState("display_case");  // → "filled"
+store.getItemState("display_case"); // → "filled"
 ```
 
 ## Configuration
@@ -47,7 +47,7 @@ Configure the store once at boot with your game's schema:
 
 ```js
 store.configure({
-    saveKey: "my-game-save",           // localStorage key
+    saveKey: "my-game-save", // localStorage key
     createFreshState: () => ({
         values: {
             chapter: "spring",
@@ -64,9 +64,9 @@ store.configure({
             // display_case: "empty", // optional per-item visual state
         },
     }),
-    aliases: { season: "chapter" },    // optional compatibility alias
+    aliases: { season: "chapter" }, // optional compatibility alias
     defaultReplayReturnScene: "MyRoom",
-    notifySubject: stateFacade,        // optional facade passed to change subscribers
+    notifySubject: stateFacade, // optional facade passed to change subscribers
 });
 ```
 
@@ -79,7 +79,7 @@ The Store auto-saves to `localStorage` on every change (debounced by batching). 
 `configure()`. Resetting:
 
 ```js
-store.reset();  // fresh state, notifies subscribers
+store.reset(); // fresh state, notifies subscribers
 ```
 
 ## Change events
@@ -110,35 +110,34 @@ store.batch(() => {
 
 ## Replay sandbox
 
-Mini-games run in a sandbox: the current state is snapshotted, the mini-game runs, and on exit the snapshot is
-restored.
+Mini-games run in a sandbox: the current state is snapshotted, the mini-game runs, and on exit the snapshot is restored.
 
 ```js
 store.beginReplay({ returnScene: "PuzzleHub" });
 // ... player plays mini-game ...
-store.endReplay();  // snapshots restored, save triggered
+store.endReplay(); // snapshots restored, save triggered
 ```
 
 ## Engine-reserved keys
 
-| Key | Type | Default | Purpose |
-|---|---|---|---|
-| `currentScene` | string | `""` | Last active scene (for resume) |
-| `timeOfDay` | `"day" | "night"` | `"day"` | Day/night cycle |
-| `activeCharacter` | string | — | Currently active playable character |
-| `inventoryCounts` | object | `{}` | Stack counts for inventory items |
-| `${id}Outfit` | string | — | Per-character active outfit (see [characters.md](characters.md)) |
+| Key               | Type   | Default  | Purpose                                                          |
+| ----------------- | ------ | -------- | ---------------------------------------------------------------- |
+| `currentScene`    | string | `""`     | Last active scene (for resume)                                   |
+| `timeOfDay`       | `"day" | "night"` | `"day"`                                                          |
+| `activeCharacter` | string | —        | Currently active playable character                              |
+| `inventoryCounts` | object | `{}`     | Stack counts for inventory items                                 |
+| `${id}Outfit`     | string | —        | Per-character active outfit (see [characters.md](characters.md)) |
 
 Helper methods:
 
 ```js
-store.getTimeOfDay();            // → "day" | "night"
+store.getTimeOfDay(); // → "day" | "night"
 store.setTimeOfDay("night");
-store.isNight();                 // → boolean
-store.getCurrentScene();         // → "MyRoom"
+store.isNight(); // → boolean
+store.getCurrentScene(); // → "MyRoom"
 store.setCurrentScene("MyRoom");
-store.getActiveCharacter();      // → "hero"
+store.getActiveCharacter(); // → "hero"
 store.setActiveCharacter("hero");
-store.getOutfit("hero");         // → "pajamas" | undefined
+store.getOutfit("hero"); // → "pajamas" | undefined
 store.setOutfit("hero", "pajamas");
 ```

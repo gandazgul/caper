@@ -11,7 +11,8 @@
  * until the game configures it.
  *
  * @typedef {object} EngineAssetSlots
- * @property {{ atlas: string, frame: string }} [thoughtBubble] - cloud sprite for ThoughtBubble.
+ * @property {{ atlas: string, frame: string }} [thoughtBubble] - cloud sprite for a "thought" DialogueBubble.
+ * @property {{ atlas: string, frame: string }} [speechBubble] - cloud sprite for a "speech" DialogueBubble.
  * @property {{ atlas: string, frame: string }} [backButton] - the UIHelper back button.
  * @property {{ atlas: string, frames: string[] }} [leaves] - falling-leaf frames for WeatherLayer.
  * @property {{ atlas: string, frame: string }} [critter] - default atlas/frame for a critter spec that omits them.

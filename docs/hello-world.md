@@ -1,7 +1,7 @@
 # Hello World — Building a Game on the AdventureEngine
 
-This guide walks through creating a minimal point-and-click game from scratch. By the end you'll have a player
-character who can walk around a room, pick up an item, and exit to another scene.
+This guide walks through creating a minimal point-and-click game from scratch. By the end you'll have a player character
+who can walk around a room, pick up an item, and exit to another scene.
 
 ## Prerequisites
 
@@ -51,10 +51,10 @@ export function registerGameContent() {
     // The engine owns built-in visuals (thought bubbles, back button,
     // leaves, critters, inventory). You supply the actual atlas/frame keys.
     engineAssets.configure({
-        thoughtBubble: { atlas: "ui-atlas",   frame: "thought-bubble" },
-        backButton:    { atlas: "ui-atlas",   frame: "back-arrow" },
-        leaves:        { atlas: "sprite_fall", frames: ["leaf1","leaf2","leaf3","leaf4"] },
-        critter:       { atlas: "critters-atlas", frame: "butterfly" },
+        thoughtBubble: { atlas: "ui-atlas", frame: "thought-bubble" },
+        backButton: { atlas: "ui-atlas", frame: "back-arrow" },
+        leaves: { atlas: "sprite_fall", frames: ["leaf1", "leaf2", "leaf3", "leaf4"] },
+        critter: { atlas: "critters-atlas", frame: "butterfly" },
         inventoryAtlas: "inventory-atlas",
         replayDefaultReturn: "MyRoom",
     });
@@ -87,8 +87,8 @@ export function registerGameContent() {
         spriteScale: 0.55,
         animationSet: {
             front: { still: "hero-front", walk: "hero-walk-front" },
-            back:  { still: "hero-back",  walk: "hero-walk-back" },
-            side:  { still: "hero-side",  walk: "hero-walk-side" },
+            back: { still: "hero-back", walk: "hero-walk-back" },
+            side: { still: "hero-side", walk: "hero-walk-side" },
         },
         playable: true,
     });
@@ -120,7 +120,7 @@ export class MyRoomScene extends AdventureScene {
         super({
             key: "MyRoom",
             backgroundsBySeason: {
-                spring: "bg_myroom",  // loads /scenes/myroom.jpg
+                spring: "bg_myroom", // loads /scenes/myroom.jpg
             },
             walkable: [
                 { x: 100, y: 600 },
@@ -135,7 +135,8 @@ export class MyRoomScene extends AdventureScene {
                 {
                     id: "key",
                     atlas: "props-atlas",
-                    x: 300, y: 400,
+                    x: 300,
+                    y: 400,
                     states: [
                         {
                             // Show only when not yet picked up
@@ -151,7 +152,8 @@ export class MyRoomScene extends AdventureScene {
                 },
                 {
                     id: "exit_door",
-                    x: 950, y: 350,
+                    x: 950,
+                    y: 350,
                     bounds: { x: 920, y: 300, w: 60, h: 120 },
                     states: [
                         {

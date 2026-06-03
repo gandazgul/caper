@@ -40,11 +40,11 @@ characters.register("hero", {
 
 The `animationSet` maps directions to animation entries. Each entry has these slots:
 
-| Slot | Type | Purpose |
-|---|---|---|
-| `still` | texture key | Shown when stationary (a single frame) |
-| `walk` | animation key | Looped while moving |
-| `idle` | animation key | Played once as an occasional fidget (repeat: 0) |
+| Slot    | Type          | Purpose                                             |
+| ------- | ------------- | --------------------------------------------------- |
+| `still` | texture key   | Shown when stationary (a single frame)              |
+| `walk`  | animation key | Looped while moving                                 |
+| `idle`  | animation key | Played once as an occasional fidget (repeat: 0)     |
 | `reach` | animation key | Played once during a pickup/interaction (repeat: 0) |
 
 Fallback chain: missing `walk` → falls to `still` → `idle`; missing `idle` → `still`.
@@ -55,10 +55,10 @@ The first playable character registered becomes the default. The active characte
 `activeCharacter`.
 
 ```js
-store.getActiveCharacter();   // → "hero"
+store.getActiveCharacter(); // → "hero"
 store.setActiveCharacter("hero");
-characters.defaultPlayer;     // → "hero"
-characters.playableIds();     // → ["hero", "sidekick"]
+characters.defaultPlayer; // → "hero"
+characters.playableIds(); // → ["hero", "sidekick"]
 characters.hasMultiplePlayers; // → true (shows character switcher)
 ```
 
@@ -75,7 +75,8 @@ When more than one playable character is registered, the engine automatically of
 
 ## Outfits (ADR 0006)
 
-An outfit is an alternate render config — a full sprite-set swap. Outfits are selected per-character through a Store key:
+An outfit is an alternate render config — a full sprite-set swap. Outfits are selected per-character through a Store
+key:
 
 ```
 heroOutfit: "pajamas"   → uses hero.pajamas config
@@ -84,7 +85,7 @@ heroOutfit: undefined    → uses base hero config
 
 ```js
 store.setOutfit("hero", "pajamas");
-store.getOutfit("hero");  // → "pajamas"
+store.getOutfit("hero"); // → "pajamas"
 ```
 
 Changing an outfit triggers a reactive rebuild — the active sprite, idle character, and all registered NPCs of that
@@ -107,9 +108,9 @@ characters.register("tall_npc", {
 
 ```js
 // Get a character's render config (with outfit overrides applied):
-characters.resolve("hero");              // base config
-characters.render("hero", "pajamas");   // base + pajama overrides merged
+characters.resolve("hero"); // base config
+characters.render("hero", "pajamas"); // base + pajama overrides merged
 
 // Check existence:
-characters.has("hero");                  // → boolean
+characters.has("hero"); // → boolean
 ```

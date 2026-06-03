@@ -5,12 +5,8 @@
  * from the character's registration metadata — the engine knows no character
  * names, only registered configs.
  *
- * Portrait resolution order (per character config):
- *   1. `getPortrait(scene)` — full override returning a texture key.
- *   2. `portraitSettings` — crop recipe applied to a source texture.
- *   3. Engine default — circular crop from the character's front still texture,
- *      centred at (50%, 25%) of the texture with radius = 20% of width.
- *
+ * The portrait is resolved (and the default cropped) by the shared
+ * {@link resolveCharacterPortrait} — see `portraits.js` for the fallback chain.
  * If a portrait texture is not yet ready (still baking / loading), the switcher
  * defers and retries on the next frame.
  */
@@ -18,101 +14,7 @@
 import { characters } from "./CharacterRegistry.js";
 import { store } from "./Store.js";
 import { UI_DEPTH } from "./UIHelper.js";
-
-// ─── Engine-default circular portrait ───────────────────────────────────────
-
-/**
- * Bake a circular crop from a texture frame into a new cached canvas texture.
- * Idempotent — subsequent calls with the same `outKey` are no-ops.
- *
- * @param {import("phaser").Scene} scene
- * @param {string} sourceKey
- * @param {string | number} frameNameOrIndex
- * @param {string} outKey
- * @param {{ cx: number, cy: number, radius: number }} circle - crop circle in
- *   pixel coords of the source frame.
- */
-function _bakeCircularCrop(scene, sourceKey, frameNameOrIndex, outKey, circle) {
-    if (scene.textures.exists(outKey)) return;
-    if (!scene.textures.exists(sourceKey)) return;
-    const texture = scene.textures.get(sourceKey);
-    const frame = texture.get(frameNameOrIndex);
-    if (!frame) return;
-    const sourceImg = texture.getSourceImage(frame.sourceIndex);
-    const diameter = Math.round(circle.radius * 2);
-    const canvas = document.createElement("canvas");
-    canvas.width = diameter;
-    canvas.height = diameter;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-    ctx.save();
-    ctx.beginPath();
-    ctx.arc(diameter / 2, diameter / 2, diameter / 2, 0, Math.PI * 2);
-    ctx.clip();
-    ctx.drawImage(
-        /** @type {CanvasImageSource} */ (sourceImg),
-        frame.cutX + (circle.cx - circle.radius),
-        frame.cutY + (circle.cy - circle.radius),
-        diameter,
-        diameter,
-        0,
-        0,
-        diameter,
-        diameter,
-    );
-    ctx.restore();
-    scene.textures.addCanvas(outKey, canvas);
-}
-
-/**
- * Resolve (or create) a circular portrait texture key for a character.
- * Follows the fallback chain: getPortrait → portraitSettings → engine default.
- *
- * @param {import("phaser").Scene} scene
- * @param {string} characterId
- * @param {import("./CharacterRegistry.js").CharacterConfig} config
- * @returns {string | null} texture key, or null if not yet available.
- */
-function _resolvePortrait(scene, characterId, config) {
-    // 1. Full override callback.
-    if (typeof config.getPortrait === "function") {
-        const key = config.getPortrait(scene);
-        if (key && scene.textures.exists(key)) return key;
-        // Callback returned a key but texture isn't ready → retry.
-        if (key) return null;
-        // Falsy → fall through.
-    }
-
-    const settings = config.portraitSettings;
-    const sourceKey = settings?.texture ?? config.spriteKey;
-    if (!sourceKey || !scene.textures.exists(sourceKey)) return null;
-
-    const texture = scene.textures.get(sourceKey);
-    const frameObj = texture.get(); // default frame (frame 0)
-    if (!frameObj) return null;
-
-    const fw = frameObj.width;
-    const fh = frameObj.height;
-
-    // 2. portraitSettings crop recipe.
-    if (settings) {
-        const cx = fw * (settings.offsetX ?? 0.5);
-        const cy = fh * (settings.offsetY ?? 0.25);
-        // Default radius = 20% of frame width, scaled by portraitSettings.scale.
-        const radius = fw * 0.2 * (settings.scale ?? 1);
-        const outKey = `engine-portrait-${characterId}`;
-        _bakeCircularCrop(scene, sourceKey, 0, outKey, { cx, cy, radius });
-        return outKey;
-    }
-
-    // 3. Engine default — centre at (50%, 25%), radius = 20% of width.
-    const cx = fw * 0.5;
-    const cy = fh * 0.25;
-    const radius = fw * 0.2;
-    const outKey = `engine-portrait-${characterId}`;
-    _bakeCircularCrop(scene, sourceKey, 0, outKey, { cx, cy, radius });
-    return outKey;
-}
+import { resolveCharacterPortrait } from "./portraits.js";
 
 // ─── Exported class ─────────────────────────────────────────────────────────
 
@@ -167,7 +69,7 @@ export class CharacterSwitcher {
         const config = characters.get(next);
         if (!config) return;
 
-        const textureKey = _resolvePortrait(this.scene, next, config);
+        const textureKey = resolveCharacterPortrait(this.scene, next, config);
         if (!textureKey) {
             // Texture not ready (still baking / loading) — retry shortly.
             this._retryTimer = this.scene.time.delayedCall(50, () => {

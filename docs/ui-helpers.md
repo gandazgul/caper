@@ -2,8 +2,8 @@
 
 ## Back button
 
-The `createBackButton` helper creates a consistent back-arrow button in the top-left corner. It follows the replay
-guard — during a replay, clicking it calls `exitReplay` instead of the custom handler.
+The `createBackButton` helper creates a consistent back-arrow button in the top-left corner. It follows the replay guard
+— during a replay, clicking it calls `exitReplay` instead of the custom handler.
 
 ```js
 import { createBackButton } from "@adventure-engine/UIHelper.js";
@@ -11,10 +11,10 @@ import { createBackButton } from "@adventure-engine/UIHelper.js";
 const backBtn = createBackButton(scene, () => {
     scene.scene.start("PreviousScene");
 }, {
-    scrollFactor0: false,          // pinned to camera
+    scrollFactor0: false, // pinned to camera
     visible: true,
-    stopPropagation: true,         // prevent walk/hotspot click-through
-    replayReturn: true,            // default: during replay, return to the replay owner scene
+    stopPropagation: true, // prevent walk/hotspot click-through
+    replayReturn: true, // default: during replay, return to the replay owner scene
 });
 ```
 
@@ -34,13 +34,13 @@ const btn = createChunkyButton(scene, 400, 300, 80, 80, {
 ### Built-in icon functions
 
 ```js
-import { drawTrashIcon, drawCameraIcon, drawFullscreenIcon, drawReloadIcon } from "@adventure-engine/UIHelper.js";
+import { drawCameraIcon, drawFullscreenIcon, drawReloadIcon, drawTrashIcon } from "@adventure-engine/UIHelper.js";
 
 // Usage inside a chunky button's drawIcon callback:
-drawTrashIcon(gfx, cx, cy);       // trash bin
-drawCameraIcon(gfx, cx, cy);      // camera
-drawFullscreenIcon(gfx, cx, cy);  // fullscreen toggle
-drawReloadIcon(gfx, cx, cy);      // reload/restart
+drawTrashIcon(gfx, cx, cy); // trash bin
+drawCameraIcon(gfx, cx, cy); // camera
+drawFullscreenIcon(gfx, cx, cy); // fullscreen toggle
+drawReloadIcon(gfx, cx, cy); // reload/restart
 ```
 
 ### Using without an icon (text label):
@@ -71,12 +71,12 @@ Toggled with the backtick key (`` ` ``). Displays:
 
 In-game spatial editor for tuning prop positions, walkable polygons, and lit windows. Activated with keyboard shortcuts:
 
-| Key | Action |
-|---|---|
-| `W` | Copy walkable polygon to clipboard |
-| `N` | Copy NightLayer window entries to clipboard |
-| `P` | Copy props to clipboard |
-| Arrow keys | Nudge selected handle |
+| Key          | Action                                                   |
+| ------------ | -------------------------------------------------------- |
+| `W`          | Copy walkable polygon to clipboard                       |
+| `N`          | Copy NightLayer window entries to clipboard              |
+| `P`          | Copy props to clipboard                                  |
+| Arrow keys   | Nudge selected handle                                    |
 | Drag handles | Move walkable vertices, prop positions, window positions |
 
 ```js

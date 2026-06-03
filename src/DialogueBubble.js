@@ -1,5 +1,6 @@
 import Phaser from "phaser";
 import { engineAssets } from "./EngineAssets.js";
+import { resolveCharacterPortrait } from "./portraits.js";
 
 /**
  * A cloud-bubble Container with optional icons + text, auto-destroying after
@@ -16,7 +17,7 @@ import { engineAssets } from "./EngineAssets.js";
  *   - Text sits just below the icons (or at (0, 0) if no icons).
  *
  * Icons are passed as `{ type, id }` pairs. New `type` values can be
- * registered at runtime via `ThoughtBubble.registerIconType()`, so other
+ * registered at runtime via `DialogueBubble.registerIconType()`, so other
  * scenes plug in their own atlases without editing this file.
  */
 
@@ -52,30 +53,41 @@ const ICON_DEFAULT_SCALE = 0.4;
  */
 
 /**
- * Icon-type registry. Empty by default — the Engine ships no game-specific
- * icon types. The Game registers its own (`toy`, `clothing`, `character`, …)
- * via {@link ThoughtBubble.registerIconType} at boot; scenes register their
- * own scene-local types the same way.
+ * Icon-type registry. Ships one built-in, registry-driven type — `character`,
+ * which renders any registered character's portrait (auto-cropped from its
+ * front sprite by default; see {@link resolveCharacterPortrait}). Everything
+ * else is game-specific: the Game registers its own (`toy`, `clothing`, …) via
+ * {@link DialogueBubble.registerIconType} at boot, and may override `character`
+ * with a custom resolver. Scenes register scene-local types the same way.
  * @type {Record<string, IconResolver>}
  */
-const ICON_TYPES = {};
+const ICON_TYPES = {
+    character: (scene, id, scale) => {
+        const key = resolveCharacterPortrait(scene, id);
+        if (!key) return null;
+        return scene.add.image(0, 0, key).setOrigin(0.5).setScale(scale);
+    },
+};
 
 /**
- * @typedef {object} ThoughtBubbleIcon
+ * @typedef {object} DialogueBubbleIcon
  * @property {string} type - key in the icon-type registry (e.g. "toy", "clothing")
  * @property {string} id - id within that registry
  * @property {number} [scale] - override the default icon scale
  */
 
 /**
- * @typedef {object} ThoughtBubbleOpts
+ * @typedef {object} DialogueBubbleOpts
  * The bubble always anchors to a `character` — pass a sprite or any object
  * with `{x, y}`. It auto-places `DEFAULT_Y_OFFSET` above the character;
  * `offset` nudges that position. Callers never pass world coords directly.
  * @property {{x: number, y: number}} character - speaker to anchor to
  * @property {{x?: number, y?: number}} [offset] - per-call nudge in pixels
  * @property {string} [text] - optional caption rendered inside the cloud
- * @property {ThoughtBubbleIcon[]} [icons] - 0-N icons laid out in a row or stack
+ * @property {DialogueBubbleIcon[]} [icons] - 0-N icons laid out in a row or stack
+ * @property {"thought" | "speech"} [variant] - which bubble art to use (default
+ *   "thought"). Both variants are identical except for the cloud sprite, which
+ *   the game supplies via the `thoughtBubble` / `speechBubble` engine assets.
  * @property {boolean} [stacked] - if true, render icons stacked diagonally instead of side-by-side
  * @property {boolean} [large] - override anchor sizing for a tall speaker (else read from the sprite's `largeBubble` data)
  * @property {number} [autoDestroyMs] - if set, auto-destroys after this many ms
@@ -113,10 +125,10 @@ function computeAnchor(char, dx, dy, isLarge, xOffsetSign) {
     return { x: centerX + xOffset + (dx * xOffsetSign), y: headY - yOffset + dy };
 }
 
-export class ThoughtBubble extends Phaser.GameObjects.Container {
+export class DialogueBubble extends Phaser.GameObjects.Container {
     /**
      * @param {import("phaser").Scene} scene
-     * @param {ThoughtBubbleOpts} opts
+     * @param {DialogueBubbleOpts} opts
      */
     constructor(scene, opts) {
         const dx = opts.offset?.x ?? 0;
@@ -180,7 +192,8 @@ export class ThoughtBubble extends Phaser.GameObjects.Container {
         // Bubble image: center origin, then offset so the cloud body lands
         // on container-local (0, 0). The puff tail extends to the bottom-left.
         // If we flipped the bubble (xOffsetSign = -1), the tail points to the bottom-right.
-        const bubbleArt = engineAssets.get("thoughtBubble");
+        // The variant selects which game-supplied sprite to use (speech vs thought).
+        const bubbleArt = engineAssets.get(opts.variant === "speech" ? "speechBubble" : "thoughtBubble");
         this.bubble = scene.add.image(0, 0, bubbleArt?.atlas, bubbleArt?.frame)
             .setOrigin(0.5, 0.5)
             .setScale(BUBBLE_SCALE);
@@ -336,11 +349,11 @@ export class ThoughtBubble extends Phaser.GameObjects.Container {
     /**
      * Convenience: build + add to scene + return.
      * @param {import("phaser").Scene} scene
-     * @param {ThoughtBubbleOpts} opts
-     * @returns {ThoughtBubble}
+     * @param {DialogueBubbleOpts} opts
+     * @returns {DialogueBubble}
      */
     static show(scene, opts) {
-        return new ThoughtBubble(scene, opts);
+        return new DialogueBubble(scene, opts);
     }
 
     /**
@@ -360,7 +373,7 @@ export class ThoughtBubble extends Phaser.GameObjects.Container {
 /**
  * Build an Image for a single icon spec, or null if the type/id is unknown.
  * @param {import("phaser").Scene} scene
- * @param {ThoughtBubbleIcon} spec
+ * @param {DialogueBubbleIcon} spec
  * @returns {Phaser.GameObjects.Image | null}
  */
 function resolveIcon(scene, spec) {

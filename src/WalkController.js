@@ -1,7 +1,7 @@
 import Phaser from "phaser";
 import { computePerspectiveScale } from "./perspective.js";
 import { findPath, snapToPolygon } from "./pathfinding.js";
-import { ThoughtBubble } from "./ThoughtBubble.js";
+import { DialogueBubble } from "./DialogueBubble.js";
 import { WearableManager } from "./Wearables.js";
 import { store } from "./Store.js";
 import { characters } from "./CharacterRegistry.js";
@@ -123,7 +123,7 @@ export class WalkController {
         this.characterId = opts.characterId ?? store.getActiveCharacter?.() ?? "";
 
         // Tall speakers (flagged on the character registration) anchor their
-        // thought bubbles higher/wider — mirrors NPC; read by ThoughtBubble.
+        // thought bubbles higher/wider — mirrors NPC; read by DialogueBubble.
         if (characters.get(this.characterId)?.largeBubble) this.sprite.setData("bubbleLarge", true);
 
         /** @type {Phaser.Tweens.Tween | null} */
@@ -163,7 +163,7 @@ export class WalkController {
                 this.walkToHotspot(hotspot);
 
             scene.input.on("pointerdown", this._onPointerDown);
-            (/** @type {any} */ (scene).bus).on("hotspot:click", this._onHotspotClick);
+            /** @type {any} */ (scene).bus.on("hotspot:click", this._onHotspotClick);
         }
 
         this._onUpdate = () => this.updatePerFrame();
@@ -195,21 +195,21 @@ export class WalkController {
      * follows the sprite. Mirrors NPC.speak so any character — active or
      * NPC — can speak the same way.
      *
-     * @param {string | import("./ThoughtBubble.js").ThoughtBubbleOpts} textOrOpts
+     * @param {string | import("./DialogueBubble.js").DialogueBubbleOpts} textOrOpts
      * @param {number} [holdMs]
-     * @returns {ThoughtBubble | null}
+     * @returns {DialogueBubble | null}
      */
     speak(textOrOpts, holdMs = 2800) {
         if (!this.sprite) return null;
         const opts = typeof textOrOpts === "string"
             ? { character: this.sprite, text: textOrOpts, autoDestroyMs: Math.max(800, holdMs - 200) }
             : { ...textOrOpts, character: this.sprite };
-        return ThoughtBubble.show(this.scene, opts);
+        return DialogueBubble.show(this.scene, opts);
     }
 
     shutdown() {
         if (this._onHotspotClick) {
-            (/** @type {any} */ (this.scene).bus).off("hotspot:click", this._onHotspotClick);
+            /** @type {any} */ (this.scene).bus.off("hotspot:click", this._onHotspotClick);
         }
         if (this._onUpdate) {
             this.scene.events.off("update", this._onUpdate);
@@ -356,7 +356,7 @@ export class WalkController {
     walkToHotspot(hotspot) {
         this.walkTo(hotspot.approachPoint, () => {
             this.applyFacing(hotspot.approachPoint.facing);
-            (/** @type {any} */ (this.scene).bus).emit("hotspot:arrived", hotspot);
+            /** @type {any} */ (this.scene).bus.emit("hotspot:arrived", hotspot);
         });
     }
 

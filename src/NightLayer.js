@@ -354,7 +354,7 @@ export class NightLayer {
 
         // Lift thought bubbles to remain visible on top of actors and glows
         for (const child of this.scene.children.list) {
-            if (child.constructor.name === "ThoughtBubble") {
+            if (child.constructor.name === "DialogueBubble") {
                 /** @type {any} */ (child).setDepth(DEPTH_WINDOWS + 20);
             }
         }

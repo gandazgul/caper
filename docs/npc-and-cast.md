@@ -19,18 +19,18 @@ const npc = new NPC(this, {
     x: 400,
     y: 300,
     texture: "character_shopkeeper",
-    frame: 0,                    // optional: atlas frame index
+    frame: 0, // optional: atlas frame index
     scale: 0.5,
     approachOffset: { x: 80, y: 0, facing: "left" },
     boundsOffset: { x: -40, y: -200, w: 80, h: 180 },
-    walkSpeed: 80,               // px/sec for walkTo()
+    walkSpeed: 80, // px/sec for walkTo()
     walkAnim: "shopkeeper-walk",
     stillFrame: "shopkeeper-still",
     chatter: ["Hello!", "Welcome!"],
     onClick: (npc) => {
         npc.speak("Nice to meet you!");
     },
-    fidget: {                    // optional: occasional idle animation
+    fidget: { // optional: occasional idle animation
         stillKey: "shopkeeper-still",
         idleAnimKey: "shopkeeper-idle",
         intervalMs: 8000,
@@ -41,11 +41,11 @@ const npc = new NPC(this, {
 ### NPC methods
 
 ```js
-npc.walkTo({ x: 500, y: 300 }, onComplete);    // walk and call back
-npc.speak("Hello!", holdMs);                     // thought bubble with text
-npc.facePlayer();                                 // rotate toward active character
-npc.stopWalking();                                // interrupt movement
-npc.setOrigin(x, y);                              // adjust sprite origin
+npc.walkTo({ x: 500, y: 300 }, onComplete); // walk and call back
+npc.speak("Hello!", holdMs); // thought bubble with text
+npc.facePlayer(); // rotate toward active character
+npc.stopWalking(); // interrupt movement
+npc.setOrigin(x, y); // adjust sprite origin
 ```
 
 ## Declarative cast
@@ -60,15 +60,15 @@ import { registerCast } from "@adventure-engine/CastRegistry.js";
 
 registerCast({
     shopkeeper: {
-        defaults: {                        // shared across seasons
+        defaults: { // shared across seasons
             scale: 0.5,
             approachOffset: { x: 80, y: 0, facing: "left" },
             boundsOffset: { x: -40, y: -200, w: 80, h: 180 },
         },
         spring: {
             ambient: {
-                behavior: "wander",        // see behaviors below
-                scope: "inside",           // only in indoor scenes
+                behavior: "wander", // see behaviors below
+                scope: "inside", // only in indoor scenes
                 when: { timeOfDay: { eq: "day" } },
                 options: { dwellRange: [4000, 8000] },
             },
@@ -177,12 +177,12 @@ Tight lockstep "conga line" trailing with configurable spacing and formation.
 
 Reactions are triggered events. The engine detects these natively:
 
-| Trigger | When it fires |
-|---|---|
-| `"see"` | Active character enters a range around the NPC |
-| `"click"` | Player clicks the NPC |
-| `"hover"` | Mouse hovers over the NPC |
-| `"leave"` | Active character leaves the range |
+| Trigger   | When it fires                                  |
+| --------- | ---------------------------------------------- |
+| `"see"`   | Active character enters a range around the NPC |
+| `"click"` | Player clicks the NPC                          |
+| `"hover"` | Mouse hovers over the NPC                      |
+| `"leave"` | Active character leaves the range              |
 
 Additionally, any string the game emits on the bus can be a trigger (e.g. `"drop:backpack"`, `"quest_complete"`).
 

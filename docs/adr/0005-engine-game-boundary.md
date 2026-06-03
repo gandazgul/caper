@@ -4,12 +4,12 @@ Status: **proposed** Date: 2026-06-01
 
 ## Decision
 
-`src/` becomes a reusable, game-agnostic **AdventureEngine** (target home: separate package) with a one-way
-dependency rule: **the Engine never imports Game content (item catalogs, cast, behaviors) or Game rules (season gates,
-game rules); the Game depends on the Engine.** The Engine is the **type authority** (`RenderableItem`,
-`InventoryItem`, `Critter`, `Prop`, …) and ships the standard "batteries" for the point-and-click genre. Where the
-Engine needs Game-specific knowledge it gets it by **inversion**: a single Game-provided **Config** (values and asset
-paths, never rules) plus **registries** the Game populates at boot.
+`src/` becomes a reusable, game-agnostic **AdventureEngine** (target home: separate package) with a one-way dependency
+rule: **the Engine never imports Game content (item catalogs, cast, behaviors) or Game rules (season gates, game rules);
+the Game depends on the Engine.** The Engine is the **type authority** (`RenderableItem`, `InventoryItem`, `Critter`,
+`Prop`, …) and ships the standard "batteries" for the point-and-click genre. Where the Engine needs Game-specific
+knowledge it gets it by **inversion**: a single Game-provided **Config** (values and asset paths, never rules) plus
+**registries** the Game populates at boot.
 
 API design **leans on Phaser's mental model** so the engine is legible to Phaser developers: registries you populate at
 boot and query by key (mirroring `TextureManager`/`anims`/`registry`/`Cache`), Scene Plugins for cross-cutting systems,
@@ -19,21 +19,21 @@ The concrete seams:
 
 1. **State** — Engine owns a generic reactive **`Store`** (typed `values`/`collections`/`items` buckets, change events,
    localStorage persistence, snapshot/restore for replay) — the same role Phaser's `registry`/DataManager plays. The
-   Game owns a **`GameState`** wrapper holding all domain methods (season transitions, scene-gating logic,
-   gameplay counters). The Store never knows about a season; the Game may organize `GameState` internally as a
-   flat facade or as reducers/slices without affecting the boundary.
+   Game owns a **`GameState`** wrapper holding all domain methods (season transitions, scene-gating logic, gameplay
+   counters). The Store never knows about a season; the Game may organize `GameState` internally as a flat facade or as
+   reducers/slices without affecting the boundary.
 2. **Content resolution** — Engine owns a **`ContentRegistry`**; the Game registers its catalogs at boot
-   (`content.registerItems({ apple: ... })`, …) and the Engine resolves `content.getItem(id)` to a
-   `RenderableItem`. Replaces hard-coded catalog chains in inventory/dialog helpers. **Inventory** and the
-   **Dialog** system (the rename of `ThoughtBubble` — icon mode now, text + dialog trees later) are Engine built-ins.
+   (`content.registerItems({ apple: ... })`, …) and the Engine resolves `content.getItem(id)` to a `RenderableItem`.
+   Replaces hard-coded catalog chains in inventory/dialog helpers. **Inventory** and the **Dialog** system (the rename
+   of `ThoughtBubble` — icon mode now, text + dialog trees later) are Engine built-ins.
 3. **Batteries** — the generic NPC behaviors (`Wander`/`Patrol`/`Follow`/`Companion`/`walker`) and `cutsceneActor` move
    live **inside** the Engine. A **cast registry** lets a Game register its cast.
 4. **Config inversion** — Engine reads a single Game-provided `Config` for dimensions, palette, inventory layout, tuning
    numbers, dev flags, and asset paths. `objects/` and `scenes/` are convention locations; concrete paths come from
    Config.
 5. **Base scene** — `AdventureScene` splits into a **thin Engine base scene + Engine Scene Plugins**; Game scenes
-   subclass it. The **Character** system is Engine-generic with the **roster** supplied via Config;
-   game-specific quest logic is extracted to the Game.
+   subclass it. The **Character** system is Engine-generic with the **roster** supplied via Config; game-specific quest
+   logic is extracted to the Game.
 6. **Bootstrap** — Engine exports a thin **`createAdventureGame(manifest)`** factory that internally does the
    Phaser-native thing (`new Phaser.Game` with `plugins: { scene: ENGINE_PLUGINS }`) and seeds the registries. It is a
    convenience front door, **not** a replacement: the plugins, registries, and base scenes stay directly usable so a
