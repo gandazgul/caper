@@ -8,12 +8,11 @@ The weather system is refactored to treat **precipitation** (rain/snow) and **am
 independent channels. Precipitation remains a global game state rolled upon scene entry, while ambient effects are tied
 to the current chapter and the specific capabilities of the scene.
 
-Each `AdventureSceneConfig` now defines these via two separate record blocks: `weather` and `ambient`. If a chapter is
-omitted from either block, the system falls back to the _previous_ chapter and keeps walking: `chapter1` falls back to
-`intro`, `chapter2` to `chapter1`, `chapter3` to `chapter2`, and `intro` wraps to `chapter3`. The chain stops at the
-first explicit entry; if no chapter matches, the resolver returns `["none"]`. Omitting a block entirely on a scene is
-equivalent to declaring `["none"]` for every chapter — that scene never participates in that channel (an indoor scene,
-or a scene that never rains, etc.).
+Each `AdventureSceneConfig` now defines these via two separate record blocks: `weather` and `ambient`. Each block is a
+**direct per-chapter lookup with no inheritance and no chapter ordering** — the engine knows nothing about how a game's
+chapters relate. A chapter a block doesn't list allows only `["none"]`, so a game lists every chapter it wants a mode in
+explicitly. Omitting a block entirely on a scene is equivalent to declaring `["none"]` for every chapter — that scene
+never participates in that channel (an indoor scene, or a scene that never rains, etc.).
 
 ## Context
 

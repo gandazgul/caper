@@ -43,9 +43,10 @@ ambient: {
 indoors: true,  // ← indoor scenes are immune to weather by convention
 ```
 
-When a chapter is omitted, the system walks backwards through the chapter order
-(`intro → chapter3 → chapter2 → chapter1`) to find the nearest explicit entry. A completely omitted block defaults to
-`["none"]`.
+A block is a **direct per-chapter lookup — no inheritance, no chapter ordering.** A chapter the block doesn't list
+allows only `["none"]`, so list every chapter you want a mode in explicitly (the engine knows nothing about how a game's
+chapters relate, so it can't "walk back" to a neighbor). A completely omitted block likewise allows only `["none"]`
+everywhere — that scene never participates in that channel.
 
 ### Rain/snow rendering
 
