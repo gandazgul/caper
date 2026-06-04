@@ -1,4 +1,5 @@
 import { store } from "../state/Store.js";
+import { resolveQuestAccessor } from "../state/Quests.js";
 
 /**
  * Declarative condition evaluator for the prop framework (see
@@ -75,6 +76,16 @@ function evaluateLeaf(key, constraint, ctx) {
             return evaluateOps(ctx.draggedId, constraint);
         }
         return ctx.draggedId === constraint;
+    }
+
+    // Virtual quest namespace: `quest.<id>.<accessor>` resolved by the Quest
+    // battery (ADR 0007). Same scalar sugar as a value key.
+    if (key.startsWith("quest.")) {
+        const actual = resolveQuestAccessor(key);
+        if (constraint !== null && typeof constraint === "object") {
+            return evaluateOps(actual, constraint);
+        }
+        return actual === constraint; // bare value = eq
     }
 
     if (store.isCollection(key)) {

@@ -21,6 +21,18 @@ export { NightLayer } from "./src/environment/NightLayer.js";
 export { exitApproaches, PropEngine } from "./src/interaction/PropEngine.js";
 export { SceneEditor } from "./src/ui/SceneEditor.js";
 export { Store, store } from "./src/state/Store.js";
+export {
+    clearQuests,
+    questProgress,
+    questRegistry,
+    quests,
+    questStatus,
+    questWhatsNext,
+    questWhatsNextNode,
+    registerQuests,
+    RESERVED_ACCESSORS,
+    resolveQuestAccessor,
+} from "./src/state/Quests.js";
 export { SubsceneStack } from "./src/scene/SubsceneStack.js";
 export { showSuccessMessage } from "./src/cutscene/SuccessMessage.js";
 export { DialogueBubble } from "./src/cutscene/DialogueBubble.js";

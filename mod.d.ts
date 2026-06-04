@@ -4107,6 +4107,131 @@ export type RunState = {
 	items: Record<string, string>;
 };
 /**
+ * Register quest definitions (merges with any already registered). Throws if a
+ * step id shadows a reserved accessor.
+ * @param {Record<string, QuestNode>} entries
+ */
+export function registerQuests(entries: Record<string, QuestNode>): Record<string, QuestNode>;
+/**
+ * Resolve a `quest.<id>.<...>.<accessor>` path against the registry. Each
+ * non-reserved segment descends into the child node with that id; a reserved
+ * segment (which must be terminal) yields the derived value. A path that ends
+ * on a node defaults to its `status`.
+ * @param {string} path
+ * @returns {string | number | null | undefined}
+ */
+export function resolveQuestAccessor(path: string): string | number | null | undefined;
+/** @param {string} id @returns {"not_started"|"seen"|"started"|"done"|undefined} */
+export function questStatus(id: string): "not_started" | "seen" | "started" | "done" | undefined;
+/** @param {string} id @returns {string | null | undefined} first outstanding unit id. */
+export function questWhatsNext(id: string): string | null | undefined;
+/** @param {string} id @returns {QuestNode | null | undefined} the outstanding leaf node (carries its optional `icon`). */
+export function questWhatsNextNode(id: string): QuestNode | null | undefined;
+/** @param {string} id @returns {{ done: number, total: number } | undefined} */
+export function questProgress(id: string): {
+	done: number;
+	total: number;
+} | undefined;
+/** Reset the registry (tests). */
+export function clearQuests(): void;
+/**
+ * Engine — declarative Quest battery (ADR 0007).
+ *
+ * A Quest is a composite tree of nodes; a Step *is* a Quest nested in a Quest.
+ * Status (`not_started`→`seen`→`started`→`done`), `whatsNext` and `progress`
+ * are DERIVED on read by evaluating each node's Condition against the Store —
+ * nothing is stored, so quest state cannot desync from the world.
+ *
+ * The Game registers a catalog at boot ({@link registerQuests}); the Engine
+ * never hardcodes a quest. State is read through the `quest.<id>.<accessor>`
+ * virtual namespace the Condition evaluator resolves (see conditions.js), so a
+ * `when` reads quest state with the same DSL — and the same names — that
+ * imperative code uses.
+ *
+ * Node shapes (one type, no taxonomy):
+ *   - leaf:       `{ id, doneWhen: Condition, icon? }`
+ *   - composite:  `{ id, steps: Node[], icon? }`
+ *   - collection: `{ id, collect: { items, in, selfCombineInto? }, icon? }`
+ *       `items` is a list of ids (or nested nodes), or a `() => list` for
+ *       runtime-rolled sets; each generated leaf is done when its id is in the
+ *       `in` collection (or already moved into `selfCombineInto`).
+ * A root may also carry `seenWhen` / `startWhen` Conditions (see {@link statusOf}).
+ *
+ * @typedef {Record<string, any>} Condition
+ * @typedef {{
+ *   id?: string,
+ *   doneWhen?: Condition,
+ *   steps?: QuestNode[],
+ *   collect?: { items: Array<string | QuestNode> | (() => Array<string | QuestNode>), in: string, selfCombineInto?: string },
+ *   seenWhen?: Condition,
+ *   startWhen?: Condition,
+ *   icon?: any,
+ *   _collect?: { in: string, selfCombineInto?: string },
+ * }} QuestNode
+ */
+/** Accessor names that may not be used as step ids (they'd shadow the namespace). */
+export const RESERVED_ACCESSORS: readonly [
+	"status",
+	"whatsNext",
+	"progress"
+];
+/**
+ * The live quest registry — a plain id → QuestNode map the Game populates at
+ * boot. Read by reference, so late registration before the first read is fine.
+ * @type {Record<string, QuestNode>}
+ */
+export const questRegistry: Record<string, QuestNode>;
+export namespace quests {
+	export { registerQuests as registerQuests };
+	export { questStatus as questStatus };
+	export { questWhatsNext as questWhatsNext };
+	export { questWhatsNextNode as questWhatsNextNode };
+	export { questProgress as questProgress };
+	export { resolveQuestAccessor as resolveQuestAccessor };
+	export { questRegistry as questRegistry };
+}
+type Condition$1 = Record<string, any>;
+/**
+ * Engine — declarative Quest battery (ADR 0007).
+ *
+ * A Quest is a composite tree of nodes; a Step *is* a Quest nested in a Quest.
+ * Status (`not_started`→`seen`→`started`→`done`), `whatsNext` and `progress`
+ * are DERIVED on read by evaluating each node's Condition against the Store —
+ * nothing is stored, so quest state cannot desync from the world.
+ *
+ * The Game registers a catalog at boot ({@link registerQuests}); the Engine
+ * never hardcodes a quest. State is read through the `quest.<id>.<accessor>`
+ * virtual namespace the Condition evaluator resolves (see conditions.js), so a
+ * `when` reads quest state with the same DSL — and the same names — that
+ * imperative code uses.
+ *
+ * Node shapes (one type, no taxonomy):
+ *   - leaf:       `{ id, doneWhen: Condition, icon? }`
+ *   - composite:  `{ id, steps: Node[], icon? }`
+ *   - collection: `{ id, collect: { items, in, selfCombineInto? }, icon? }`
+ *       `items` is a list of ids (or nested nodes), or a `() => list` for
+ *       runtime-rolled sets; each generated leaf is done when its id is in the
+ *       `in` collection (or already moved into `selfCombineInto`).
+ * A root may also carry `seenWhen` / `startWhen` Conditions (see {@link statusOf}).
+ */
+export type QuestNode = {
+	id?: string;
+	doneWhen?: Condition$1;
+	steps?: QuestNode[];
+	collect?: {
+		items: Array<string | QuestNode> | (() => Array<string | QuestNode>);
+		in: string;
+		selfCombineInto?: string;
+	};
+	seenWhen?: Condition$1;
+	startWhen?: Condition$1;
+	icon?: any;
+	_collect?: {
+		in: string;
+		selfCombineInto?: string;
+	};
+};
+/**
  * Fade the camera out, then start `targetKey`.
  *
  * If a replay sandbox is active, the call is redirected to {@link exitReplay}

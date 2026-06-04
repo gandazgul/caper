@@ -40,6 +40,9 @@ Extract and formalize domain terminology from the codebase.
 | **WeatherLayer** | Overlays procedural rain/snow (Graphics lines) and/or falling leaves (sprites) | `this.weather` on AdventureScene |
 | **NightLayer** | Evening/night lighting overlay: tint, lit windows, moon | Per-scene optional |
 | **CritterHelper** | Static utility for spawning decorative ambient critters (butterfly, bird, ground) | Uses `summer-atlas` by default |
+| **Quest** | A composite tree of Steps the game registers at boot; the engine derives `done`/`whatsNext` by evaluating each node's `doneWhen` **Condition** over the Store. No stored status, no player-facing log | Registered via `quests` registry; evaluator peer of `PropEngine` |
+| **Step** | A node in a Quest — a Quest nested in a Quest. Leaf carries a `doneWhen`; composite carries ordered `steps` (hand-authored or generated from a runtime target list). `whatsNext` = DFS to first incomplete leaf | One node type, no `flag`/`collection` taxonomy |
+| **Quest path namespace** | Virtual `quest.<id>.<accessor>` keys the Condition evaluator resolves at eval time (not stored). `<accessor>` ∈ `{ status, whatsNext, progress }` or a `<step_name>` that descends. `status` ∈ `not_started`→`seen`→`started`→`done` (derived cascade); `progress` = count of done leaves. Same namespace for `when` and imperative reads | Step names can't shadow `status`/`whatsNext`/`progress` (boot guard) |
 | **DialogueBubble** | A cloud-bubble Container with optional icons + text, auto-destroying | Supports `thought` and `speech` variants |
 | **ContentRegistry** | Engine registry mapping inventory item IDs to atlas/frame/scale specs | `content.registerItems()` / `content.getItem()` |
 | **CharacterRegistry** | Engine registry mapping character IDs to render configs (sprite, animations, outfits) | `characters.register()` / `characters.resolve()` / `characters.render()` |
