@@ -15,7 +15,7 @@ Named presets are defined in `TRANSITIONS`:
 | `"dim"`       | 500ms    | black | Quickest dark cut              |
 | `"dramatic"`  | 600ms    | black | Weightier dark exit            |
 | `"night"`     | 700ms    | black | Deeper dark                    |
-| `"cinematic"` | 800ms    | black | Season-change intros           |
+| `"cinematic"` | 800ms    | black | Chapter-change intros          |
 
 ## transitionTo
 

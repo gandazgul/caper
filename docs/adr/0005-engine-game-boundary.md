@@ -5,7 +5,7 @@ Status: **accepted** Date: 2026-06-01
 ## Decision
 
 `src/` has been structured as a reusable, game-agnostic engine with a one-way dependency rule: **the Engine never
-imports Game content (item catalogs, cast, behaviors) or Game rules (season gates, game rules); the Game depends on the
+imports Game content (item catalogs, cast, behaviors) or Game rules (chapter gates, game rules); the Game depends on the
 Engine.** The Engine is the **type authority** (`RenderableItem`, `InventoryItem`, `Critter`, `Prop`, …) and ships the
 standard "batteries" for the point-and-click genre. Where the Engine needs Game-specific knowledge it gets it by
 **inversion**: a single Game-provided **Config** (values and asset paths, never rules) plus **registries** the Game
@@ -19,8 +19,8 @@ The boundary interfaces:
 
 1. **State** — Engine owns a generic reactive **`Store`** (typed `values`/`collections`/`items` buckets, change events,
    localStorage persistence, snapshot/restore for replay) — the same role Phaser's `registry`/DataManager plays. The
-   Game owns a **`GameState`** wrapper holding all domain methods (season transitions, scene-gating logic, gameplay
-   counters). The Store never knows about a season; the Game may organize `GameState` internally as a flat facade or as
+   Game owns a **`GameState`** wrapper holding all domain methods (chapter transitions, scene-gating logic, gameplay
+   counters). The Store never knows about a chapter; the Game may organize `GameState` internally as a flat facade or as
    reducers/slices without affecting the boundary.
 2. **Content resolution** — Engine owns a **`ContentRegistry`**; the Game registers its catalogs at boot
    (`content.registerItems({ apple: ... })`, …) and the Engine resolves `content.getItem(id)` to a `RenderableItem`.

@@ -7,7 +7,7 @@
  * hardcodes no atlas names or scales; those are Game knowledge supplied at
  * registration. Item ids are globally unique, so resolution is a flat
  * id → ItemSprite lookup with ordered resolver fallbacks for catalogs that
- * compute their specs (e.g. lake/fall lookups).
+ * compute their specs (e.g. lake / chapter-specific lookups).
  *
  * @typedef {Object} ItemSprite
  * @property {string} atlas

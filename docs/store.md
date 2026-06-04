@@ -10,7 +10,7 @@ The Store knows nothing about domains or game state — only keys and values. Do
 ### Values — scalars, flags, strings, numbers
 
 ```js
-store.get("chapter"); // → "spring"
+store.get("chapter"); // → "intro"
 store.set("hasKey", true);
 store.set("playerName", "Hero");
 ```
@@ -50,7 +50,7 @@ store.configure({
     saveKey: "my-game-save", // localStorage key
     createFreshState: () => ({
         values: {
-            chapter: "spring",
+            chapter: "intro",
             timeOfDay: "day",
             activeCharacter: "hero",
             // ...your game's default flags
@@ -64,7 +64,6 @@ store.configure({
             // display_case: "empty", // optional per-item visual state
         },
     }),
-    aliases: { season: "chapter" }, // optional compatibility alias
     defaultReplayReturnScene: "MyRoom",
     notifySubject: stateFacade, // optional facade passed to change subscribers
 });

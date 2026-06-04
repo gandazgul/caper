@@ -30,7 +30,7 @@ export const TRANSITIONS = {
     dim: { duration: 500, color: 0x000000, fadeIn: true }, // quickest dark cut
     dramatic: { duration: 600, color: 0x000000, fadeIn: true }, // weightier dark exit
     night: { duration: 700, color: 0x000000, fadeIn: true }, // deeper dark
-    cinematic: { duration: 800, color: 0x000000, fadeIn: true }, // season-change intros
+    cinematic: { duration: 800, color: 0x000000, fadeIn: true }, // chapter-change intros
 };
 
 export const DEFAULT_TRANSITION = "room";

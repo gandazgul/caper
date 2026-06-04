@@ -31,7 +31,7 @@
  *   flipX?: boolean,
  *   origin?: { x?: number, y?: number },
  *   shouldRender?: () => boolean,
- *   seasons?: string[],
+ *   chapters?: string[],
  *   hideIfPickedUp?: boolean,
  * }} PropItem
  */

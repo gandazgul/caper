@@ -48,7 +48,7 @@ import Phaser from "phaser";
  * @property {number} y
  * @property {number} [depth]
  * @property {number} [scale]
- * @property {string[]} [seasons]
+ * @property {string[]} [chapters]
  */
 
 /**

@@ -13,8 +13,8 @@ const DEFAULT_SEE_RANGE = 220;
 
 /**
  * Reads the declarative cast registry (ADR 0004) and, per scene, spawns each
- * character's season-keyed ambient behavior, wires the current season's
- * reactions (pull-evaluated, scoped to this season only), and runs cutscenes
+ * character's chapter-keyed ambient behavior, wires the current chapter's
+ * reactions (pull-evaluated, scoped to this chapter only), and runs cutscenes
  * through a {@link CutsceneRunner}. One per AdventureScene.
  *
  * With an empty registry this is inert — no NPCs, no update listener, no
@@ -56,29 +56,29 @@ export class CastDirector {
         });
 
         this._onCoarseChange = () => this.rebuild();
-        scene.bus.on("seasonchange", this._onCoarseChange);
+        scene.bus.on("chapterchange", this._onCoarseChange);
         scene.bus.on("weatherchange", this._onCoarseChange);
         scene.bus.on("timechange", this._onCoarseChange);
 
         scene.events.once("shutdown", () => this.destroy());
     }
 
-    /** @returns {string} */
-    season() {
-        return store.get("season") ?? "spring";
+    /** @returns {string | undefined} */
+    chapter() {
+        return store.get("chapter");
     }
 
     /**
-     * This season's config block for a character (ambient + reactions).
+     * This chapter's config block for a character (ambient + reactions).
      * @param {string} id
-     * @returns {import("./CastRegistry.js").SeasonCast | undefined}
+     * @returns {import("./CastRegistry.js").ChapterCast | undefined}
      */
-    _seasonCfg(id) {
+    _chapterCfg(id) {
         const entry = this.registry[id];
-        return entry ? /** @type {any} */ (entry)[this.season()] : undefined;
+        return entry ? /** @type {any} */ (entry)[this.chapter()] : undefined;
     }
 
-    /** Spawn matching ambient + wire reactions for the current season. */
+    /** Spawn matching ambient + wire reactions for the current chapter. */
     build() {
         // Read declarative suppress from the scene's cast config block
         // (e.g. `cast: { <id>: { suppress: true } }` in sceneConfig).
@@ -92,9 +92,9 @@ export class CastDirector {
         this._wireReactions();
     }
 
-    /** Re-resolve everything for a new season / weather / time. */
+    /** Re-resolve everything for a new chapter / weather / time. */
     rebuild() {
-        // `viaTransition`: this is a live weather/season/time change while the
+        // `viaTransition`: this is a live weather/chapter/time change while the
         // player is in the scene, not a fresh entry. A character newly matching
         // an outdoor activity rule should walk IN from its door, not pop into
         // the yard already working.
@@ -139,7 +139,7 @@ export class CastDirector {
 
     /** @param {string} id @returns {import("./CastRegistry.js").Ambient[]} */
     _ambientRules(id) {
-        const a = this._seasonCfg(id)?.ambient;
+        const a = this._chapterCfg(id)?.ambient;
         if (!a) return [];
         return Array.isArray(a) ? a : [a];
     }
@@ -223,7 +223,7 @@ export class CastDirector {
      * NPC standing AT a waypoint so its in-place activity matches its position.
      * @param {string} id @param {NPC} npc @param {import("./CastRegistry.js").Ambient} rule
      * @param {boolean} [viaTransition] - true when re-resolving after a live
-     *   weather/season/time change (vs a fresh scene entry). Makes an outdoor
+     *   weather/chapter/time change (vs a fresh scene entry). Makes an outdoor
      *   activity NPC walk IN from its door instead of popping into the yard.
      */
     _applyRuleBehavior(id, npc, rule, viaTransition = false) {
@@ -374,7 +374,7 @@ export class CastDirector {
     _wireReactions() {
         this._clearReactions();
         for (const id of this.present.keys()) {
-            const reactions = this._seasonCfg(id)?.reactions ?? [];
+            const reactions = this._chapterCfg(id)?.reactions ?? [];
             for (const r of reactions) {
                 if (r.on === "see") {
                     this._seeWatchers.push({ id, range: DEFAULT_SEE_RANGE });
@@ -426,13 +426,13 @@ export class CastDirector {
      * @param {string} id @param {string} trigger @param {any} [ctx]
      */
     _handleInteraction(id, trigger, ctx) {
-        const reactions = this._seasonCfg(id)?.reactions ?? [];
+        const reactions = this._chapterCfg(id)?.reactions ?? [];
         for (let i = 0; i < reactions.length; i++) {
             const r = reactions[i];
             if (r.on !== trigger) continue;
             if (r.when && !evaluateCondition(r.when, ctx)) continue;
             if (r.every === false) {
-                const flag = `cast:${id}:${this.season()}:r${i}`;
+                const flag = `cast:${id}:${this.chapter()}:r${i}`;
                 if (store.get(flag)) continue;
                 store.set(flag, true);
             }
@@ -479,7 +479,7 @@ export class CastDirector {
         this.runner.shutdown();
         this._clearReactions();
         if (this.scene?.bus) {
-            this.scene.bus.off("seasonchange", this._onCoarseChange);
+            this.scene.bus.off("chapterchange", this._onCoarseChange);
             this.scene.bus.off("weatherchange", this._onCoarseChange);
             this.scene.bus.off("timechange", this._onCoarseChange);
         }

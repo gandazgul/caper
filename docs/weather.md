@@ -6,7 +6,7 @@ The engine provides two atmospheric systems: a **WeatherLayer** for precipitatio
 ## WeatherLayer
 
 The weather system treats **precipitation** (rain/snow) and **ambient effects** (falling leaves) as two independent
-channels. They can run simultaneously — rain with falling leaves in autumn, for example.
+channels. They can run simultaneously — rain with falling leaves in chapter2, for example.
 
 ### Precipitation modes
 
@@ -27,24 +27,25 @@ channels. They can run simultaneously — rain with falling leaves in autumn, fo
 
 ### Scene configuration
 
-Configure which weather and ambient modes are allowed per season:
+Configure which weather and ambient modes are allowed per chapter:
 
 ```js
 // In your scene config:
 weather: {
-    spring: ["light-rain"],
-    summer: ["light-rain", "heavy-rain"],
-    fall: ["light-rain", "heavy-rain"],
-    winter: ["snow", "heavy-snow"],
+    intro: ["light-rain"],
+    chapter1: ["light-rain", "heavy-rain"],
+    chapter2: ["light-rain", "heavy-rain"],
+    chapter3: ["snow", "heavy-snow"],
 },
 ambient: {
-    fall: ["falling-leaves"],
+    chapter2: ["falling-leaves"],
 },
 indoors: true,  // ← indoor scenes are immune to weather by convention
 ```
 
-When a season is omitted, the system walks backwards through the season order (`spring → winter → fall → summer`) to
-find the nearest explicit entry. A completely omitted block defaults to `["none"]`.
+When a chapter is omitted, the system walks backwards through the chapter order
+(`intro → chapter3 → chapter2 → chapter1`) to find the nearest explicit entry. A completely omitted block defaults to
+`["none"]`.
 
 ### Rain/snow rendering
 

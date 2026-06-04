@@ -3,7 +3,7 @@
 The engine provides two complementary systems for non-player characters:
 
 1. **`NPC`** — the primitive: a sprite + hotspot + locomotion + speech. Use it for ad-hoc, one-scene characters.
-2. **`CastDirector` + `castRegistry`** — declarative NPC management: seasonal ambient behavior, reaction wiring, and
+2. **`CastDirector` + `castRegistry`** — declarative NPC management: per-chapter ambient behavior, reaction wiring, and
    cutscene orchestration. Use it for recurring characters that appear across multiple scenes.
 
 ## NPC primitive
@@ -51,7 +51,7 @@ npc.setOrigin(x, y); // adjust sprite origin
 ## Declarative cast
 
 For recurring characters, populate the `castRegistry` at boot. The `CastDirector` (one per scene) reads the registry,
-spawns each character's seasonal ambient behavior, and wires reactions.
+spawns each character's per-chapter ambient behavior, and wires reactions.
 
 ### Cast entry structure
 
@@ -60,12 +60,12 @@ import { registerCast } from "@caper/engine";
 
 registerCast({
     shopkeeper: {
-        defaults: { // shared across seasons
+        defaults: { // shared across chapters
             scale: 0.5,
             approachOffset: { x: 80, y: 0, facing: "left" },
             boundsOffset: { x: -40, y: -200, w: 80, h: 180 },
         },
-        spring: {
+        intro: {
             ambient: {
                 behavior: "wander", // see behaviors below
                 scope: "inside", // only in indoor scenes
@@ -73,7 +73,7 @@ registerCast({
                 options: { dwellRange: [4000, 8000] },
             },
             reactions: [
-                { on: "click", say: ["Hello spring!"] },
+                { on: "click", say: ["Hello!"] },
                 {
                     on: "click",
                     when: { hasQuestItem: { eq: true } },
@@ -84,7 +84,7 @@ registerCast({
                 },
             ],
         },
-        summer: {
+        chapter1: {
             ambient: { behavior: "patrol", activity: "sweep", scope: "outside" },
             reactions: [{ on: "click", say: ["Hot out here!"] }],
         },
@@ -92,10 +92,10 @@ registerCast({
 });
 ```
 
-### Seasonal ambient rules
+### Per-chapter ambient rules
 
 The `ambient` field is either a single rule or an **ordered list** of weather/scope-conditioned rules. The director
-picks the first whose conditions match, re-picking only on `seasonchange` / `weatherchange` / `timechange` bus events.
+picks the first whose conditions match, re-picking only on `chapterchange` / `weatherchange` / `timechange` bus events.
 
 ```js
 ambient: [

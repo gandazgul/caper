@@ -28,7 +28,7 @@ Extract and formalize domain terminology from the codebase.
 | **CastDirector** | Per-scene orchestrator that spawns NPCs from the cast registry, runs ambient behaviors, wires reactions, and runs cutscenes | One per `AdventureScene` |
 | **WalkController** | Owns the active character sprite: walkable polygon, linear walking, fidget idle, direction animation | `this.walk` on AdventureScene |
 | **EngineScene** | The duck-typed interface contract engine modules rely on — the union of capabilities an AdventureScene provides | `EngineScene` typedef in `src/scene/EngineScene.js` |
-| **Event bus** | A `Phaser.Events.EventEmitter` (`this.bus`) for cross-system communication without coupling | Events: `seasonchange`, `weatherchange`, `timechange`, `ambientchange`, `hotspot:arrived`, `subscene:open`/`close` |
+| **Event bus** | A `Phaser.Events.EventEmitter` (`this.bus`) for cross-system communication without coupling | Events: `chapterchange`, `weatherchange`, `timechange`, `ambientchange`, `hotspot:arrived`, `subscene:open`/`close` |
 | **RenderableItem** | The minimal shape for a renderable inventory item: `{ id, frame?, scale?, rotation? }` | Typedef in `src/inventory/itemDef.js` |
 | **Transition** | Named fade presets (`room`, `quick`, `dim`, `dramatic`, `night`, `cinematic`, `arrival`) with configurable duration/color | Managed in `src/scene/transitions.js` |
 | **Replay sandbox** | A snapshot/restore system on the Store that isolates mini-game state changes from the main save | `store.snapshot()` / `store.restore()` |
@@ -46,7 +46,7 @@ Extract and formalize domain terminology from the codebase.
 | **DialogueBubble** | A cloud-bubble Container with optional icons + text, auto-destroying | Supports `thought` and `speech` variants |
 | **ContentRegistry** | Engine registry mapping inventory item IDs to atlas/frame/scale specs | `content.registerItems()` / `content.getItem()` |
 | **CharacterRegistry** | Engine registry mapping character IDs to render configs (sprite, animations, outfits) | `characters.register()` / `characters.resolve()` / `characters.render()` |
-| **CastRegistry** | Engine registry mapping NPC IDs to per-season ambient behaviors + reactions | `registerCast()` / `castRegistry` |
+| **CastRegistry** | Engine registry mapping NPC IDs to per-chapter ambient behaviors + reactions | `registerCast()` / `castRegistry` |
 | **EngineAssetRegistry** | Engine registry for art keys of built-in widgets (thought bubble, back button, leaves, critter, inventory atlas) | `engineAssets.configure()` / `engineAssets.get()` |
 | **Asset loading convention** | Key-based URL derivation: `bg_<name>` → `/scenes/<name>.jpg`, `sprite_<name>` → `/objects/<name>.png` (+ JSON), `object_<name>` → `/objects/<name>.png`, `character_<name>` → `/characters/<name>.png` | `deriveAsset()` in `src/assets/assetLoading.js` |
 | **Boot sequence** | 1. Game calls `createAdventureGame({ register, config })` → 2. `register()` fires to populate all registries → 3. `new Phaser.Game(config)` boots scenes | See ADR 0005 |
@@ -59,7 +59,7 @@ Extract and formalize domain terminology from the codebase.
 | `mod.js` | Package entry point — re-exports all public API symbols from every capability slice |
 | `mod.d.ts` | Bundled type declarations (auto-generated from JSDoc via `deno task dts`) |
 | `deno.json` | Deno project config: tasks, imports (Phaser 3, std/assert, std/fs), fmt/lint rules, publish config |
-| `src/scene/AdventureScene.js` | **Engine base scene** — composes all engine systems, hooks for game override (`getActiveCharacterId`, `handleSeasonTransition`, `isExitDisabled`) |
+| `src/scene/AdventureScene.js` | **Engine base scene** — composes all engine systems, hooks for game override (`getActiveCharacterId`, `handleChapterTransition`, `isExitDisabled`) |
 | `src/scene/createAdventureGame.js` | **Bootstrap factory** — runs `register()` then creates `Phaser.Game` |
 | `src/state/Store.js` | **Reactive state store** — values/collections/items buckets, persistence, change events, batching, replay sandbox |
 | `src/core/conditions.js` | **Declarative conditions DSL** — pure data query language over the Store |
@@ -85,7 +85,7 @@ Extract and formalize domain terminology from the codebase.
 | `src/movement/IdleCharacter.js` | **Idle playable character** — autonomous wanderer when another character is active |
 | `src/movement/behaviors/WanderBehavior.js` | **Come-and-go wander state machine** |
 | `src/movement/behaviors/walker.js` | **Walker/WanderHost contract** + shared utility functions |
-| `src/assets/assetLoading.js` | **Convention-based asset loading** — key → URL derivation, guarded loaders, seasonal key collection |
+| `src/assets/assetLoading.js` | **Convention-based asset loading** — key → URL derivation, guarded loaders, chapter-based key collection |
 | `src/assets/EngineAssets.js` | **Engine widget art key registry** — thought bubble, back button, leaves, critter, inventory atlas |
 | `src/ui/UIHelper.js` | **Shared UI utilities** — chunky buttons, icon drawing, depth constant |
 | `src/ui/DebugOverlay.js` | **Debug visualizer** — walkable polygon, hotspot bounds, approach arrows |
@@ -123,9 +123,9 @@ Extract and formalize domain terminology from the codebase.
 
 5. **Reactive State**: The `Store` drives reactivity. Engine widgets subscribe to changes via `store.onChange()`. `PropEngine.reconcile()` runs on every store change to update prop visibility/state/hotspots. The `evaluateCondition()` DSL queries the store declaratively.
 
-6. **Event Bus**: `this.bus` (`Phaser.Events.EventEmitter`) for cross-system communication. Major events: `seasonchange`, `weatherchange`, `timechange`, `hotspot:arrived`, `subscene:open`/`close`.
+6. **Event Bus**: `this.bus` (`Phaser.Events.EventEmitter`) for cross-system communication. Major events: `chapterchange`, `weatherchange`, `timechange`, `hotspot:arrived`, `subscene:open`/`close`.
 
-7. **Game Hooks**: `AdventureScene` provides override points for game-specific behavior: `getActiveCharacterId()`, `handleSeasonTransition()`, `isExitDisabled()`. Default implementations exist for each.
+7. **Game Hooks**: `AdventureScene` provides override points for game-specific behavior: `getActiveCharacterId()`, `handleChapterTransition()`, `isExitDisabled()`. Default implementations exist for each.
 
 ### Data Flow
 

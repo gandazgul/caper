@@ -58,7 +58,7 @@ hardcodes a game-specific value.
 | ------------------------------------ | ------------------------------------------------------------------------ |
 | Active character sprite + animations | `characters.register("hero", { spriteKey, animationSet })`               |
 | Item art for inventory               | `content.registerItems({ apple: { atlas, frame, scale } })`              |
-| NPC cast + seasonal behavior         | `registerCast({ hero: { spring: { ambient, reactions } } })`             |
+| NPC cast + per-chapter behavior      | `registerCast({ hero: { intro: { ambient, reactions } } })`              |
 | Art keys for built-in widgets        | `engineAssets.configure({ thoughtBubble, backButton, leaves, critter })` |
 | Wearable offsets per character       | `wearables.registerAll({ ... })`                                         |
 | State schema + save key              | `store.configure({ saveKey, createFreshState })`                         |

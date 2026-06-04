@@ -35,7 +35,7 @@ The goal is a framework — applicable to a future game — where the 90% case i
 
 A prop = art + an ordered list of **states**. Each state carries its own appearance, interaction, and gates. Pure
 decoration omits interactions; a pure trigger-zone (an exit over a background-painted door) omits art. State-driven
-variants generalize the existing `backgroundsBySeason` pattern.
+variants generalize the existing `backgroundsByChapter` pattern.
 
 ```
 // Visible-but-inactive: apple box renders behind the box stack,
@@ -64,7 +64,7 @@ variants generalize the existing `backgroundsBySeason` pattern.
 Three opinionated, game-agnostic buckets. Being opinionated about what can be stored is what keeps conditions a small
 serializable language.
 
-- **`values`** — `get(key)` / `set(key, val)` scalars (boolean/number/string). Well-known keys `chapter` (season) and
+- **`values`** — `get(key)` / `set(key, val)` scalars (boolean/number/string). Well-known keys `chapter` and
   `timeOfDay`; every `*Open`/`*Done`/`*Seen` flag; counters; namespaced counts (`itemCount.some_item`). Replaces the
   `markFlag`/`isFlag` method-pair explosion with `set`/`get`.
 - **`collections`** — named Sets, queried with `has`. `inventory` and `world` are engine-owned collections; a game
@@ -86,7 +86,7 @@ Conventions:
 - Bare number = `eq`; thresholds use explicit `{ gte: 3 }`.
 
 Derived completions are **not** quantified at condition time — they are **computed-and-stored** as flags via effects,
-keeping the DSL pure and serializable. Gameplay-only gates (season transitions, exit win-conditions) stay as plain code
+keeping the DSL pure and serializable. Gameplay-only gates (chapter transitions, exit win-conditions) stay as plain code
 reading the primitives.
 
 ### Effects (verbs) + lifecycle

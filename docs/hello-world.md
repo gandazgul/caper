@@ -67,7 +67,7 @@ export function registerGameContent() {
             values: {
                 playerName: "Hero",
                 hasKey: false,
-                chapter: "spring",
+                chapter: "intro",
                 activeCharacter: "hero",
             },
             collections: {
@@ -75,7 +75,6 @@ export function registerGameContent() {
             },
             items: {},
         }),
-        aliases: { season: "chapter" },
         defaultReplayReturnScene: "MyRoom",
     });
 
@@ -119,8 +118,8 @@ export class MyRoomScene extends AdventureScene {
     constructor() {
         super({
             key: "MyRoom",
-            backgroundsBySeason: {
-                spring: "bg_myroom", // loads /scenes/myroom.jpg
+            backgroundsByChapter: {
+                intro: "bg_myroom", // loads /scenes/myroom.jpg
             },
             walkable: [
                 { x: 100, y: 600 },
@@ -192,7 +191,7 @@ exit to transition to another scene.
 ## What's next?
 
 - Add more scenes and link them with exits
-- Register NPCs with seasonal ambient behaviors → [npc-and-cast.md](npc-and-cast.md)
+- Register NPCs with per-chapter ambient behaviors → [npc-and-cast.md](npc-and-cast.md)
 - Declare interactive props with state machines → [props.md](props.md)
 - Add weather, day/night cycles → [weather.md](weather.md)
 - Write cutscenes with awaitable locomotion → [cutscenes.md](cutscenes.md)

@@ -1,13 +1,13 @@
-# 0004 — Declarative NPC cast (season-keyed ambient, reactions, cutscene runner)
+# 0004 — Declarative NPC cast (chapter-keyed ambient, reactions, cutscene runner)
 
 Status: **proposed** Date: 2026-05-30
 
 ## Decision
 
 A recurring character's **global ambient behavior** becomes declarative data in a single **cast registry**, keyed by
-season — readable in one place per character. Everything beyond ambient (scripted choreography, puzzles, one-off
-appearances) stays **imperative code**, reached through engine-provided primitives. Season gating, locomotion, greeting,
-and quest hooks decompose into cast data + a small set of engine services.
+chapter — readable in one place per character. Everything beyond ambient (scripted choreography, puzzles, one-off
+appearances) stays **imperative code**, reached through engine-provided primitives. Chapter gating, locomotion,
+greeting, and quest hooks decompose into cast data + a small set of engine services.
 
 This is the NPC sibling of [ADR 0002](./0002-declarative-prop-framework.md). It deliberately **diverges** from 0002 on
 one axis: props optimize for editor-authorability (everything serializable); the cast optimizes for **strong types + JS
@@ -20,7 +20,7 @@ a global reactive evaluation loop.
 Point-and-click NPC scenes tend to share primitive behavior — `walkTo`/`speak`/`wander()`/`patrol()` — but duplicate the
 integration logic around those primitives:
 
-1. **Season/weather/time gating** is hand-written per character. Each scene controller hard-codes which season and
+1. **Chapter/weather/time gating** is hand-written per character. Each scene controller hard-codes which chapter and
    weather conditions show the character and which retreat them indoors.
 2. **One character's logic is spread across places.** Understanding a recurring character requires reading multiple
    controller files, the global NPC spawner, and per-scene `new NPC(...)` calls.
@@ -38,20 +38,20 @@ The single principle: **the engine detects only what it can know without game kn
 hardcodes a game concept.** "Steal" is not an engine trigger — it is the game declaring `steal: true` on a prop and
 emitting an event when that prop is taken; the engine merely routes the event string to reactions.
 
-| Engine provides                                                                                                            | Game (creator) provides                                                                        |
-| -------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
-| `NPC` (sprite + hotspot + locomotion + speak)                                                                              | Cast registry data (per character, per season)                                                 |
-| Behaviors: `wander` / `patrol` / `static` / `follow` + custom-factory escape                                               | The `run` fns / `say` lines (the choreography itself)                                          |
-| `CastDirector`: resolves season-keyed ambient on spawn, re-resolves on coarse bus events, suspend/resume                   | Scene-side `activityLoop(localWaypoints)`, `suppress`, appear-and-say                          |
-| Reaction system: spatial triggers it detects natively + open bus-event subscription, **scoped to the current season only** | Semantics of game events (what `steal`/`pickup` _mean_; prop `steal:true`; emitting the event) |
-| Cutscene runner: async suspend → sequence → resume, blast-radius via opts                                                  | `director.cutscene(fn)` cutscenes / puzzles + their state flags                                |
-| Conditions DSL (reused for `when`)                                                                                         | The conditions' content                                                                        |
+| Engine provides                                                                                                             | Game (creator) provides                                                                        |
+| --------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| `NPC` (sprite + hotspot + locomotion + speak)                                                                               | Cast registry data (per character, per chapter)                                                |
+| Behaviors: `wander` / `patrol` / `static` / `follow` + custom-factory escape                                                | The `run` fns / `say` lines (the choreography itself)                                          |
+| `CastDirector`: resolves chapter-keyed ambient on spawn, re-resolves on coarse bus events, suspend/resume                   | Scene-side `activityLoop(localWaypoints)`, `suppress`, appear-and-say                          |
+| Reaction system: spatial triggers it detects natively + open bus-event subscription, **scoped to the current chapter only** | Semantics of game events (what `steal`/`pickup` _mean_; prop `steal:true`; emitting the event) |
+| Cutscene runner: async suspend → sequence → resume, blast-radius via opts                                                   | `director.cutscene(fn)` cutscenes / puzzles + their state flags                                |
+| Conditions DSL (reused for `when`)                                                                                          | The conditions' content                                                                        |
 
 ## The cast registry
 
-One entry per recurring character. The **season key partitions the whole entry** — ambient, greet, and reactions all
-nest under the season — so three chapters later the engine never reconsiders a past chapter's conditions: that chapter's
-reaction list is not even in the lookup.
+One entry per recurring character. The **chapter key partitions the whole entry** — ambient, greet, and reactions all
+nest under the chapter — so three chapters later the engine never reconsiders a past chapter's conditions: that
+chapter's reaction list is not even in the lookup.
 
 ```js
 // cast.js
@@ -59,7 +59,7 @@ shopkeeper: {
   sprites:  { indoor: "shopkeeper-home-side-walk", outdoor: "shopkeeper-hat-side-walk" },
   defaults: { scale: 0.42, boundsOffset: {...}, approachOffset: {...} },
 
-  fall: {
+  chapter2: {
     ambient: [
       { when: { weatherMode: { anyOf: ["light-rain", "heavy-rain"] } },
         scope: "inside",  behavior: "wander" },
@@ -72,17 +72,17 @@ shopkeeper: {
         run: giveReward },
     ],
   },
-  summer: {
+  chapter1: {
     ambient:   { scope: "anywhere", behavior: "wander", shelterOnRain: true },
     reactions: [ { on: "both", every: true, say: ["Beautiful day!"] } ],
   },
-  spring: { ambient: { scope: "inside", behavior: "wander" }, reactions: [ ... ] },
+  intro: { ambient: { scope: "inside", behavior: "wander" }, reactions: [ ... ] },
 }
 ```
 
 ### Reactions
 
-A reaction is `{ on: <trigger>, when?: <conditions>, every?: bool, run | say }`. The season holds an **ordered list**;
+A reaction is `{ on: <trigger>, when?: <conditions>, every?: bool, run | say }`. The chapter holds an **ordered list**;
 for a given fired trigger the **first matching `when` wins** (`PropEngine` first-match semantics, reused). Greeting is
 not special — it is the reaction whose trigger is `see` / `click`.
 
@@ -91,8 +91,8 @@ not special — it is the reaction whose trigger is `see` / `click`.
 - **Triggers from the bus (open vocabulary):** any string the game emits — `enter`, a prop's `emit`, a drag-drop
   (`drop:key_item`), a quest event. The game owns their meaning.
 - **Evaluation is pull, not push.** A reaction's `when` is checked **only when its trigger fires** — never in a global
-  loop, never on every `store.onChange`. The `CastDirector` subscribes **only the current season's** reactions to their
-  triggers; on `seasonchange` it tears those down and wires the next season's. Cost = reactions in the current chapter
+  loop, never on every `store.onChange`. The `CastDirector` subscribes **only the current chapter's** reactions to their
+  triggers; on `chapterchange` it tears those down and wires the next chapter's. Cost = reactions in the current chapter
   for characters currently on screen.
 - **Frequency.** `every: false` = first encounter only, backed by an engine-derived Store flag (the sprite is rebuilt
   every room, so an instance bool won't survive). `every: true` = each encounter.
@@ -100,7 +100,7 @@ not special — it is the reaction whose trigger is `see` / `click`.
 ### Ambient
 
 `ambient` is either one rule or an **ordered list of weather/scope-conditioned rules**; the director picks the first
-whose `when` (weather/time DSL) + `scope` + `activity`-availability hold, re-picking only on a coarse `seasonchange` /
+whose `when` (weather/time DSL) + `scope` + `activity`-availability hold, re-picking only on a coarse `chapterchange` /
 `weatherchange` / `timechange` bus event (the events the scene already listens for) — never a continuous scan.
 `behavior` is one of `wander` / `patrol` / `static` / `follow`, **or** a custom factory `(npc, ctx) => Behavior`.
 
@@ -153,20 +153,21 @@ async function giveReward(d) {     // d exposes each present cast member + playe
 
 | Controller does…                   | …becomes                                                          |
 | ---------------------------------- | ----------------------------------------------------------------- |
-| Seasonal presence gate             | `<id>.<season>.ambient` (cast lookup)                             |
+| Chapter-based presence gate        | `<id>.<chapter>.ambient` (cast lookup)                            |
 | Scene-specific activity loop       | scene `director.get(id).activityLoop(waypoints)`                  |
 | Rain/night retreat                 | `shelterOnRain` + `doorPoint`                                     |
 | Click → greeting                   | reaction `{ on: "see"/"click", say: [...] }`                      |
 | Click → quest item                 | reaction `{ on: "click", when, run }`                             |
 | Companion follow-behind            | `{ behavior: "follow" }`, scene/quest-invoked                     |
 | Give item on drop                  | reaction `{ on: "drop:<item>", run }` (inventory emits the event) |
-| Global NPC wander matrix           | `<id>.<season>.ambient` entries                                   |
+| Global NPC wander matrix           | `<id>.<chapter>.ambient` entries                                  |
 | Non-playable character idle wander | `WanderBehavior` over its `WalkController`                        |
 
 ## Consequences
 
 - One declarative place per character for global ambient; per-scene reactions read in the scene (accepted).
-- No global reactive NPC loop — interaction-time pull + season-scoped subscriptions keep cost bounded as the game grows.
+- No global reactive NPC loop — interaction-time pull + chapter-scoped subscriptions keep cost bounded as the game
+  grows.
 - New surface to build: `CastDirector`, the reaction subscription/scoping layer, awaitable locomotion + the cutscene
   runner's cancellation contract, and the `follow` behavior. The conditions DSL and first-match evaluation are reused
   from `PropEngine`, not reinvented.

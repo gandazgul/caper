@@ -17,7 +17,7 @@ Every registry follows the Phaser-idiomatic pattern: **populate at boot, query b
 | -------------- | ---------------------- | -------------------------------------------------------- | ----------------------------------------- |
 | `characters`   | `CharacterRegistry.js` | Character render configs (sprite key, animations, scale) | `characters.register("hero", {...})`      |
 | `content`      | `ContentRegistry.js`   | Inventory item sprite specs (atlas + frame + scale)      | `content.registerItems({ apple: {...} })` |
-| `castRegistry` | `CastRegistry.js`      | NPC cast: per-season ambient + reactions                 | `registerCast({ npcId: {...} })`          |
+| `castRegistry` | `CastRegistry.js`      | NPC cast: per-chapter ambient + reactions                | `registerCast({ npcId: {...} })`          |
 | `engineAssets` | `EngineAssets.js`      | Art keys for built-in engine widgets                     | `engineAssets.configure({...})`           |
 | `wearables`    | `Wearables.js`         | Wearable item definitions (backpack, held items)         | `wearables.registerAll({...})`            |
 | `store`        | `Store.js`             | Injects state schema, save key, default values           | `store.configure({...})`                  |
@@ -32,7 +32,7 @@ Every registry follows the Phaser-idiomatic pattern: **populate at boot, query b
    ├── store.configure(...)              # save key, fresh state factory
    ├── characters.register("hero", ...)  # player + NPC render configs
    ├── content.registerItems({...})      # inventory item art
-   ├── registerCast({...})               # NPC seasonal ambient + reactions
+   ├── registerCast({...})               # NPC per-chapter ambient + reactions
    ├── wearables.registerAll({...})      # wearable offsets and art
    └── (any other game-specific setup)
 
@@ -87,9 +87,9 @@ class MyGameScene extends AdventureScene {
         return store.getActiveCharacter() ?? characters.defaultPlayer ?? "";
     }
 
-    /** React to a season change */
-    handleSeasonTransition(oldSeason, newSeason) {
-        this.changeBackground(`bg_room_${newSeason}`);
+    /** React to a chapter change */
+    handleChapterTransition(oldChapter, newChapter) {
+        this.changeBackground(`bg_room_${newChapter}`);
     }
 
     /** Prevent exiting a scene */
@@ -105,7 +105,7 @@ class MyGameScene extends AdventureScene {
 
 | Event                              | Emitted by     | Payload          | Consumed by                                |
 | ---------------------------------- | -------------- | ---------------- | ------------------------------------------ |
-| `seasonchange`                     | AdventureScene | season string    | CastDirector (rebuilds NPCs), WeatherLayer |
+| `chapterchange`                    | AdventureScene | chapter string   | CastDirector (rebuilds NPCs), WeatherLayer |
 | `weatherchange`                    | AdventureScene | weather string   | CastDirector, CritterHelper                |
 | `timechange`                       | AdventureScene | "day" or "night" | CastDirector, NightLayer                   |
 | `ambientchange`                    | AdventureScene | ambient string   | —                                          |

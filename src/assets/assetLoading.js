@@ -20,15 +20,15 @@
  * they are never auto-derived.
  *
  * Each scene declares the keys it needs:
- *   - `backgroundsBySeason` (already in the config) → the per-season background
+ *   - `backgroundsByChapter` (already in the config) → the per-chapter background
  *   - `assets` (an array of convention keys) → its other backgrounds, props,
- *     and season atlases
- * Scanning those at boot tells each seasonal loading screen exactly what that
- * season requires (see collectSeasonAssetKeys), so we never load summer's or
- * fall's heavy atlases for a player who's still in spring.
+ *     and chapter atlases
+ * Scanning those at boot tells each chapter loading screen exactly what that
+ * chapter requires (see collectChapterAssetKeys), so we never load a later
+ * chapter's heavy atlases for a player who's still in an earlier one.
  *
  * Every loader guards on the texture / JSON cache, so the same key requested
- * from BootScene, a season intro, and the scene itself only downloads once.
+ * from BootScene, a chapter intro, and the scene itself only downloads once.
  */
 
 /**
@@ -225,21 +225,21 @@ export function registerAssetKeys(scene, keys) {
 
 /**
  * Walk every registered scene's config and collect the asset keys that the
- * given season needs: each scene that has a background for `season` contributes
+ * given chapter needs: each scene that has a background for `chapter` contributes
  * that background plus its declared `assets`. Minigame scenes (plain
  * Phaser.Scene, no sceneConfig) aren't included — they load their own assets in
  * their preload, since they're entered deliberately.
  *
  * @param {Phaser.Scenes.SceneManager} manager
- * @param {string} season
+ * @param {string} chapter
  * @returns {Set<string>}
  */
-export function collectSeasonAssetKeys(manager, season) {
+export function collectChapterAssetKeys(manager, chapter) {
     /** @type {Set<string>} */
     const keys = new Set();
     for (const scene of manager.scenes) {
         const cfg = /** @type {any} */ (scene).sceneConfig;
-        const bg = cfg?.backgroundsBySeason?.[season];
+        const bg = cfg?.backgroundsByChapter?.[chapter];
         if (!bg) continue;
         keys.add(bg);
         for (const a of cfg.assets ?? []) keys.add(a);
@@ -248,20 +248,20 @@ export function collectSeasonAssetKeys(manager, season) {
 }
 
 /**
- * The asset keys a seasonal loading screen should preload. Spring is the
- * baseline that's reachable in every season (the always-accessible interiors and
- * exteriors), so summer and fall layer their extras on top of it —
- * which also covers a reload that resumes straight into summer or fall without
- * having replayed the spring loader.
+ * The union of asset keys to preload for one or more chapters. Pass every
+ * chapter whose backgrounds should be loaded for a given screen — the engine
+ * has no notion of a "baseline" chapter, so if a game wants a common chapter's
+ * art always available it includes that chapter id in the list itself.
  *
  * @param {Phaser.Scenes.SceneManager} manager
- * @param {"spring" | "summer" | "fall" | "winter"} season
+ * @param {string[]} chapters
  * @returns {Set<string>}
  */
-export function seasonLoadSet(manager, season) {
-    const keys = collectSeasonAssetKeys(manager, "spring");
-    if (season !== "spring") {
-        for (const k of collectSeasonAssetKeys(manager, season)) keys.add(k);
+export function chapterLoadSet(manager, chapters) {
+    /** @type {Set<string>} */
+    const keys = new Set();
+    for (const chapter of chapters) {
+        for (const k of collectChapterAssetKeys(manager, chapter)) keys.add(k);
     }
     return keys;
 }

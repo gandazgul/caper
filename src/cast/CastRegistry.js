@@ -8,7 +8,7 @@
  *
  * @typedef {object} Ambient
  * @property {"wander" | "patrol" | "static" | "follow" | "none"} behavior -
- *   the global routine this character runs while present this season. `none`
+ *   the global routine this character runs while present this chapter. `none`
  *   = don't spawn globally (a scene spawns/positions them itself).
  * @property {"inside" | "outside" | "anywhere"} [scope] - which scenes this
  *   ambient applies to (indoor/outdoor/either). Default "anywhere".
@@ -37,7 +37,7 @@
  * @property {boolean} [lockPlayer] - lock the player walk while `run` plays.
  * @property {string[]} [cast] - which cast to suspend for `run` (default: this one).
  *
- * @typedef {object} SeasonCast
+ * @typedef {object} ChapterCast
  * @property {Ambient | Ambient[]} [ambient] - one rule, or an ordered list of
  *   weather/scope-conditioned rules (first match wins, re-picked on weatherchange).
  * @property {Reaction[]} [reactions]
@@ -52,12 +52,11 @@
  * @property {boolean} [suppress] - opt this character out of the scene.
  * @property {Record<string, SceneActivity>} [activities] - activity geometry by name.
  *
- * @typedef {object} CastEntry
- * @property {Record<string, any>} [defaults] - scale / boundsOffset / approachOffset.
- * @property {SeasonCast} [spring]
- * @property {SeasonCast} [summer]
- * @property {SeasonCast} [fall]
- * @property {SeasonCast} [winter]
+ * A cast entry: an optional `defaults` render-config block (scale / boundsOffset
+ * / approachOffset) plus one optional {@link ChapterCast} block per chapter id,
+ * keyed by the game's own chapter values and read dynamically by the
+ * CastDirector. The engine enumerates no chapters of its own.
+ * @typedef {Record<string, any>} CastEntry
  */
 
 /**

@@ -14,7 +14,7 @@
  * The Store is schema-agnostic. A Game supplies its schema via `configure()`:
  * a `createFreshState()` factory (game defaults + additional collections), the
  * `saveKey`, optional key `aliases`, and the `notifySubject` handed to change
- * subscribers. Domain rules (season gates, item availability, …) live in the Game's
+ * subscribers. Domain rules (chapter gates, item availability, …) live in the Game's
  * GameState wrapper, never here.
  *
  * The exported `store` is the engine-owned singleton: engine modules import it

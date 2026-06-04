@@ -52,14 +52,14 @@ export { WalkController } from "./src/movement/WalkController.js";
 export { WearableRegistry, wearables } from "./src/characters/Wearables.js";
 export { WeatherLayer } from "./src/environment/WeatherLayer.js";
 export {
-    collectSeasonAssetKeys,
+    chapterLoadSet,
+    collectChapterAssetKeys,
     loadAssetKeys,
     loadAssetKeysAsync,
     loadImageOnce,
     loadSpritesheetOnce,
     registerAssetKeys,
     registerTrimmedAtlas,
-    seasonLoadSet,
 } from "./src/assets/assetLoading.js";
 export { evaluateCondition } from "./src/core/conditions.js";
 export { createAdventureGame } from "./src/scene/createAdventureGame.js";

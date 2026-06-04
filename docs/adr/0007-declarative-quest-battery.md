@@ -58,8 +58,8 @@ it is needed. In the reference game, the two kitchen-doorway hotspots each inlin
 `isBreakfastInProgress` predicate in raw DSL keys; the "what is the next thing to do" question was answered by ~6
 bespoke cascades (`getMissingToys`, `getPancakeIngredientsMissing`, `getOutOfBoundsBlockers`,
 `getNextBackpackQuestStepIcon`, `getBreakfastReminderIcons`, `getEndGameBlocker`); and a pile of intro-seen flags
-(`summerIntroSeen`, `mamaBackpackIntroSeen`, …) tracked lifecycle by hand. Changing one rule meant editing every copy in
-lockstep; missing one shipped a regression.
+(`chapter1IntroSeen`, `mamaBackpackIntroSeen`, …) tracked lifecycle by hand. Changing one rule meant editing every copy
+in lockstep; missing one shipped a regression.
 
 A survey of how the genre handles this confirmed the failure mode rather than offering an escape:
 

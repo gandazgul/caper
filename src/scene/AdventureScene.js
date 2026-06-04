@@ -26,16 +26,16 @@ import { clearLastTransitionFrom, lastTransitionFrom } from "./transitions.js";
 /**
  * @typedef {object} AdventureSceneConfig
  * @property {string} key
- * @property {string} [season] - the chapter/season this scene belongs to.
- * @property {Record<string, string>} backgroundsBySeason
+ * @property {string} [chapter] - the chapter/chapter this scene belongs to.
+ * @property {Record<string, string>} backgroundsByChapter
  * @property {{ x: number, y: number }[]} walkable
  * @property {SpawnPose} [activeCharacter] - spawn pose (+ optional sprite fields some helpers read).
  * @property {Record<string, number>} [animationScales]
  * @property {Record<string, { x?: number, y?: number }>} [animationOrigins]
  * @property {Record<string, number>} [characterScales] - per-scene scale overrides by character id/name.
  * @property {import("../core/perspective.js").PerspectiveConfig} [perspective]
- * @property {Record<string, string[]>} [weather] - per-season allowed precipitation modes.
- * @property {Record<string, string[]>} [ambient] - per-season allowed ambient effects.
+ * @property {Record<string, string[]>} [weather] - per-chapter allowed precipitation modes.
+ * @property {Record<string, string[]>} [ambient] - per-chapter allowed ambient effects.
  * @property {string} [inventoryAtlas]
  * @property {boolean} [inventoryHidden]
  * @property {boolean} [indoors]
@@ -59,7 +59,7 @@ import { clearLastTransitionFrom, lastTransitionFrom } from "./transitions.js";
  *     to the Store's `activeCharacter`, else the first playable).
  *   - `inventoryLayout` / `debugInitialVisible` — Config values (the engine has
  *     defaults so it runs with neither).
- *   - `handleSeasonTransition()` / `isExitDisabled()` — game reactions.
+ *   - `handleChapterTransition()` / `isExitDisabled()` — game reactions.
  */
 export class AdventureScene extends Phaser.Scene {
     /** @type {AdventureSceneConfig} */
@@ -95,7 +95,7 @@ export class AdventureScene extends Phaser.Scene {
     /** @type {Phaser.GameObjects.Image} */
     background;
     /** @type {string} */
-    currentSeason;
+    currentChapter;
     /** @type {string} */
     currentWeather;
     /** @type {import("../environment/WeatherLayer.js").AmbientMode} */
@@ -127,7 +127,7 @@ export class AdventureScene extends Phaser.Scene {
 
     collectAssetKeys() {
         const cfg = this.sceneConfig;
-        return [...Object.values(cfg.backgroundsBySeason ?? {}), ...(cfg.assets ?? [])];
+        return [...Object.values(cfg.backgroundsByChapter ?? {}), ...(cfg.assets ?? [])];
     }
 
     preload() {
@@ -171,10 +171,9 @@ export class AdventureScene extends Phaser.Scene {
 
         registerAssetKeys(this, this.collectAssetKeys());
 
-        const chapter = store.get("chapter") ?? "spring";
+        const chapter = store.get("chapter");
 
-        const bgKey = cfg.backgroundsBySeason[chapter] ?? cfg.backgroundsBySeason["spring"] ??
-            Object.values(cfg.backgroundsBySeason)[0];
+        const bgKey = cfg.backgroundsByChapter[chapter] ?? Object.values(cfg.backgroundsByChapter)[0];
         this.background = this.add.image(0, 0, bgKey).setOrigin(0, 0).setData("debugSkip", true);
 
         this.hotspots = new HotspotManager(this, []);
@@ -237,22 +236,22 @@ export class AdventureScene extends Phaser.Scene {
 
         store.setCurrentScene(cfg.key);
 
-        this.currentSeason = chapter;
+        this.currentChapter = chapter;
         this.currentWeather = initialWeather;
         /** @type {import("../environment/WeatherLayer.js").AmbientMode} */
         this.currentAmbient = initialAmbient;
         this.currentTimeOfDay = store.getTimeOfDay();
         const unsubscribe = store.onChange(() => {
-            const newSeason = store.get("chapter") ?? "spring";
-            if (this.currentSeason !== newSeason) {
-                const oldSeason = this.currentSeason;
-                this.currentSeason = newSeason;
-                this.handleSeasonTransition(oldSeason, newSeason);
-                this.bus.emit("seasonchange", newSeason);
+            const newChapter = store.get("chapter");
+            if (this.currentChapter !== newChapter) {
+                const oldChapter = this.currentChapter;
+                this.currentChapter = newChapter;
+                this.handleChapterTransition(oldChapter, newChapter);
+                this.bus.emit("chapterchange", newChapter);
             }
             if (hasWeatherConfig) {
                 const ng = store.get("weatherMode") ?? "none";
-                const nw = resolveAllowedModes(cfg.weather, this.currentSeason).includes(ng) ? ng : "none";
+                const nw = resolveAllowedModes(cfg.weather, this.currentChapter).includes(ng) ? ng : "none";
                 if (this.currentWeather !== nw) {
                     this.currentWeather = nw;
                     this.weather?.setWeatherMode(
@@ -262,13 +261,14 @@ export class AdventureScene extends Phaser.Scene {
                 }
             }
             if (hasAmbientConfig) {
-                const fb = this.currentSeason === "fall" ? "falling-leaves" : "none";
-                const na = resolveAllowedModes(cfg.ambient, this.currentSeason).includes(fb) ? fb : "none";
+                // Default ambient = the first non-"none" mode the scene allows
+                // for this chapter (no chapter-specific knowledge in the engine).
+                const na = /** @type {import("../environment/WeatherLayer.js").AmbientMode} */ (
+                    resolveAllowedModes(cfg.ambient, this.currentChapter).find((m) => m !== "none") ?? "none"
+                );
                 if (this.currentAmbient !== na) {
                     this.currentAmbient = na;
-                    this.weather?.setAmbientMode(
-                        /** @type {import("../environment/WeatherLayer.js").AmbientMode} */ (na),
-                    );
+                    this.weather?.setAmbientMode(na);
                     this.bus.emit("ambientchange", na);
                 }
             }
@@ -300,9 +300,9 @@ export class AdventureScene extends Phaser.Scene {
 
     /**
      * Game hook: react to a chapter transition. No-op in the engine.
-     * @param {string} _oldSeason @param {string} _newSeason
+     * @param {string} _oldChapter @param {string} _newChapter
      */
-    handleSeasonTransition(_oldSeason, _newSeason) {}
+    handleChapterTransition(_oldChapter, _newChapter) {}
 
     /**
      * Game hook: whether an exit is currently blocked. @param {import("../interaction/HotspotManager.js").HotspotConfig} _hotspot
@@ -346,18 +346,12 @@ function findReturnApproach(cfg, previousSceneKey) {
 }
 
 /**
- * Resolve the allowed modes for a chapter, walking backwards through the
- * season order (with wraparound) when the chapter isn't listed.
- * @param {Record<string, string[]> | undefined} configBlock @param {string} season @returns {string[]}
+ * The weather/ambient modes a scene allows for a chapter — a direct lookup with
+ * no inheritance. The engine knows nothing about chapters or their order; a
+ * chapter the scene doesn't list simply allows only "none". Whatever modes a
+ * game declares for a chapter are allowed as-is; the engine validates nothing.
+ * @param {Record<string, string[]> | undefined} configBlock @param {string} chapter @returns {string[]}
  */
-function resolveAllowedModes(configBlock, season) {
-    if (!configBlock) return ["none"];
-    const order = ["spring", "summer", "fall", "winter"];
-    const idx = order.indexOf(season);
-    if (idx < 0) return configBlock[season] ?? ["none"];
-    for (let i = 0; i < order.length; i++) {
-        const s = order[(idx - i + order.length) % order.length];
-        if (configBlock[s]) return configBlock[s];
-    }
-    return ["none"];
+function resolveAllowedModes(configBlock, chapter) {
+    return configBlock?.[chapter] ?? ["none"];
 }

@@ -2466,7 +2466,7 @@ export function registerCast(entries: Record<string, CastEntry>): Record<string,
  *
  * @typedef {object} Ambient
  * @property {"wander" | "patrol" | "static" | "follow" | "none"} behavior -
- *   the global routine this character runs while present this season. `none`
+ *   the global routine this character runs while present this chapter. `none`
  *   = don't spawn globally (a scene spawns/positions them itself).
  * @property {"inside" | "outside" | "anywhere"} [scope] - which scenes this
  *   ambient applies to (indoor/outdoor/either). Default "anywhere".
@@ -2495,7 +2495,7 @@ export function registerCast(entries: Record<string, CastEntry>): Record<string,
  * @property {boolean} [lockPlayer] - lock the player walk while `run` plays.
  * @property {string[]} [cast] - which cast to suspend for `run` (default: this one).
  *
- * @typedef {object} SeasonCast
+ * @typedef {object} ChapterCast
  * @property {Ambient | Ambient[]} [ambient] - one rule, or an ordered list of
  *   weather/scope-conditioned rules (first match wins, re-picked on weatherchange).
  * @property {Reaction[]} [reactions]
@@ -2510,12 +2510,11 @@ export function registerCast(entries: Record<string, CastEntry>): Record<string,
  * @property {boolean} [suppress] - opt this character out of the scene.
  * @property {Record<string, SceneActivity>} [activities] - activity geometry by name.
  *
- * @typedef {object} CastEntry
- * @property {Record<string, any>} [defaults] - scale / boundsOffset / approachOffset.
- * @property {SeasonCast} [spring]
- * @property {SeasonCast} [summer]
- * @property {SeasonCast} [fall]
- * @property {SeasonCast} [winter]
+ * A cast entry: an optional `defaults` render-config block (scale / boundsOffset
+ * / approachOffset) plus one optional {@link ChapterCast} block per chapter id,
+ * keyed by the game's own chapter values and read dynamically by the
+ * CastDirector. The engine enumerates no chapters of its own.
+ * @typedef {Record<string, any>} CastEntry
  */
 /**
  * The live cast registry — a plain id → CastEntry map the Game populates at
@@ -2535,7 +2534,7 @@ export const castRegistry: Record<string, CastEntry>;
 export type Ambient = {
 	/**
 	 * -
-	 * the global routine this character runs while present this season. `none`
+	 * the global routine this character runs while present this chapter. `none`
 	 * = don't spawn globally (a scene spawns/positions them itself).
 	 */
 	behavior: "wander" | "patrol" | "static" | "follow" | "none";
@@ -2623,7 +2622,7 @@ export type Reaction = {
  * registers its actual cast at boot via {@link registerCast}. With an empty
  * registry the CastDirector is inert.
  */
-export type SeasonCast = {
+export type ChapterCast = {
 	/**
 	 * - one rule, or an ordered list of
 	 * weather/scope-conditioned rules (first match wins, re-picked on weatherchange).
@@ -2666,6 +2665,11 @@ export type SceneCastOverride = {
 	suppress?: boolean;
 	/**
 	 * - activity geometry by name.
+	 *
+	 * A cast entry: an optional `defaults` render-config block (scale / boundsOffset
+	 * / approachOffset) plus one optional {@link ChapterCast} block per chapter id,
+	 * keyed by the game's own chapter values and read dynamically by the
+	 * CastDirector. The engine enumerates no chapters of its own.
 	 */
 	activities?: Record<string, SceneActivity>;
 };
@@ -2677,20 +2681,11 @@ export type SceneCastOverride = {
  * registers its actual cast at boot via {@link registerCast}. With an empty
  * registry the CastDirector is inert.
  */
-export type CastEntry = {
-	/**
-	 * - scale / boundsOffset / approachOffset.
-	 */
-	defaults?: Record<string, any>;
-	spring?: SeasonCast;
-	summer?: SeasonCast;
-	fall?: SeasonCast;
-	winter?: SeasonCast;
-};
+export type CastEntry = Record<string, any>;
 /**
  * Reads the declarative cast registry (ADR 0004) and, per scene, spawns each
- * character's season-keyed ambient behavior, wires the current season's
- * reactions (pull-evaluated, scoped to this season only), and runs cutscenes
+ * character's chapter-keyed ambient behavior, wires the current chapter's
+ * reactions (pull-evaluated, scoped to this chapter only), and runs cutscenes
  * through a {@link CutsceneRunner}. One per AdventureScene.
  *
  * With an empty registry this is inert — no NPCs, no update listener, no
@@ -2729,17 +2724,17 @@ export class CastDirector {
 	_seeUpdate: (() => void) | null;
 	runner: CutsceneRunner;
 	_onCoarseChange: () => void;
-	/** @returns {string} */
-	season(): string;
+	/** @returns {string | undefined} */
+	chapter(): string | undefined;
 	/**
-	 * This season's config block for a character (ambient + reactions).
+	 * This chapter's config block for a character (ambient + reactions).
 	 * @param {string} id
-	 * @returns {import("./CastRegistry.js").SeasonCast | undefined}
+	 * @returns {import("./CastRegistry.js").ChapterCast | undefined}
 	 */
-	_seasonCfg(id: string): SeasonCast | undefined;
-	/** Spawn matching ambient + wire reactions for the current season. */
+	_chapterCfg(id: string): ChapterCast | undefined;
+	/** Spawn matching ambient + wire reactions for the current chapter. */
 	build(): void;
-	/** Re-resolve everything for a new season / weather / time. */
+	/** Re-resolve everything for a new chapter / weather / time. */
 	rebuild(): void;
 	/** @param {string} id @param {boolean} viaTransition */
 	_resolve(id: string, viaTransition: boolean): void;
@@ -2770,7 +2765,7 @@ export class CastDirector {
 	 * NPC standing AT a waypoint so its in-place activity matches its position.
 	 * @param {string} id @param {NPC} npc @param {import("./CastRegistry.js").Ambient} rule
 	 * @param {boolean} [viaTransition] - true when re-resolving after a live
-	 *   weather/season/time change (vs a fresh scene entry). Makes an outdoor
+	 *   weather/chapter/time change (vs a fresh scene entry). Makes an outdoor
 	 *   activity NPC walk IN from its door instead of popping into the yard.
 	 */
 	_applyRuleBehavior(id: string, npc: NPC, rule: Ambient, viaTransition?: boolean): void;
@@ -2841,16 +2836,16 @@ export class CastDirector {
 /**
  * @typedef {object} AdventureSceneConfig
  * @property {string} key
- * @property {string} [season] - the chapter/season this scene belongs to.
- * @property {Record<string, string>} backgroundsBySeason
+ * @property {string} [chapter] - the chapter/chapter this scene belongs to.
+ * @property {Record<string, string>} backgroundsByChapter
  * @property {{ x: number, y: number }[]} walkable
  * @property {SpawnPose} [activeCharacter] - spawn pose (+ optional sprite fields some helpers read).
  * @property {Record<string, number>} [animationScales]
  * @property {Record<string, { x?: number, y?: number }>} [animationOrigins]
  * @property {Record<string, number>} [characterScales] - per-scene scale overrides by character id/name.
  * @property {import("../core/perspective.js").PerspectiveConfig} [perspective]
- * @property {Record<string, string[]>} [weather] - per-season allowed precipitation modes.
- * @property {Record<string, string[]>} [ambient] - per-season allowed ambient effects.
+ * @property {Record<string, string[]>} [weather] - per-chapter allowed precipitation modes.
+ * @property {Record<string, string[]>} [ambient] - per-chapter allowed ambient effects.
  * @property {string} [inventoryAtlas]
  * @property {boolean} [inventoryHidden]
  * @property {boolean} [indoors]
@@ -2873,7 +2868,7 @@ export class CastDirector {
  *     to the Store's `activeCharacter`, else the first playable).
  *   - `inventoryLayout` / `debugInitialVisible` — Config values (the engine has
  *     defaults so it runs with neither).
- *   - `handleSeasonTransition()` / `isExitDisabled()` — game reactions.
+ *   - `handleChapterTransition()` / `isExitDisabled()` — game reactions.
  */
 export class AdventureScene extends Phaser.Scene {
 	/** @param {AdventureSceneConfig} config */
@@ -2911,7 +2906,7 @@ export class AdventureScene extends Phaser.Scene {
 	/** @type {Phaser.GameObjects.Image} */
 	background: Phaser.GameObjects.Image;
 	/** @type {string} */
-	currentSeason: string;
+	currentChapter: string;
 	/** @type {string} */
 	currentWeather: string;
 	/** @type {import("../environment/WeatherLayer.js").AmbientMode} */
@@ -2952,9 +2947,9 @@ export class AdventureScene extends Phaser.Scene {
 	hasCharacter(id: string): boolean;
 	/**
 	 * Game hook: react to a chapter transition. No-op in the engine.
-	 * @param {string} _oldSeason @param {string} _newSeason
+	 * @param {string} _oldChapter @param {string} _newChapter
 	 */
-	handleSeasonTransition(_oldSeason: string, _newSeason: string): void;
+	handleChapterTransition(_oldChapter: string, _newChapter: string): void;
 	/**
 	 * Game hook: whether an exit is currently blocked. @param {import("../interaction/HotspotManager.js").HotspotConfig} _hotspot
 	 * @returns {boolean}
@@ -2977,10 +2972,10 @@ export type SpawnPose = {
 export type AdventureSceneConfig = {
 	key: string;
 	/**
-	 * - the chapter/season this scene belongs to.
+	 * - the chapter/chapter this scene belongs to.
 	 */
-	season?: string;
-	backgroundsBySeason: Record<string, string>;
+	chapter?: string;
+	backgroundsByChapter: Record<string, string>;
 	walkable: {
 		x: number;
 		y: number;
@@ -3000,11 +2995,11 @@ export type AdventureSceneConfig = {
 	characterScales?: Record<string, number>;
 	perspective?: PerspectiveConfig;
 	/**
-	 * - per-season allowed precipitation modes.
+	 * - per-chapter allowed precipitation modes.
 	 */
 	weather?: Record<string, string[]>;
 	/**
-	 * - per-season allowed ambient effects.
+	 * - per-chapter allowed ambient effects.
 	 */
 	ambient?: Record<string, string[]>;
 	inventoryAtlas?: string;
@@ -3089,7 +3084,7 @@ export type Critter = {
 	 */
 	frame?: string;
 	/**
-	 * - Override the source atlas key (defaults to "sprite_summer").
+	 * - Override the source atlas key (defaults to the engineAssets `critter` atlas).
 	 * Use e.g. "sprite_forest" to spawn a ladybug / bee / ant_trail as a critter.
 	 */
 	atlas?: string;
@@ -3765,7 +3760,7 @@ export type RenderableItem = {
  *   flipX?: boolean,
  *   origin?: { x?: number, y?: number },
  *   shouldRender?: () => boolean,
- *   seasons?: string[],
+ *   chapters?: string[],
  *   hideIfPickedUp?: boolean,
  * }} PropItem
  */
@@ -3780,7 +3775,7 @@ export const RenderableItem: RenderableItem;
  * hardcodes no atlas names or scales; those are Game knowledge supplied at
  * registration. Item ids are globally unique, so resolution is a flat
  * id → ItemSprite lookup with ordered resolver fallbacks for catalogs that
- * compute their specs (e.g. lake/fall lookups).
+ * compute their specs (e.g. lake / chapter-specific lookups).
  *
  * @typedef {Object} ItemSprite
  * @property {string} atlas
@@ -3820,7 +3815,7 @@ export const content: ContentRegistry;
  * hardcodes no atlas names or scales; those are Game knowledge supplied at
  * registration. Item ids are globally unique, so resolution is a flat
  * id → ItemSprite lookup with ordered resolver fallbacks for catalogs that
- * compute their specs (e.g. lake/fall lookups).
+ * compute their specs (e.g. lake / chapter-specific lookups).
  */
 export type ItemSprite = {
 	atlas: string;
@@ -4094,7 +4089,7 @@ export const store: Store;
  * The Store is schema-agnostic. A Game supplies its schema via `configure()`:
  * a `createFreshState()` factory (game defaults + additional collections), the
  * `saveKey`, optional key `aliases`, and the `notifySubject` handed to change
- * subscribers. Domain rules (season gates, item availability, …) live in the Game's
+ * subscribers. Domain rules (chapter gates, item availability, …) live in the Game's
  * GameState wrapper, never here.
  *
  * The exported `store` is the engine-owned singleton: engine modules import it
@@ -4434,15 +4429,15 @@ export const BACK_BUTTON_POSITION: Readonly<{
  * they are never auto-derived.
  *
  * Each scene declares the keys it needs:
- *   - `backgroundsBySeason` (already in the config) → the per-season background
+ *   - `backgroundsByChapter` (already in the config) → the per-chapter background
  *   - `assets` (an array of convention keys) → its other backgrounds, props,
- *     and season atlases
- * Scanning those at boot tells each seasonal loading screen exactly what that
- * season requires (see collectSeasonAssetKeys), so we never load summer's or
- * fall's heavy atlases for a player who's still in spring.
+ *     and chapter atlases
+ * Scanning those at boot tells each chapter loading screen exactly what that
+ * chapter requires (see collectChapterAssetKeys), so we never load a later
+ * chapter's heavy atlases for a player who's still in an earlier one.
  *
  * Every loader guards on the texture / JSON cache, so the same key requested
- * from BootScene, a season intro, and the scene itself only downloads once.
+ * from BootScene, a chapter intro, and the scene itself only downloads once.
  */
 /**
  * @param {Phaser.Scene} scene
@@ -4491,28 +4486,27 @@ export function registerTrimmedAtlas(key: string): void;
 export function registerAssetKeys(scene: Phaser.Scene, keys: Iterable<string>): void;
 /**
  * Walk every registered scene's config and collect the asset keys that the
- * given season needs: each scene that has a background for `season` contributes
+ * given chapter needs: each scene that has a background for `chapter` contributes
  * that background plus its declared `assets`. Minigame scenes (plain
  * Phaser.Scene, no sceneConfig) aren't included — they load their own assets in
  * their preload, since they're entered deliberately.
  *
  * @param {Phaser.Scenes.SceneManager} manager
- * @param {string} season
+ * @param {string} chapter
  * @returns {Set<string>}
  */
-export function collectSeasonAssetKeys(manager: Phaser.Scenes.SceneManager, season: string): Set<string>;
+export function collectChapterAssetKeys(manager: Phaser.Scenes.SceneManager, chapter: string): Set<string>;
 /**
- * The asset keys a seasonal loading screen should preload. Spring is the
- * baseline that's reachable in every season (the always-accessible interiors and
- * exteriors), so summer and fall layer their extras on top of it —
- * which also covers a reload that resumes straight into summer or fall without
- * having replayed the spring loader.
+ * The union of asset keys to preload for one or more chapters. Pass every
+ * chapter whose backgrounds should be loaded for a given screen — the engine
+ * has no notion of a "baseline" chapter, so if a game wants a common chapter's
+ * art always available it includes that chapter id in the list itself.
  *
  * @param {Phaser.Scenes.SceneManager} manager
- * @param {"spring" | "summer" | "fall" | "winter"} season
+ * @param {string[]} chapters
  * @returns {Set<string>}
  */
-export function seasonLoadSet(manager: Phaser.Scenes.SceneManager, season: "spring" | "summer" | "fall" | "winter"): Set<string>;
+export function chapterLoadSet(manager: Phaser.Scenes.SceneManager, chapters: string[]): Set<string>;
 /**
  * Bake a circular crop from a texture frame into a new cached canvas texture.
  * Idempotent — subsequent calls with the same `outKey` are no-ops.

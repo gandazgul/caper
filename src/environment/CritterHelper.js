@@ -14,7 +14,7 @@ import { engineAssets } from "../assets/EngineAssets.js";
  *   _critterType?: 'butterfly' | 'bird' | 'ground' | 'custom';
  * }} CritterSprite
  *
- * Critters are sourced from the `summer-atlas` (shared across all scenes) and
+ * Critters are sourced from the atlas registered as `critter` in engineAssets and
  * animated based on their `type` property. Supported types:
  *
  *   - "butterfly" — gentle back-and-forth bobbing (default)
@@ -37,7 +37,7 @@ import { engineAssets } from "../assets/EngineAssets.js";
  * @property {number} x - The x-coordinate positioning.
  * @property {number} y - The y-coordinate positioning.
  * @property {string} [frame] - The texture frame name.
- * @property {string} [atlas] - Override the source atlas key (defaults to "sprite_summer").
+ * @property {string} [atlas] - Override the source atlas key (defaults to the engineAssets `critter` atlas).
  *   Use e.g. "sprite_forest" to spawn a ladybug / bee / ant_trail as a critter.
  * @property {number} [scale] - The scale factor of the sprite.
  * @property {number} [originX] - The horizontal origin/anchor point.

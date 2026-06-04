@@ -24,9 +24,9 @@ class MyScene extends AdventureScene {
     constructor() {
         super({
             key: "MyScene",
-            backgroundsBySeason: {
-                spring: "bg_myroom_spring", // → /scenes/myroom_spring.jpg
-                summer: "bg_myroom_summer.webp", // → /scenes/myroom_summer.webp
+            backgroundsByChapter: {
+                intro: "bg_myroom_intro", // → /scenes/myroom_intro.jpg
+                chapter1: "bg_myroom_chapter1.webp", // → /scenes/myroom_chapter1.webp
             },
             assets: [ // additional keys
                 "sprite_props", // → /objects/props.png + .json
@@ -56,23 +56,23 @@ loadSpritesheetOnce(scene, "character_hero", "/characters/hero.png", {
 });
 ```
 
-All loaders guard on `textures.exists()` / `cache.json.exists()` — the same key requested from BootScene, a season
+All loaders guard on `textures.exists()` / `cache.json.exists()` — the same key requested from BootScene, a chapter
 intro, and the scene itself only downloads once.
 
-## Seasonal loading
+## Chapter-based loading
 
-The engine pre-computes which assets each season needs:
+The engine pre-computes which assets each chapter needs:
 
 ```js
-import { collectSeasonAssetKeys, seasonLoadSet } from "@caper/engine";
+import { chapterLoadSet, collectChapterAssetKeys } from "@caper/engine";
 
-// All keys for a given season:
-const keys = collectSeasonAssetKeys(sceneManager, "summer");
+// All keys for a given chapter:
+const keys = collectChapterAssetKeys(sceneManager, "chapter1");
 
-// Spring baseline + season-specific extras:
-const loadSet = seasonLoadSet(sceneManager, "summer");
-// Spring is always loaded (the baseline). Summer extras are added on top.
-// A reload that resumes into summer never re-downloads spring-loadable assets.
+// Intro baseline + chapter-specific extras:
+const loadSet = chapterLoadSet(sceneManager, "chapter1");
+// The intro chapter is always loaded (the baseline). Chapter1 extras are added on top.
+// A reload that resumes into chapter1 never re-downloads intro-loadable assets.
 ```
 
 ## EngineAssets registry
@@ -108,5 +108,5 @@ engineAssets.configure({
 
 1. **`registerGameContent()`** — populates all registries including `engineAssets`
 2. **`BootScene`** — loads globally-shared atlases (`ui-atlas`, character spritesheets)
-3. **Season intro scene** — preloads assets for the current season using `seasonLoadSet()`
+3. **Chapter intro scene** — preloads assets for the current chapter using `chapterLoadSet()`
 4. **Per scene** — loads its remaining assets in `preload()` via `loadAssetKeys()`
