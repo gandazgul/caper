@@ -145,8 +145,8 @@ const BACK_BUTTON_SCALE = 0.4;
 const BACK_BUTTON_HOVER_SCALE = 0.44;
 
 /**
- * Create the standard "back" button — the wooden arrow pinned to the top-left
- * corner. Position, scale, left-facing flip, and hover feedback are identical
+ * Create the standard "back" button — the registered arrow art pinned to the
+ * top-left corner. Position, scale, and hover feedback are identical
  * everywhere; only the click behavior and per-scene layering differ.
  *
  * @param {import("phaser").Scene} scene
@@ -164,10 +164,8 @@ const BACK_BUTTON_HOVER_SCALE = 0.44;
 export function createBackButton(scene, onClick, options = {}) {
     const { scrollFactor0 = false, visible = true, stopPropagation = false, replayReturn = true } = options;
 
-    // The arrow art points right by default — flip so it reads as "back".
     const backArt = engineAssets.get("backButton");
     const btn = scene.add.image(BACK_BUTTON_POSITION.x, BACK_BUTTON_POSITION.y, backArt?.atlas, backArt?.frame)
-        .setFlipX(true)
         .setScale(BACK_BUTTON_SCALE)
         .setDepth(UI_DEPTH)
         .setInteractive({ useHandCursor: true });

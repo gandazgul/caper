@@ -4350,8 +4350,8 @@ export function drawReloadIcon(gfx: Phaser.GameObjects.Graphics, cx: number, cy:
  */
 export function drawIcon(gfx: Phaser.GameObjects.Graphics, cx: number, cy: number, name: string): void;
 /**
- * Create the standard "back" button — the wooden arrow pinned to the top-left
- * corner. Position, scale, left-facing flip, and hover feedback are identical
+ * Create the standard "back" button — the registered arrow art pinned to the
+ * top-left corner. Position, scale, and hover feedback are identical
  * everywhere; only the click behavior and per-scene layering differ.
  *
  * @param {import("phaser").Scene} scene
