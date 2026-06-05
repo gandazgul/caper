@@ -4381,7 +4381,16 @@ export function createBackButton(scene: import("phaser").Scene, onClick: () => v
  * @param {number} y — center Y
  * @param {number} width
  * @param {number} height
- * @param {{ text?: string | null, fontSize?: string, icon?: string, iconDrawFn?: ((gfx: Phaser.GameObjects.Graphics, cx: number, cy: number) => void) | null, onClick: () => void, selected?: boolean }} options
+ * @param {{
+ *   text?: string | null,
+ *   fontSize?: string,
+ *   icon?: string,
+ *   iconDrawFn?: ((gfx: Phaser.GameObjects.Graphics, cx: number, cy: number) => void) | null,
+ *   iconImage?: { texture: string, frame?: string | number, maxWidth?: number, maxHeight?: number, scale?: number } | null,
+ *   textAlign?: "left" | "center" | "right",
+ *   onClick: () => void,
+ *   selected?: boolean,
+ * }} options
  * @returns {any}
  */
 export function createChunkyButton<T extends import("phaser").Scene>(scene: T, x: number, y: number, width: number, height: number, options: {
@@ -4389,6 +4398,14 @@ export function createChunkyButton<T extends import("phaser").Scene>(scene: T, x
 	fontSize?: string;
 	icon?: string;
 	iconDrawFn?: ((gfx: Phaser.GameObjects.Graphics, cx: number, cy: number) => void) | null;
+	iconImage?: {
+		texture: string;
+		frame?: string | number;
+		maxWidth?: number;
+		maxHeight?: number;
+		scale?: number;
+	} | null;
+	textAlign?: "left" | "center" | "right";
 	onClick: () => void;
 	selected?: boolean;
 }): any;

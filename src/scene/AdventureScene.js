@@ -255,7 +255,7 @@ export class AdventureScene extends Phaser.Scene {
                 if (this.currentWeather !== nw) {
                     this.currentWeather = nw;
                     this.weather?.setWeatherMode(
-                        /** @type {import("../environment/WeatherLayer.js").PrecipitationMode} */ (nw),
+                        /** @type {import("../environment/WeatherLayer.js").PrecipitationMode} */(nw),
                     );
                     this.bus.emit("weatherchange", nw);
                 }
@@ -302,7 +302,7 @@ export class AdventureScene extends Phaser.Scene {
      * Game hook: react to a chapter transition. No-op in the engine.
      * @param {string} _oldChapter @param {string} _newChapter
      */
-    handleChapterTransition(_oldChapter, _newChapter) {}
+    handleChapterTransition(_oldChapter, _newChapter) { }
 
     /**
      * Game hook: whether an exit is currently blocked. @param {import("../interaction/HotspotManager.js").HotspotConfig} _hotspot

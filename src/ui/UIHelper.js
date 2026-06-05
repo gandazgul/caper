@@ -196,6 +196,51 @@ export function createBackButton(scene, onClick, options = {}) {
 }
 
 /**
+ * @param {Phaser.GameObjects.Container} container
+ * @param {{
+ *   width: number,
+ *   height: number,
+ *   label: Phaser.GameObjects.Text | null,
+ *   iconObj: (Phaser.GameObjects.GameObject & { displayWidth?: number, displayHeight?: number, width?: number, height?: number }) | null,
+ *   textAlign?: "left" | "center" | "right",
+ * }} opts
+ */
+function layoutButtonContent(container, opts) {
+    const { width, label, iconObj } = opts;
+    const hasText = !!label;
+    const hasIcon = !!iconObj;
+    if (!hasText && !hasIcon) return;
+
+    const align = opts.textAlign ?? (hasText && hasIcon ? "left" : "center");
+    const paddingX = Math.min(18, Math.max(10, width * 0.14));
+    const gap = hasText && hasIcon ? Math.min(10, Math.max(6, width * 0.07)) : 0;
+    const iconW = hasIcon ? Math.max(iconObj.displayWidth ?? iconObj.width ?? 0, 24) : 0;
+    const maxLabelW = hasText ? Math.max(12, width - paddingX * 2 - iconW - gap) : 0;
+    if (label && label.width > maxLabelW) {
+        label.setScale(maxLabelW / label.width);
+    }
+    const labelW = hasText ? label.displayWidth : 0;
+    const groupW = iconW + gap + labelW;
+
+    let startX = -groupW / 2;
+    if (align === "left") startX = -width / 2 + paddingX;
+    if (align === "right") startX = width / 2 - paddingX - groupW;
+
+    if (iconObj) {
+        const iconAny = /** @type {any} */ (iconObj);
+        iconAny.setPosition?.(startX + iconW / 2, 0);
+        if (!iconAny.setPosition) iconAny.x = startX + iconW / 2;
+        container.add(iconObj);
+    }
+
+    if (label) {
+        label.setX(startX + iconW + gap);
+        label.setY(0);
+        container.add(label);
+    }
+}
+
+/**
  * Create a chunky wooden button container.
  *
  * @template {import("phaser").Scene} T
@@ -204,11 +249,29 @@ export function createBackButton(scene, onClick, options = {}) {
  * @param {number} y — center Y
  * @param {number} width
  * @param {number} height
- * @param {{ text?: string | null, fontSize?: string, icon?: string, iconDrawFn?: ((gfx: Phaser.GameObjects.Graphics, cx: number, cy: number) => void) | null, onClick: () => void, selected?: boolean }} options
+ * @param {{
+ *   text?: string | null,
+ *   fontSize?: string,
+ *   icon?: string,
+ *   iconDrawFn?: ((gfx: Phaser.GameObjects.Graphics, cx: number, cy: number) => void) | null,
+ *   iconImage?: { texture: string, frame?: string | number, maxWidth?: number, maxHeight?: number, scale?: number } | null,
+ *   textAlign?: "left" | "center" | "right",
+ *   onClick: () => void,
+ *   selected?: boolean,
+ * }} options
  * @returns {any}
  */
 export function createChunkyButton(scene, x, y, width, height, options) {
-    const { text, fontSize = "30px", icon, iconDrawFn, onClick, selected = false } = options;
+    const {
+        text,
+        fontSize = "30px",
+        icon,
+        iconDrawFn,
+        iconImage,
+        textAlign,
+        onClick,
+        selected = false,
+    } = options;
 
     const hw = width / 2;
     const hh = height / 2;
@@ -263,26 +326,40 @@ export function createChunkyButton(scene, x, y, width, height, options) {
 
     extendedContainer.isSelected = () => isSelected;
 
-    if (text) {
-        const label = scene.add.text(0, 0, text, {
+    const label = text
+        ? scene.add.text(0, 0, text, {
             fontSize,
             color: "#ffebd6",
             fontFamily: "Arial",
             stroke: "#3d251c",
             strokeThickness: 3,
-        }).setOrigin(0.5);
-        container.add(label);
-    }
+        }).setOrigin(0, 0.5)
+        : null;
 
+    /** @type {Phaser.GameObjects.GameObject & { displayWidth?: number, displayHeight?: number, width?: number, height?: number, setScale?: (...args: number[]) => any } | null} */
+    let iconObj = null;
     if (iconDrawFn) {
         const iconGfx = scene.add.graphics();
         iconDrawFn(iconGfx, 0, 0);
-        container.add(iconGfx);
+        iconObj = iconGfx;
     } else if (icon) {
         const iconGfx = scene.add.graphics();
         drawIcon(iconGfx, 0, 0, icon);
-        container.add(iconGfx);
+        iconObj = iconGfx;
+    } else if (iconImage) {
+        const frame = iconImage.frame === undefined ? undefined : iconImage.frame;
+        const iconSprite = scene.add.image(0, 0, iconImage.texture, frame).setOrigin(0.5);
+        if (iconImage.scale !== undefined) {
+            iconSprite.setScale(iconImage.scale);
+        } else {
+            const maxWidth = iconImage.maxWidth ?? 26;
+            const maxHeight = iconImage.maxHeight ?? 28;
+            iconSprite.setScale(Math.min(maxWidth / iconSprite.width, maxHeight / iconSprite.height));
+        }
+        iconObj = iconSprite;
     }
+
+    layoutButtonContent(container, { width, height, label, iconObj, textAlign });
 
     container.setDepth(UI_DEPTH);
 
