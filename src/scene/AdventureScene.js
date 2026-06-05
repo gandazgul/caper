@@ -39,6 +39,7 @@ import { clearLastTransitionFrom, lastTransitionFrom } from "./transitions.js";
  * @property {string} [inventoryAtlas]
  * @property {boolean} [inventoryHidden]
  * @property {boolean} [indoors]
+ * @property {boolean} [suppressActiveCharacter] - hide the active character and disable free-walk clicks while keeping hotspot arrival routing.
  * @property {boolean} [disableIdleCharacter] - opt this scene out of the autonomous idle character.
  * @property {boolean} [hideCharacterSwitcher]
  * @property {import("../interaction/PropEngine.js").Prop[]} [props]
@@ -164,6 +165,24 @@ export class AdventureScene extends Phaser.Scene {
         return this.walk;
     }
 
+    /**
+     * Hide the active character for scenes where the actor is already painted
+     * into the background, but keep hotspot-click routing alive so prop arrival
+     * effects still run. Free walking is disabled by removing only the
+     * scene-click handler.
+     */
+    suppressActiveCharacter() {
+        if (!this.walk) return;
+        if (this.walk.sprite) {
+            this.walk.sprite
+                .setVisible(false)
+                .setData("debugSkip", true);
+        }
+        this.walk.wearables?.destroy?.();
+        this.walk.wearables = null;
+        if (this.walk._onPointerDown) this.input.off("pointerdown", this.walk._onPointerDown);
+    }
+
     /** @param {any} [data] */
     create(data) {
         this.bus = new Phaser.Events.EventEmitter();
@@ -196,6 +215,7 @@ export class AdventureScene extends Phaser.Scene {
         if (lastTransitionFrom) clearLastTransitionFrom();
 
         this.spawnActiveCharacter(this.getActiveCharacterId(), startPos, initialFacing);
+        if (cfg.suppressActiveCharacter) this.suppressActiveCharacter();
 
         this.inventory = new InventoryLayer(this, {
             atlasKey: cfg.inventoryAtlas ?? engineAssets.get("inventoryAtlas"),
@@ -255,7 +275,7 @@ export class AdventureScene extends Phaser.Scene {
                 if (this.currentWeather !== nw) {
                     this.currentWeather = nw;
                     this.weather?.setWeatherMode(
-                        /** @type {import("../environment/WeatherLayer.js").PrecipitationMode} */(nw),
+                        /** @type {import("../environment/WeatherLayer.js").PrecipitationMode} */ (nw),
                     );
                     this.bus.emit("weatherchange", nw);
                 }
@@ -302,7 +322,7 @@ export class AdventureScene extends Phaser.Scene {
      * Game hook: react to a chapter transition. No-op in the engine.
      * @param {string} _oldChapter @param {string} _newChapter
      */
-    handleChapterTransition(_oldChapter, _newChapter) { }
+    handleChapterTransition(_oldChapter, _newChapter) {}
 
     /**
      * Game hook: whether an exit is currently blocked. @param {import("../interaction/HotspotManager.js").HotspotConfig} _hotspot

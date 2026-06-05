@@ -135,6 +135,15 @@ export class DebugOverlay {
                     g.lineBetween(h.approachPoint.x, h.approachPoint.y, tip.x, tip.y);
                 }
             }
+
+            const dropTargets = /** @type {any} */ (this.scene).propEngine?.dropTargets;
+            if (dropTargets?.size) {
+                g.lineStyle(2, 0xff5fff, 0.9);
+                for (const target of dropTargets.values()) {
+                    const { x, y, w, h } = target.bounds;
+                    g.strokeRect(x, y, w, h);
+                }
+            }
         }
 
         // Walk the display list and box every Image / Sprite with its
