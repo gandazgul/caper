@@ -448,12 +448,12 @@ export class CastDirector {
             return;
         }
         const npc = this.present.get(id);
-        if (r.say && npc) {
-            const lines = r.say;
+        if (r.speak && npc) {
+            const lines = r.speak;
             const behavior = this.behaviors.get(id);
             const speak = () => {
                 npc.facePlayer();
-                // A `say` reaction is the character talking aloud → speech bubble.
+                // A `speak` reaction is the character talking aloud → speech bubble.
                 npc.speakRandom(lines, 2800, "speech");
             };
             if (behavior?.interrupt) behavior.interrupt(speak);

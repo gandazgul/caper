@@ -13,7 +13,7 @@ export class CutsceneCancelled extends Error {
 /**
  * The cancellation core of the cutscene runner — deliberately Phaser-free so the
  * contract is unit-testable. A cutscene is a plain async function over awaitable
- * primitives (walkTo/say/play); those primitives are callback-based underneath
+ * primitives (walkTo/speak/play); those primitives are callback-based underneath
  * (a Phaser tween's `onComplete`, a timer). `wait()` bridges callback → promise
  * and registers an `onCancel` so an in-flight tween/timer can be stopped.
  *

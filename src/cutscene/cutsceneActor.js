@@ -23,7 +23,7 @@ function actorFor(npc, scene, cs) {
                 () => npc.stopWalking(),
             ),
         /** @param {string} text @param {number} [holdMs] @param {"thought" | "speech"} [variant] */
-        say: (text, holdMs = 2800, variant = "thought") => {
+        speak: (text, holdMs = 2800, variant = "thought") => {
             /** @type {Phaser.Time.TimerEvent | undefined} */
             let timer;
             return cs.wait(

@@ -2,7 +2,7 @@ import { assert, assertEquals, assertRejects, assertStrictEquals } from "@std/as
 import { Cutscene, CutsceneCancelled } from "./Cutscene.js";
 
 // ── The cancellation contract ──────────────────────────────────────────────
-// The cutscene runner turns callback-style ops (walkTo/say/play, which resolve
+// The cutscene runner turns callback-style ops (walkTo/speak/play, which resolve
 // from a Phaser tween or timer) into awaitable promises. When the scene shuts
 // down (or the cutscene is preempted) mid-sequence, every outstanding await must
 // reject so the async function unwinds — WITHOUT running later steps that would

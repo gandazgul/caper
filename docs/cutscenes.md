@@ -53,9 +53,9 @@ The `CastDirector` exposes a `cutscene()` method that wraps `CutsceneRunner.run(
 
 ```js
 director.cutscene(async (d) => {
-    await d.hero.say("What's this?");
+    await d.hero.speak("What's this?");
     await d.npc.facePlayer();
-    await d.npc.say("A secret passage!");
+    await d.npc.speak("A secret passage!");
     await d.hero.walkTo({ x: 400, y: 300 });
     await d.wait(500); // pause, cancellable
 }, { lockPlayer: true, cast: ["npc"] });
@@ -77,7 +77,7 @@ cancel token:
 director.cutscene(async (d) => {
     // Per-NPC methods:
     await d.shopkeeper.walkTo({ x: 400, y: 300 }); // returns promise
-    await d.shopkeeper.say("Hello!", 3000); // speech + hold
+    await d.shopkeeper.speak("Hello!", 3000); // speech + hold
     await d.shopkeeper.facePlayer(); // instant
     await d.shopkeeper.play("wave-anim"); // animation, resolves on complete
     d.shopkeeper.setFlipX(true); // instant
@@ -102,7 +102,7 @@ reactions: [
         on: "click",
         when: { hasQuestItem: true },
         run: async (d) => {
-            await d.shopkeeper.say("You found it!");
+            await d.shopkeeper.speak("You found it!");
             await d.give("reward");
         },
     },
@@ -113,14 +113,14 @@ reactions: [
 
 ```js
 director.cutscene(async (d) => {
-    await d.npc.say("Follow me!");
+    await d.npc.speak("Follow me!");
     await d.npc.walkTo({ x: 200, y: 300 });
 
     // If the cutscene is cancelled here (scene shutdown or preemption),
     // the await rejects with CutsceneCancelled — the rest never runs.
     // The NPC's ambient behavior is still resumed once.
 
-    await d.npc.say("We're here.");
+    await d.npc.speak("We're here.");
 }, { lockPlayer: true });
 ```
 

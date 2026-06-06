@@ -2411,7 +2411,7 @@ export class CutsceneCancelled extends Error {
 /**
  * The cancellation core of the cutscene runner — deliberately Phaser-free so the
  * contract is unit-testable. A cutscene is a plain async function over awaitable
- * primitives (walkTo/say/play); those primitives are callback-based underneath
+ * primitives (walkTo/speak/play); those primitives are callback-based underneath
  * (a Phaser tween's `onComplete`, a timer). `wait()` bridges callback → promise
  * and registers an `onCancel` so an in-flight tween/timer can be stopped.
  *
@@ -2554,9 +2554,9 @@ export function registerCast(entries: Record<string, CastEntry>): Record<string,
  *   the engine detects natively, OR any bus-event string the game emits.
  * @property {any} [when] - conditions DSL (see engine/conditions.js).
  * @property {boolean} [every] - fire on every occurrence (true) vs first only
- *   (false, default for `say` greetings) — backed by a state flag.
+ *   (false, default for `speak` greetings) — backed by a state flag.
  * @property {(d: any) => (Promise<void> | void)} [run] - cutscene to play.
- * @property {string[]} [say] - lines to speak (one picked at random).
+ * @property {string[]} [speak] - lines to speak (one picked at random).
  * @property {boolean} [lockPlayer] - lock the player walk while `run` plays.
  * @property {string[]} [cast] - which cast to suspend for `run` (default: this one).
  *
@@ -2659,7 +2659,7 @@ export type Reaction = {
 	when?: any;
 	/**
 	 * - fire on every occurrence (true) vs first only
-	 * (false, default for `say` greetings) — backed by a state flag.
+	 * (false, default for `speak` greetings) — backed by a state flag.
 	 */
 	every?: boolean;
 	/**
@@ -2669,7 +2669,7 @@ export type Reaction = {
 	/**
 	 * - lines to speak (one picked at random).
 	 */
-	say?: string[];
+	speak?: string[];
 	/**
 	 * - lock the player walk while `run` plays.
 	 */

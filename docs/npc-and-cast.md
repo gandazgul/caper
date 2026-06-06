@@ -73,12 +73,12 @@ registerCast({
                 options: { dwellRange: [4000, 8000] },
             },
             reactions: [
-                { on: "click", say: ["Hello!"] },
+                { on: "click", speak: ["Hello!"] },
                 {
                     on: "click",
                     when: { hasQuestItem: { eq: true } },
                     run: async (d) => {
-                        await d.shopkeeper.say("Thanks for bringing that!");
+                        await d.shopkeeper.speak("Thanks for bringing that!");
                         await d.give("reward");
                     },
                 },
@@ -86,7 +86,7 @@ registerCast({
         },
         chapter1: {
             ambient: { behavior: "patrol", activity: "sweep", scope: "outside" },
-            reactions: [{ on: "click", say: ["Hot out here!"] }],
+            reactions: [{ on: "click", speak: ["Hot out here!"] }],
         },
     },
 });
@@ -193,7 +193,7 @@ Reaction options:
     on: "click",
     when: { hasItem: { eq: true } },    // conditions DSL
     every: false,                        // fire once (default) or every time
-    say: ["Hello!"],                     // random line from array
+    speak: ["Hello!"],                     // random line from array
     run: async (d) => { ... },           // custom cutscene
     lockPlayer: true,                    // lock player walk during the cutscene
     cast: ["shopkeeper"],                // suspend these NPCs' ambient during cutscene

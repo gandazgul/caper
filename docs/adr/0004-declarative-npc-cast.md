@@ -41,8 +41,8 @@ emitting an event when that prop is taken; the engine merely routes the event st
 | Engine provides                                                                                                             | Game (creator) provides                                                                        |
 | --------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
 | `NPC` (sprite + hotspot + locomotion + speak)                                                                               | Cast registry data (per character, per chapter)                                                |
-| Behaviors: `wander` / `patrol` / `static` / `follow` + custom-factory escape                                                | The `run` fns / `say` lines (the choreography itself)                                          |
-| `CastDirector`: resolves chapter-keyed ambient on spawn, re-resolves on coarse bus events, suspend/resume                   | Scene-side `activityLoop(localWaypoints)`, `suppress`, appear-and-say                          |
+| Behaviors: `wander` / `patrol` / `static` / `follow` + custom-factory escape                                                | The `run` fns / `speak` lines (the choreography itself)                                        |
+| `CastDirector`: resolves chapter-keyed ambient on spawn, re-resolves on coarse bus events, suspend/resume                   | Scene-side `activityLoop(localWaypoints)`, `suppress`, appear-and-speak                        |
 | Reaction system: spatial triggers it detects natively + open bus-event subscription, **scoped to the current chapter only** | Semantics of game events (what `steal`/`pickup` _mean_; prop `steal:true`; emitting the event) |
 | Cutscene runner: async suspend → sequence → resume, blast-radius via opts                                                   | `director.cutscene(fn)` cutscenes / puzzles + their state flags                                |
 | Conditions DSL (reused for `when`)                                                                                          | The conditions' content                                                                        |
@@ -66,7 +66,7 @@ shopkeeper: {
       { scope: "outside", behavior: "patrol", activity: "sweep" },
     ],
     reactions: [
-      { on: "see", every: false, say: ["Getting chilly out!"] },
+      { on: "see", every: false, speak: ["Getting chilly out!"] },
       { on: "click",
         when: { questItemSeen: { eq: true }, rewardGiven: { ne: true } },
         run: giveReward },
@@ -74,7 +74,7 @@ shopkeeper: {
   },
   chapter1: {
     ambient:   { scope: "anywhere", behavior: "wander", shelterOnRain: true },
-    reactions: [ { on: "both", every: true, say: ["Beautiful day!"] } ],
+    reactions: [ { on: "both", every: true, speak: ["Beautiful day!"] } ],
   },
   intro: { ambient: { scope: "inside", behavior: "wander" }, reactions: [ ... ] },
 }
@@ -82,9 +82,9 @@ shopkeeper: {
 
 ### Reactions
 
-A reaction is `{ on: <trigger>, when?: <conditions>, every?: bool, run | say }`. The chapter holds an **ordered list**;
-for a given fired trigger the **first matching `when` wins** (`PropEngine` first-match semantics, reused). Greeting is
-not special — it is the reaction whose trigger is `see` / `click`.
+A reaction is `{ on: <trigger>, when?: <conditions>, every?: bool, run | speak }`. The chapter holds an **ordered
+list**; for a given fired trigger the **first matching `when` wins** (`PropEngine` first-match semantics, reused).
+Greeting is not special — it is the reaction whose trigger is `see` / `click`.
 
 - **Triggers the engine detects natively (spatial/local):** `see` (active character within range), `click`, `hover`,
   `leave`. Wired onto the sprite on spawn.
@@ -135,7 +135,7 @@ director.cutscene(fn, { lockPlayer?: boolean, cast?: string[] });
 
 async function giveReward(d) {     // d exposes each present cast member + player + helpers
   await d.shopkeeper.facePlayer();
-  await d.shopkeeper.say("Here's your reward!");
+  await d.shopkeeper.speak("Here's your reward!");
   await d.give("reward_item");
   store.set("rewardGiven", true);
 }
@@ -144,8 +144,8 @@ async function giveReward(d) {     // d exposes each present cast member + playe
 - **Blast radius via opts.** `cast` lists which ambient behaviors to suspend (default: all present); `lockPlayer` locks
   the player walk. A greeting is `{ cast: ["shopkeeper"] }` (player free); a multi-actor scene is
   `{ lockPlayer: true, cast: ["shopkeeper", "guard"] }`. `npc.interrupt()` stays as sugar for the one-NPC, no-lock case.
-- **Awaitable primitives.** `walkTo` / `say` / `play` return promises wrapping the existing tween/timer callbacks. Scene
-  shutdown (or preemption) **rejects** outstanding awaits so the async function unwinds cleanly and never fires
+- **Awaitable primitives.** `walkTo` / `speak` / `play` return promises wrapping the existing tween/timer callbacks.
+  Scene shutdown (or preemption) **rejects** outstanding awaits so the async function unwinds cleanly and never fires
   callbacks on a destroyed sprite — the riskiest implementation surface, called out explicitly.
 - **A puzzle is a cutscene that sets a flag.** No separate "puzzle" primitive.
 
@@ -156,7 +156,7 @@ async function giveReward(d) {     // d exposes each present cast member + playe
 | Chapter-based presence gate        | `<id>.<chapter>.ambient` (cast lookup)                            |
 | Scene-specific activity loop       | scene `director.get(id).activityLoop(waypoints)`                  |
 | Rain/night retreat                 | `shelterOnRain` + `doorPoint`                                     |
-| Click → greeting                   | reaction `{ on: "see"/"click", say: [...] }`                      |
+| Click → greeting                   | reaction `{ on: "see"/"click", speak: [...] }`                    |
 | Click → quest item                 | reaction `{ on: "click", when, run }`                             |
 | Companion follow-behind            | `{ behavior: "follow" }`, scene/quest-invoked                     |
 | Give item on drop                  | reaction `{ on: "drop:<item>", run }` (inventory emits the event) |
