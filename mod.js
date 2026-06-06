@@ -47,6 +47,7 @@ export {
     drawTrashIcon,
     exitReplay,
     UI_DEPTH,
+    UI_SAFE_TOP,
 } from "./src/ui/UIHelper.js";
 export { WalkController } from "./src/movement/WalkController.js";
 export { WearableRegistry, wearables } from "./src/characters/Wearables.js";

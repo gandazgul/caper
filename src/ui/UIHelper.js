@@ -20,6 +20,12 @@ export { exitReplay };
 export const UI_DEPTH = 9000;
 
 /**
+ * Minimum screen-space y for interactive floating scene objects that should
+ * stay below the top UI cluster (back button / character switcher).
+ */
+export const UI_SAFE_TOP = 96;
+
+/**
  * Draw a trash/bin icon centered at (cx, cy).
  * @param {Phaser.GameObjects.Graphics} gfx
  * @param {number} cx

@@ -1,6 +1,7 @@
 import Phaser from "phaser";
 import { engineAssets } from "../assets/EngineAssets.js";
 import { resolveCharacterPortrait } from "../characters/portraits.js";
+import { UI_SAFE_TOP } from "../ui/UIHelper.js";
 
 /**
  * A cloud-bubble Container with optional icons + text, auto-destroying after
@@ -125,6 +126,19 @@ function computeAnchor(char, dx, dy, isLarge, xOffsetSign) {
     return { x: centerX + xOffset + (dx * xOffsetSign), y: headY - yOffset + dy };
 }
 
+/**
+ * Keep the bubble out from under fixed top UI. `anchor.y` is world-space, so
+ * add `scrollY` when the camera scrolls vertically.
+ * @param {import("phaser").Scene} scene
+ * @param {{ x: number, y: number }} anchor
+ * @returns {{ x: number, y: number }}
+ */
+function clampToUiSafeTop(scene, anchor) {
+    const cam = scene.cameras.main;
+    const minY = (cam?.scrollY ?? 0) + UI_SAFE_TOP;
+    return anchor.y < minY ? { ...anchor, y: minY } : anchor;
+}
+
 export class DialogueBubble extends Phaser.GameObjects.Container {
     /**
      * @param {import("phaser").Scene} scene
@@ -175,6 +189,7 @@ export class DialogueBubble extends Phaser.GameObjects.Container {
                 anchor = computeAnchor(char, dx, dy, isLarge, xOffsetSign);
             }
         }
+        anchor = clampToUiSafeTop(scene, anchor);
 
         super(scene, anchor.x, anchor.y);
         this.setDepth(BUBBLE_DEPTH);
@@ -328,6 +343,7 @@ export class DialogueBubble extends Phaser.GameObjects.Container {
                 this._applyLayout(xOffsetSign);
             }
         }
+        anchor = clampToUiSafeTop(this.scene, anchor);
 
         this.x = anchor.x;
         this.y = anchor.y;

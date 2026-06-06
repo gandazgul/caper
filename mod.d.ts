@@ -4491,6 +4491,11 @@ export function createChunkyButton<T extends import("phaser").Scene>(scene: T, x
  * in a scene. Callers can still pass an explicit `depth` to override it.
  */
 export const UI_DEPTH: 9000;
+/**
+ * Minimum screen-space y for interactive floating scene objects that should
+ * stay below the top UI cluster (back button / character switcher).
+ */
+export const UI_SAFE_TOP: 96;
 export function drawCameraIcon(gfx: Phaser.GameObjects.Graphics, cx: number, cy: number): void;
 /**
  * Canonical placement + sizing for the back button so it sits in the exact
