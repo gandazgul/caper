@@ -91,7 +91,7 @@ export class IdleCharacter {
 
         this.walker = new WalkController(
             this.scene,
-            /** @type {import("./WalkController.js").WalkControllerOpts & {nonControllable?: boolean}} */ ({
+            /** @type {import("./WalkController.js").WalkControllerOpts & {nonControllable?: boolean}} */({
                 characterId: this.name,
                 spriteKey: this.config.spriteKey,
                 startPosition: { x, y },
@@ -135,7 +135,7 @@ export class IdleCharacter {
         const text = this.opts.greeting?.(store.getActiveCharacter() ?? "", this.name);
         this.behavior.interrupt(() => {
             if (text) {
-                DialogueBubble.show(this.scene, { character: this.sprite, text, autoDestroyMs: 2000 });
+                DialogueBubble.show(this.scene, { character: this.sprite, text, autoDestroyMs: 2000, variant: "speech" });
             }
         });
     }

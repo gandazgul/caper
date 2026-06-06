@@ -374,6 +374,11 @@ export class SceneEditor {
             // legacy propItems or props with no matching `when`).
             const activeState = engine?.currentState?.get?.(item.id) ?? null;
 
+            // If the prop is declarative (has states defined) but is currently inactive, skip it.
+            if (item.states && !activeState) {
+                continue;
+            }
+
             // Anchor handle: only when the prop has a live sprite AND some
             // object (state or prop) authored x/y. Pure-zone props (exits,
             // story-time hotspots) have no anchor.

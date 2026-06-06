@@ -1514,6 +1514,15 @@ export type PropState = {
         x?: number;
         y?: number;
     };
+    stack?: {
+        count?: number;
+        xOffset?: number;
+        yOffset?: number;
+        xSpread?: number;
+        ySpread?: number;
+        rotationRange?: [number, number];
+        scaleRange?: [number, number];
+    };
     onClick?: PropEffect[];
     onDrop?: {
         accepts: Condition;
@@ -1573,6 +1582,15 @@ export type Prop = {
     origin?: {
         x?: number;
         y?: number;
+    };
+    stack?: {
+        count?: number;
+        xOffset?: number;
+        yOffset?: number;
+        xSpread?: number;
+        ySpread?: number;
+        rotationRange?: [number, number];
+        scaleRange?: [number, number];
     };
     bounds?: {
         x: number;

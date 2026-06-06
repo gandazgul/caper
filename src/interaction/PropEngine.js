@@ -1,3 +1,4 @@
+import Phaser from "phaser";
 import { store } from "../state/Store.js";
 import { transitionTo } from "../scene/transitions.js";
 import { evaluateCondition } from "../core/conditions.js";
@@ -28,6 +29,7 @@ import { DialogueBubble } from "../cutscene/DialogueBubble.js";
  * @property {number} [x] @property {number} [y] @property {number} [depth]
  * @property {number} [scale] @property {number} [rotation] @property {boolean} [flipX]
  * @property {{ x?: number, y?: number }} [origin]
+ * @property {object} [stack] - options for rendering as a stack of multiple sprites.
  * @property {PropEffect[]} [onClick]
  * @property {{ accepts: import("../core/conditions.js").Condition, effects: PropEffect[] }} [onDrop]
  * @property {import("../core/conditions.js").Condition} [activeWhen] - gate clickability separately from visibility.
@@ -43,6 +45,7 @@ import { DialogueBubble } from "../cutscene/DialogueBubble.js";
  * @property {number} [x] @property {number} [y] @property {number} [depth]
  * @property {number} [scale] @property {number} [rotation] @property {boolean} [flipX]
  * @property {{ x?: number, y?: number }} [origin]
+ * @property {object} [stack] - default options for rendering as a stack.
  * @property {{ x: number, y: number, w: number, h: number }} [bounds]
  * @property {{ x: number, y: number, facing: string } | "in-place"} [approach]
  * @property {"pickup"|"look"|"exit"|"subscene"|"use-with"} [cursor]
@@ -256,14 +259,32 @@ export class PropEngine {
         const atlas = st.atlas ?? prop.atlas;
         const x = st.x ?? prop.x ?? 0;
         const y = st.y ?? prop.y ?? 0;
+        const stackConfig = st.stack ?? prop.stack;
         let sprite = this.sprites.get(prop.id);
+
+        if (sprite && stackConfig && !(sprite instanceof PropStack)) {
+            sprite.destroy();
+            sprite = null;
+        } else if (sprite && !stackConfig && (sprite instanceof PropStack)) {
+            sprite.destroy();
+            sprite = null;
+        }
+
         if (!sprite) {
-            sprite = this.scene.add.sprite(x, y, /** @type {string} */ (atlas), st.frame);
+            if (stackConfig) {
+                sprite = new PropStack(this.scene, x, y, /** @type {string} */ (atlas), st.frame, stackConfig);
+            } else {
+                sprite = this.scene.add.sprite(x, y, /** @type {string} */ (atlas), st.frame);
+            }
             this.sprites.set(prop.id, sprite);
         } else {
             // Only set texture/frame if it has actually changed, to avoid resetting running animations.
-            if (sprite.texture.key !== atlas || (!sprite.anims.isPlaying && sprite.frame.name !== st.frame)) {
+            if (sprite instanceof PropStack) {
                 sprite.setTexture(/** @type {string} */ (atlas), st.frame);
+            } else {
+                if (sprite.texture.key !== atlas || (!sprite.anims.isPlaying && sprite.frame.name !== st.frame)) {
+                    sprite.setTexture(/** @type {string} */ (atlas), st.frame);
+                }
             }
             // Don't fight an in-flight effect tween (e.g. the box-stack slide);
             // the destination state's x/y match where the tween lands.
@@ -309,7 +330,13 @@ export class PropEngine {
                 // handler always reads the current state, so it's correct as-is.
                 if (sprite.input) sprite.input.cursor = cursor;
             } else {
-                sprite.setInteractive({ cursor });
+                if (sprite instanceof PropStack) {
+                    const bounds = sprite.getBounds();
+                    sprite.setSize(bounds.width, bounds.height);
+                    sprite.setInteractive({ cursor, useHandCursor: true });
+                } else {
+                    sprite.setInteractive({ cursor });
+                }
                 sprite.on("pointerdown", () => {
                     const cur = this.currentState.get(prop.id);
                     if (cur?.onClick) this.runEffects(cur.onClick, this.ctxFor(prop));
@@ -704,4 +731,103 @@ function normalizeColl(arg, ctx) {
 /** @param {number} x @param {number} y @param {{x:number,y:number,w:number,h:number}} b */
 function pointInBounds(x, y, b) {
     return x >= b.x && x <= b.x + b.w && y >= b.y && y <= b.y + b.h;
+}
+
+export class PropStack extends Phaser.GameObjects.Container {
+    /**
+     * @param {Phaser.Scene} scene
+     * @param {number} x
+     * @param {number} y
+     * @param {string} texture
+     * @param {string} frame
+     * @param {object} config
+     */
+    constructor(scene, x, y, texture, frame, config) {
+        super(scene, x, y);
+        this.textureKey = texture;
+        this.frameName = frame;
+        this.config = config || {};
+        this.rebuildStack();
+        scene.add.existing(this);
+    }
+
+    rebuildStack() {
+        this.removeAll(true);
+
+        const count = this.config.count ?? 3;
+        const xOffset = this.config.xOffset ?? 0;
+        const yOffset = this.config.yOffset ?? 0;
+        const xSpread = this.config.xSpread ?? 10;
+        const ySpread = this.config.ySpread ?? 10;
+        const rotationRange = this.config.rotationRange ?? [-15, 15];
+        const scaleRange = this.config.scaleRange ?? [0.9, 1.1];
+
+        // Seeded random for determinism (consistent piles)
+        let seed = (this.x * 17 + this.y * 31) || 42;
+        const random = () => {
+            seed = (seed * 1664525 + 1013904223) % 4294967296;
+            return seed / 4294967296;
+        };
+        const randomRange = (min, max) => {
+            return min + random() * (max - min);
+        };
+
+        for (let i = 0; i < count; i++) {
+            const bx = i * xOffset + (xSpread ? randomRange(-xSpread, xSpread) : 0);
+            const by = i * yOffset + (ySpread ? randomRange(-ySpread, ySpread) : 0);
+            const rot = rotationRange ? randomRange(rotationRange[0], rotationRange[1]) : 0;
+            const scale = scaleRange ? randomRange(scaleRange[0], scaleRange[1]) : 1;
+
+            const child = new Phaser.GameObjects.Sprite(this.scene, bx, by, this.textureKey, this.frameName);
+            child.setAngle(rot);
+            child.setScale(scale);
+            this.add(child);
+        }
+    }
+
+    setTexture(key, frameName) {
+        if (this.textureKey !== key || this.frameName !== frameName) {
+            this.textureKey = key;
+            this.frameName = frameName;
+            this.rebuildStack();
+        }
+        return this;
+    }
+
+    setOrigin(x, y) {
+        this.list.forEach((child) => {
+            if (child.setOrigin) child.setOrigin(x, y);
+        });
+        return this;
+    }
+
+    setFlipX(flipX) {
+        this.list.forEach((child) => {
+            if (child.setFlipX) child.setFlipX(flipX);
+        });
+        return this;
+    }
+
+    play(key, ignoreIfPlaying) {
+        this.list.forEach((child) => {
+            if (child.play) child.play(key, ignoreIfPlaying);
+        });
+        return this;
+    }
+
+    stop() {
+        this.list.forEach((child) => {
+            if (child.stop) child.stop();
+        });
+        return this;
+    }
+
+    get anims() {
+        const self = this;
+        return {
+            get isPlaying() {
+                return self.list.some((child) => child.anims?.isPlaying);
+            },
+        };
+    }
 }
