@@ -20,6 +20,15 @@ import { DialogueBubble } from "../cutscene/DialogueBubble.js";
  *
  * @typedef {Record<string, any>} PropEffect - exactly one verb key per object.
  *
+ * @typedef {object} PropStackConfig
+ * @property {number} [count]
+ * @property {number} [xOffset]
+ * @property {number} [yOffset]
+ * @property {number} [xSpread]
+ * @property {number} [ySpread]
+ * @property {[number, number]} [rotationRange]
+ * @property {[number, number]} [scaleRange]
+ *
  * @typedef {object} PropState
  * @property {string} [notes] - editor comments for this state.
  * @property {import("../core/conditions.js").Condition} [when] - gate for this state.
@@ -29,7 +38,7 @@ import { DialogueBubble } from "../cutscene/DialogueBubble.js";
  * @property {number} [x] @property {number} [y] @property {number} [depth]
  * @property {number} [scale] @property {number} [rotation] @property {boolean} [flipX]
  * @property {{ x?: number, y?: number }} [origin]
- * @property {object} [stack] - options for rendering as a stack of multiple sprites.
+ * @property {PropStackConfig} [stack] - options for rendering as a stack of multiple sprites.
  * @property {PropEffect[]} [onClick]
  * @property {{ accepts: import("../core/conditions.js").Condition, effects: PropEffect[] }} [onDrop]
  * @property {import("../core/conditions.js").Condition} [activeWhen] - gate clickability separately from visibility.
@@ -45,7 +54,7 @@ import { DialogueBubble } from "../cutscene/DialogueBubble.js";
  * @property {number} [x] @property {number} [y] @property {number} [depth]
  * @property {number} [scale] @property {number} [rotation] @property {boolean} [flipX]
  * @property {{ x?: number, y?: number }} [origin]
- * @property {object} [stack] - default options for rendering as a stack.
+ * @property {PropStackConfig} [stack] - default options for rendering as a stack.
  * @property {{ x: number, y: number, w: number, h: number }} [bounds]
  * @property {{ x: number, y: number, facing: string } | "in-place"} [approach]
  * @property {"pickup"|"look"|"exit"|"subscene"|"use-with"} [cursor]
@@ -72,7 +81,7 @@ export class PropEngine {
         /** @type {Prop[]} */
         this.props = (/** @type {any} */ (scene).sceneConfig?.props) ?? [];
         /** Sprites are shared with the scene so the editor / subclasses can reach them. */
-        /** @type {Map<string, import("phaser").GameObjects.Sprite>} */
+        /** @type {Map<string, import("phaser").GameObjects.Sprite | PropStack>} */
         this.sprites = (/** @type {any} */ (scene)).propSprites;
         /** propId → the PropState whose hotspot zone is currently registered. */
         /** @type {Map<string, PropState>} */
@@ -740,12 +749,13 @@ export class PropStack extends Phaser.GameObjects.Container {
      * @param {number} y
      * @param {string} texture
      * @param {string} frame
-     * @param {object} config
+     * @param {PropStackConfig} config
      */
     constructor(scene, x, y, texture, frame, config) {
         super(scene, x, y);
         this.textureKey = texture;
         this.frameName = frame;
+        /** @type {PropStackConfig} */
         this.config = config || {};
         this.rebuildStack();
         scene.add.existing(this);
@@ -768,6 +778,7 @@ export class PropStack extends Phaser.GameObjects.Container {
             seed = (seed * 1664525 + 1013904223) % 4294967296;
             return seed / 4294967296;
         };
+        /** @param {number} min @param {number} max */
         const randomRange = (min, max) => {
             return min + random() * (max - min);
         };
@@ -785,6 +796,7 @@ export class PropStack extends Phaser.GameObjects.Container {
         }
     }
 
+    /** @param {string} key @param {string} frameName */
     setTexture(key, frameName) {
         if (this.textureKey !== key || this.frameName !== frameName) {
             this.textureKey = key;
@@ -794,39 +806,39 @@ export class PropStack extends Phaser.GameObjects.Container {
         return this;
     }
 
+    /** @param {number} x @param {number} y */
     setOrigin(x, y) {
-        this.list.forEach((child) => {
-            if (child.setOrigin) child.setOrigin(x, y);
-        });
+        const children = /** @type {Phaser.GameObjects.Sprite[]} */ (this.list);
+        children.forEach((child) => child.setOrigin(x, y));
         return this;
     }
 
+    /** @param {boolean} flipX */
     setFlipX(flipX) {
-        this.list.forEach((child) => {
-            if (child.setFlipX) child.setFlipX(flipX);
-        });
+        const children = /** @type {Phaser.GameObjects.Sprite[]} */ (this.list);
+        children.forEach((child) => child.setFlipX(flipX));
         return this;
     }
 
+    /** @param {string} key @param {boolean} [ignoreIfPlaying] */
     play(key, ignoreIfPlaying) {
-        this.list.forEach((child) => {
-            if (child.play) child.play(key, ignoreIfPlaying);
-        });
+        const children = /** @type {Phaser.GameObjects.Sprite[]} */ (this.list);
+        children.forEach((child) => child.play(key, ignoreIfPlaying));
         return this;
     }
 
     stop() {
-        this.list.forEach((child) => {
-            if (child.stop) child.stop();
-        });
+        const children = /** @type {Phaser.GameObjects.Sprite[]} */ (this.list);
+        children.forEach((child) => child.stop());
         return this;
     }
 
     get anims() {
-        const self = this;
+        const children = /** @type {Phaser.GameObjects.Sprite[]} */ (this.list);
+        const getIsPlaying = () => children.some((child) => child.anims.isPlaying);
         return {
             get isPlaying() {
-                return self.list.some((child) => child.anims?.isPlaying);
+                return getIsPlaying();
             },
         };
     }
