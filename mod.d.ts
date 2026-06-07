@@ -4000,6 +4000,7 @@ export type TransitionOpts = {
 		onBegin?: () => void;
 	};
 };
+/** @typedef {import("phaser").Scene} PhaserScene */
 /**
  * Engine asset registry (ADR 0005). The engine ships several built-in visuals
  * — thought bubbles, the back button, falling-leaf weather, ambient critters,
@@ -4020,7 +4021,7 @@ export type TransitionOpts = {
  * @property {{ atlas: string, frame: string }} [critter] - default atlas/frame for a critter spec that omits them.
  * @property {string} [inventoryAtlas] - default atlas for the inventory bar (a scene may override via `inventoryAtlas`).
  * @property {string} [replayDefaultReturn] - scene key to return to from a replay when no return scene is stored (default none).
- * @property {(args: { scene: import("phaser").Scene, targetKey: string, opts: import("../scene/transitions.js").TransitionOpts }) => (boolean | { returnScene?: string, onBegin?: () => void } | null | undefined)} [replayTransition] - optional game policy for transitions that should enter replay sandbox mode.
+ * @property {(args: { scene: PhaserScene, targetKey: string, opts: import("../scene/transitions.js").TransitionOpts }) => (boolean | { returnScene?: string, onBegin?: () => void } | null | undefined)} [replayTransition] - optional game policy for transitions that should enter replay sandbox mode.
  */
 export class EngineAssetRegistry {
 	/** @type {EngineAssetSlots} */
@@ -4040,6 +4041,7 @@ export class EngineAssetRegistry {
 }
 /** Engine-owned singleton. The Game supplies its keys at boot. */
 export const engineAssets: EngineAssetRegistry;
+export type PhaserScene = import("phaser").Scene;
 /**
  * Engine asset registry (ADR 0005). The engine ships several built-in visuals
  * — thought bubbles, the back button, falling-leaf weather, ambient critters,
@@ -4100,7 +4102,7 @@ export type EngineAssetSlots = {
 	 * - optional game policy for transitions that should enter replay sandbox mode.
 	 */
 	replayTransition?: (args: {
-		scene: import("phaser").Scene;
+		scene: PhaserScene;
 		targetKey: string;
 		opts: TransitionOpts;
 	}) => (boolean | {
