@@ -48,6 +48,8 @@ export class Store {
         /** @type {Record<string, string>} */
         this._aliases = {};
         this._defaultReplayReturnScene = "";
+        /** @type {Set<string>} */
+        this._replayPreserveValues = new Set();
         /** Object passed to change subscribers (the Game's state facade, if set). */
         this._notifySubject = /** @type {any} */ (null);
 
@@ -76,6 +78,7 @@ export class Store {
      *   createFreshState: () => RunState,
      *   aliases?: Record<string, string>,
      *   defaultReplayReturnScene?: string,
+     *   replayPreserveValues?: string[],
      *   notifySubject?: any,
      * }} cfg
      */
@@ -85,6 +88,7 @@ export class Store {
         this._aliases = cfg.aliases ?? {};
         this._defaultReplayReturnScene = cfg.defaultReplayReturnScene ?? "";
         this._replayReturnScene = this._defaultReplayReturnScene;
+        this._replayPreserveValues = new Set(cfg.replayPreserveValues ?? []);
         this._notifySubject = cfg.notifySubject ?? null;
         this._state = this._loadState();
         return this;
@@ -385,7 +389,14 @@ export class Store {
     endReplay() {
         if (!this._replaying) return;
         this._replaying = false;
-        if (this._replaySnapshot) this._state = this._replaySnapshot;
+        if (this._replaySnapshot) {
+            for (const key of this._replayPreserveValues) {
+                if (Object.hasOwn(this._state.values, key)) {
+                    this._replaySnapshot.values[key] = this._state.values[key];
+                }
+            }
+            this._state = this._replaySnapshot;
+        }
         this._replaySnapshot = null;
         this.handleChange();
     }

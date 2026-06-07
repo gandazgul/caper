@@ -3900,6 +3900,107 @@ export type ItemSprite = {
 	scale: number;
 };
 /**
+ * Fade the camera out, then start `targetKey`.
+ *
+ * If a replay sandbox is active, the call is redirected to {@link exitReplay}
+ * — the player is mid-mini-game and "exit" means "return to the wall's owning
+ * scene with the snapshot restored," not "go to the literal target."
+ *
+ * @param {import("phaser").Scene} scene
+ * @param {string} targetKey
+ * @param {string | TransitionOpts} [opts] - a preset name, or an options object.
+ */
+export function transitionTo(scene: import("phaser").Scene, targetKey: string, opts?: string | TransitionOpts): void;
+/**
+ * Leave a mini-game launched from a replay wall: fade out, restore the real
+ * game state, and return to the wall's owning scene (configured via
+ * `engineAssets`). Uses {@link fadeAndStart} directly so the replay guard in
+ * `transitionTo` doesn't catch us in a tight recursion before the
+ * `endReplay()` in `onBeforeStart` ever fires.
+ *
+ * @param {import("phaser").Scene} scene
+ */
+export function exitReplay(scene: import("phaser").Scene): void;
+/**
+ * Opt-in symmetric fade-in upon scene creation. Call this in a scene's create()
+ * method instead of `cameras.main.resetFX()` to match the fade out style.
+ *
+ * @param {import("phaser").Scene} scene
+ * @param {string | TransitionOpts} [opts]
+ */
+export function transitionIn(scene: import("phaser").Scene, opts?: string | TransitionOpts): void;
+/**
+ * Named scene-transition presets and the single helper every scene change runs
+ * through. Replaces the copy-pasted `fadeOut → camerafadeoutcomplete →
+ * scene.start` block that was duplicated across ~20 scenes.
+ *
+ * Resolution order (most specific wins):
+ *   1. per-call override   — `transitionTo(scene, key, "cinematic")` or `{ duration, color }`
+ *   2. per-scene default   — `scene.sceneConfig.transition` (a scene's house style)
+ *   3. global default      — DEFAULT_TRANSITION
+ *
+ * Color is the fade fill (0xRRGGBB); white = everyday room-to-room, black =
+ * weightier/darker moments.
+ *
+ * @typedef {Object} TransitionPreset
+ * @property {number} duration
+ * @property {number} color
+ * @property {boolean} [fadeIn]
+ */
+/** @type {Record<string, TransitionPreset>} */
+export const TRANSITIONS: Record<string, TransitionPreset>;
+/**
+ * Named scene-transition presets and the single helper every scene change runs
+ * through. Replaces the copy-pasted `fadeOut → camerafadeoutcomplete →
+ * scene.start` block that was duplicated across ~20 scenes.
+ *
+ * Resolution order (most specific wins):
+ *   1. per-call override   — `transitionTo(scene, key, "cinematic")` or `{ duration, color }`
+ *   2. per-scene default   — `scene.sceneConfig.transition` (a scene's house style)
+ *   3. global default      — DEFAULT_TRANSITION
+ *
+ * Color is the fade fill (0xRRGGBB); white = everyday room-to-room, black =
+ * weightier/darker moments.
+ */
+export type TransitionPreset = {
+	duration: number;
+	color: number;
+	fadeIn?: boolean;
+};
+export type TransitionOpts = {
+	/**
+	 * - a key of TRANSITIONS.
+	 */
+	preset?: string;
+	/**
+	 * - overrides the resolved preset duration (ms).
+	 */
+	duration?: number;
+	/**
+	 * - overrides the resolved preset color (0xRRGGBB).
+	 */
+	color?: number;
+	/**
+	 * - opt out of fadeIn for this specific transition.
+	 */
+	fadeIn?: boolean;
+	/**
+	 * - passed to `scene.start` as its data argument.
+	 */
+	data?: object;
+	/**
+	 * - runs after the fade, before `scene.start`.
+	 */
+	onBeforeStart?: () => void;
+	/**
+	 * - opt into replay sandboxing for this transition; `false` skips the game's configured replay policy.
+	 */
+	replay?: boolean | {
+		returnScene?: string;
+		onBegin?: () => void;
+	};
+};
+/**
  * Engine asset registry (ADR 0005). The engine ships several built-in visuals
  * — thought bubbles, the back button, falling-leaf weather, ambient critters,
  * the inventory bar — but it owns no art. The Game supplies the texture/atlas
@@ -3919,6 +4020,7 @@ export type ItemSprite = {
  * @property {{ atlas: string, frame: string }} [critter] - default atlas/frame for a critter spec that omits them.
  * @property {string} [inventoryAtlas] - default atlas for the inventory bar (a scene may override via `inventoryAtlas`).
  * @property {string} [replayDefaultReturn] - scene key to return to from a replay when no return scene is stored (default none).
+ * @property {(args: { scene: import("phaser").Scene, targetKey: string, opts: import("../scene/transitions.js").TransitionOpts }) => (boolean | { returnScene?: string, onBegin?: () => void } | null | undefined)} [replayTransition] - optional game policy for transitions that should enter replay sandbox mode.
  */
 export class EngineAssetRegistry {
 	/** @type {EngineAssetSlots} */
@@ -3994,6 +4096,17 @@ export type EngineAssetSlots = {
 	 * - scene key to return to from a replay when no return scene is stored (default none).
 	 */
 	replayDefaultReturn?: string;
+	/**
+	 * - optional game policy for transitions that should enter replay sandbox mode.
+	 */
+	replayTransition?: (args: {
+		scene: import("phaser").Scene;
+		targetKey: string;
+		opts: TransitionOpts;
+	}) => (boolean | {
+		returnScene?: string;
+		onBegin?: () => void;
+	} | null | undefined);
 };
 export class Store {
 	_saveKey: string;
@@ -4002,6 +4115,8 @@ export class Store {
 	/** @type {Record<string, string>} */
 	_aliases: Record<string, string>;
 	_defaultReplayReturnScene: string;
+	/** @type {Set<string>} */
+	_replayPreserveValues: Set<string>;
 	/** Object passed to change subscribers (the Game's state facade, if set). */
 	_notifySubject: any;
 	/** @type {RunState} */
@@ -4023,6 +4138,7 @@ export class Store {
 	 *   createFreshState: () => RunState,
 	 *   aliases?: Record<string, string>,
 	 *   defaultReplayReturnScene?: string,
+	 *   replayPreserveValues?: string[],
 	 *   notifySubject?: any,
 	 * }} cfg
 	 */
@@ -4031,6 +4147,7 @@ export class Store {
 		createFreshState: () => RunState;
 		aliases?: Record<string, string>;
 		defaultReplayReturnScene?: string;
+		replayPreserveValues?: string[];
 		notifySubject?: any;
 	}): this;
 	/**
@@ -4302,100 +4419,6 @@ export type QuestNode = {
 		in: string;
 		selfCombineInto?: string;
 	};
-};
-/**
- * Fade the camera out, then start `targetKey`.
- *
- * If a replay sandbox is active, the call is redirected to {@link exitReplay}
- * — the player is mid-mini-game and "exit" means "return to the wall's owning
- * scene with the snapshot restored," not "go to the literal target."
- *
- * @param {import("phaser").Scene} scene
- * @param {string} targetKey
- * @param {string | TransitionOpts} [opts] - a preset name, or an options object.
- */
-export function transitionTo(scene: import("phaser").Scene, targetKey: string, opts?: string | TransitionOpts): void;
-/**
- * Leave a mini-game launched from a replay wall: fade out, restore the real
- * game state, and return to the wall's owning scene (configured via
- * `engineAssets`). Uses {@link fadeAndStart} directly so the replay guard in
- * `transitionTo` doesn't catch us in a tight recursion before the
- * `endReplay()` in `onBeforeStart` ever fires.
- *
- * @param {import("phaser").Scene} scene
- */
-export function exitReplay(scene: import("phaser").Scene): void;
-/**
- * Opt-in symmetric fade-in upon scene creation. Call this in a scene's create()
- * method instead of `cameras.main.resetFX()` to match the fade out style.
- *
- * @param {import("phaser").Scene} scene
- * @param {string | TransitionOpts} [opts]
- */
-export function transitionIn(scene: import("phaser").Scene, opts?: string | TransitionOpts): void;
-/**
- * Named scene-transition presets and the single helper every scene change runs
- * through. Replaces the copy-pasted `fadeOut → camerafadeoutcomplete →
- * scene.start` block that was duplicated across ~20 scenes.
- *
- * Resolution order (most specific wins):
- *   1. per-call override   — `transitionTo(scene, key, "cinematic")` or `{ duration, color }`
- *   2. per-scene default   — `scene.sceneConfig.transition` (a scene's house style)
- *   3. global default      — DEFAULT_TRANSITION
- *
- * Color is the fade fill (0xRRGGBB); white = everyday room-to-room, black =
- * weightier/darker moments.
- *
- * @typedef {Object} TransitionPreset
- * @property {number} duration
- * @property {number} color
- * @property {boolean} [fadeIn]
- */
-/** @type {Record<string, TransitionPreset>} */
-export const TRANSITIONS: Record<string, TransitionPreset>;
-/**
- * Named scene-transition presets and the single helper every scene change runs
- * through. Replaces the copy-pasted `fadeOut → camerafadeoutcomplete →
- * scene.start` block that was duplicated across ~20 scenes.
- *
- * Resolution order (most specific wins):
- *   1. per-call override   — `transitionTo(scene, key, "cinematic")` or `{ duration, color }`
- *   2. per-scene default   — `scene.sceneConfig.transition` (a scene's house style)
- *   3. global default      — DEFAULT_TRANSITION
- *
- * Color is the fade fill (0xRRGGBB); white = everyday room-to-room, black =
- * weightier/darker moments.
- */
-export type TransitionPreset = {
-	duration: number;
-	color: number;
-	fadeIn?: boolean;
-};
-export type TransitionOpts = {
-	/**
-	 * - a key of TRANSITIONS.
-	 */
-	preset?: string;
-	/**
-	 * - overrides the resolved preset duration (ms).
-	 */
-	duration?: number;
-	/**
-	 * - overrides the resolved preset color (0xRRGGBB).
-	 */
-	color?: number;
-	/**
-	 * - opt out of fadeIn for this specific transition.
-	 */
-	fadeIn?: boolean;
-	/**
-	 * - passed to `scene.start` as its data argument.
-	 */
-	data?: object;
-	/**
-	 * - runs after the fade, before `scene.start`.
-	 */
-	onBeforeStart?: () => void;
 };
 /**
  * Draw a trash/bin icon centered at (cx, cy).

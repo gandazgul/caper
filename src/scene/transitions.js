@@ -43,6 +43,7 @@ export const DEFAULT_TRANSITION = "room";
  * @property {boolean} [fadeIn] - opt out of fadeIn for this specific transition.
  * @property {object} [data] - passed to `scene.start` as its data argument.
  * @property {() => void} [onBeforeStart] - runs after the fade, before `scene.start`.
+ * @property {boolean | { returnScene?: string, onBegin?: () => void }} [replay] - opt into replay sandboxing for this transition; `false` skips the game's configured replay policy.
  */
 
 /** @type {string | null} */
@@ -69,6 +70,13 @@ export function transitionTo(scene, targetKey, opts = {}) {
     lastTransitionFrom = scene.scene.key;
 
     const o = typeof opts === "string" ? { preset: opts } : { ...opts };
+    const replayPolicy = engineAssets.get("replayTransition");
+    const replay = o.replay === false ? null : o.replay ?? replayPolicy?.({ scene, targetKey, opts: o });
+    if (replay) {
+        const replayOpts = replay === true ? {} : replay;
+        store.beginReplay({ returnScene: replayOpts.returnScene ?? scene.scene.key });
+        replayOpts.onBegin?.();
+    }
     o.data = { ...(o.data ?? {}), from: scene.scene.key };
 
     fadeAndStart(scene, targetKey, o);
