@@ -65,6 +65,7 @@ export {
 export { evaluateCondition } from "./src/core/conditions.js";
 export { createAdventureGame } from "./src/scene/createAdventureGame.js";
 export { buildCutsceneContext } from "./src/cutscene/cutsceneActor.js";
+export { applyDebugChapterState, readEngineDebugConfig } from "./src/debug/engineDebug.js";
 export { bakeCircularCrop, resolveCharacterPortrait } from "./src/characters/portraits.js";
 export { randomInt } from "./src/core/random.js";
 export { RenderableItem } from "./src/inventory/itemDef.js";
