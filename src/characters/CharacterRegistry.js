@@ -23,6 +23,45 @@
  * `animationSet` + scales/origins — a full sprite-set swap) that overrides the
  * base look. See {@link CharacterRegistry#render} and ADR 0006.
  */
+const PREFIXES = ["character_", "bg_", "sprite_", "object_"];
+
+/**
+ * @param {string | undefined} key
+ * @returns {string | undefined}
+ */
+function prefixKey(key) {
+    if (!key || typeof key !== "string") return key;
+    if (PREFIXES.some((p) => key.startsWith(p))) return key;
+    return `character_${key}`;
+}
+
+/**
+ * @param {CharacterConfig} config
+ * @returns {CharacterConfig}
+ */
+function normalizeConfig(config) {
+    const copy = { ...config };
+    if (copy.spriteKey) copy.spriteKey = prefixKey(copy.spriteKey);
+    if (copy.animationSet) {
+        copy.animationSet = { ...copy.animationSet };
+        for (const [dir, set] of Object.entries(copy.animationSet)) {
+            /** @type {any} */ (copy.animationSet)[dir] = { ...set };
+            for (const [anim, key] of Object.entries(set)) {
+                if (typeof key === "string") {
+                    /** @type {any} */ (copy.animationSet)[dir][anim] = prefixKey(key);
+                }
+            }
+        }
+    }
+    if (copy.outfits) {
+        copy.outfits = { ...copy.outfits };
+        for (const [name, outfit] of Object.entries(copy.outfits)) {
+            copy.outfits[name] = normalizeConfig(outfit);
+        }
+    }
+    return copy;
+}
+
 export class CharacterRegistry {
     constructor() {
         /** @type {Map<string, CharacterConfig>} */
@@ -37,8 +76,9 @@ export class CharacterRegistry {
      * @param {string} id @param {CharacterConfig} config
      */
     register(id, config) {
-        this._chars.set(id, config);
-        if (config.playable && this._defaultPlayer === null) this._defaultPlayer = id;
+        const normalized = normalizeConfig(config);
+        this._chars.set(id, normalized);
+        if (normalized.playable && this._defaultPlayer === null) this._defaultPlayer = id;
         return this;
     }
 

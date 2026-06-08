@@ -59,8 +59,10 @@ export function loadJsonOnce(scene, key, url) {
     if (!scene.cache.json.exists(key)) scene.load.json(key, url);
 }
 
-const IMAGE_EXTENSIONS = new Set(["jpg", "jpeg", "png", "webp", "svg"]);
-const ATLAS_EXTENSIONS = new Set(["png", "webp"]);
+const IMAGE_EXTENSIONS = new Set(["jpg", "jpeg", "png", "webp", "svg", "gif"]);
+const ATLAS_EXTENSIONS = new Set(["png", "webp", "jpg", "jpeg", "svg", "gif"]);
+
+import { characters } from "../characters/CharacterRegistry.js";
 
 /**
  * @param {string} name
@@ -82,6 +84,7 @@ function resolveAssetName(name, fallbackExtension, allowedExtensions) {
     if (ext && allowedExtensions.has(ext)) {
         return { file: name, stem: name.slice(0, -ext.length - 1) };
     }
+    // If no extension, or unrecognised extension, assume the requested fallback
     return { file: `${name}.${fallbackExtension}`, stem: name };
 }
 
@@ -244,6 +247,21 @@ export function collectChapterAssetKeys(manager, chapter) {
         keys.add(bg);
         for (const a of cfg.assets ?? []) keys.add(a);
     }
+
+    // Auto-include playable characters, as they can appear in any scene
+    for (const id of characters.playableIds()) {
+        const conf = characters.get(id);
+        if (conf?.spriteKey) keys.add(conf.spriteKey);
+        if (conf?.animationSet) {
+            for (const dir of Object.values(conf.animationSet)) {
+                if (dir.still) keys.add(dir.still);
+                if (dir.idle) keys.add(dir.idle);
+                if (dir.walk) keys.add(dir.walk);
+                if (dir.reach) keys.add(dir.reach);
+            }
+        }
+    }
+
     return keys;
 }
 

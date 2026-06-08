@@ -128,7 +128,23 @@ export class AdventureScene extends Phaser.Scene {
 
     collectAssetKeys() {
         const cfg = this.sceneConfig;
-        return [...Object.values(cfg.backgroundsByChapter ?? {}), ...(cfg.assets ?? [])];
+        const keys = [...Object.values(cfg.backgroundsByChapter ?? {}), ...(cfg.assets ?? [])];
+
+        // Auto-include playable characters
+        for (const id of characters.playableIds()) {
+            const conf = characters.get(id);
+            if (conf?.spriteKey) keys.push(conf.spriteKey);
+            if (conf?.animationSet) {
+                for (const dir of Object.values(conf.animationSet)) {
+                    if (dir.still) keys.push(dir.still);
+                    if (dir.idle) keys.push(dir.idle);
+                    if (dir.walk) keys.push(dir.walk);
+                    if (dir.reach) keys.push(dir.reach);
+                }
+            }
+        }
+
+        return keys;
     }
 
     preload() {
