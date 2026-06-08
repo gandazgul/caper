@@ -7,6 +7,7 @@ import { walkControllerWanderHost } from "./behaviors/walker.js";
 
 /**
  * @typedef {object} IdleCharacterOptions
+ * @property {string} [characterId] - the specific playable character id to spawn. Defaults to the first inactive.
  * @property {(activeId: string, idleId: string) => string} [greeting] - text to
  *   speak when the idle character is clicked. No bubble if omitted.
  * @property {boolean} [startPresent] - spawn already on-screen (vs. the default
@@ -44,13 +45,17 @@ export class IdleCharacter {
         if (!sceneConfig?.walkable || sceneConfig.disableIdleCharacter) return;
 
         const playables = characters.playableIds();
+        /** @type {string} */
         this.activeName = store.getActiveCharacter() ?? characters.defaultPlayer ?? "";
         // Inert unless the active character is itself playable and a different
         // playable exists to stand in as the idle one.
         if (!playables.includes(this.activeName)) return;
-        const idle = playables.find((id) => id !== this.activeName);
-        if (!idle) return;
-        this.name = idle;
+
+        /** @type {string | undefined} */
+        const targetId = opts.characterId ?? playables.find((id) => id !== this.activeName);
+        if (!targetId || targetId === this.activeName) return;
+
+        this.name = targetId;
         this.config = characters.render(this.name, store.getOutfit(this.name));
 
         this.walkable = sceneConfig.walkable;

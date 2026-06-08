@@ -13,6 +13,7 @@ import { characters } from "../characters/CharacterRegistry.js";
 import { engineAssets } from "../assets/EngineAssets.js";
 import { loadAssetKeys, registerAssetKeys } from "../assets/assetLoading.js";
 import { clearLastTransitionFrom, lastTransitionFrom } from "./transitions.js";
+import { IdleCharacter } from "../movement/IdleCharacter.js";
 
 /**
  * @typedef {object} SpawnPose
@@ -83,6 +84,8 @@ export class AdventureScene extends Phaser.Scene {
     editor;
     /** @type {CastDirector} */
     cast;
+    /** @type {IdleCharacter[]} */
+    idleCharacters = [];
     /**
      * Count of live NPCs per character id, maintained by `NPC`. Lets wanderers
      * skip a character already present in the scene.
@@ -152,13 +155,46 @@ export class AdventureScene extends Phaser.Scene {
     }
 
     /**
+     * Spawn the idle characters (the inactive playables) to wander the scene.
+     * The engine automatically determines which characters are inactive, but only
+     * spawns those flagged `wanderer: true` in the registry, unless overridden via opts.
+     * @param {import("../movement/IdleCharacter.js").IdleCharacterOptions & { wanderers?: string[] }} [opts]
+     */
+    spawnIdleCharacters(opts) {
+        for (const char of this.idleCharacters) char.destroy();
+        this.idleCharacters = [];
+        
+        // Scene-wide suppression?
+        if (this.sceneConfig.disableIdleCharacter) return this.idleCharacters;
+
+        const playables = characters.playableIds();
+        const activeName = this.getActiveCharacterId();
+        const inactives = playables.filter((id) => id !== activeName);
+
+        // Explicit list provided? Otherwise use registry opt-in.
+        let targetIds = opts?.wanderers;
+        if (!targetIds) {
+            targetIds = inactives.filter((id) => characters.get(id)?.wanderer);
+        }
+
+        // Only spawn those that are actually inactive
+        const toSpawn = targetIds.filter(id => inactives.includes(id));
+
+        for (const id of toSpawn) {
+            this.idleCharacters.push(new IdleCharacter(this, { ...opts, characterId: id }));
+        }
+        return this.idleCharacters;
+    }
+
+    /**
      * Build the active character's WalkController from the registry, applying
      * the character's current outfit and any per-scene scale override. Reused
      * by `create()` and by a subclass's switch/rebuild.
-     * @param {string} name @param {{ x: number, y: number }} startPos
+     * @param {{ x: number, y: number }} startPos
      * @param {"up" | "down" | "left" | "right"} [initialFacing]
      */
-    spawnActiveCharacter(name, startPos, initialFacing) {
+    spawnActiveCharacter(startPos, initialFacing) {
+        const name = this.getActiveCharacterId();
         const cfg = this.sceneConfig;
         const conf = characters.render(name, store.getOutfit(name));
         const baseScale = 0.55;
@@ -230,7 +266,7 @@ export class AdventureScene extends Phaser.Scene {
         }
         if (lastTransitionFrom) clearLastTransitionFrom();
 
-        this.spawnActiveCharacter(this.getActiveCharacterId(), startPos, initialFacing);
+        this.spawnActiveCharacter(startPos, initialFacing);
         if (cfg.suppressActiveCharacter) this.suppressActiveCharacter();
 
         this.inventory = new InventoryLayer(this, {

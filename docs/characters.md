@@ -17,6 +17,7 @@ characters.register("hero", {
     animationScales: { "hero-walk-front": 0.5 },   // per-animation scale overrides
     animationOrigins: { "hero-side": { x: 0.5, y: 1 } },
     playable: true,              // ← this character is player-controllable
+    wanderer: true,              // ← if inactive, this character wanders the scene
     largeBubble: false,          // ← thought bubble anchors normally
     outfits: {
         pajamas: {               // alternate render config (see below)
@@ -71,7 +72,20 @@ When more than one playable character is registered, the engine automatically of
 
 1. Stores the new active character id
 2. Rebuilds the active walker with the new character's render config
-3. Emits a `characterchange` event that NPC reactions can listen for
+3. Repositions the newly active character to where the previous active character stood
+4. Updates the inactive wandering characters (see below)
+5. Emits a `characterchange` event that NPC reactions can listen for
+
+## Wanderers (Inactive Characters)
+
+When multiple playable characters are registered, the currently unselected (inactive) characters can autonomously wander around the scene. The engine manages these characters through `engineScene.idleCharacters`.
+
+To enable wandering, you must opt-in:
+- **Registry Opt-in:** Set `wanderer: true` when registering the character. They will automatically wander whenever they are inactive.
+- **Explicit Override:** Pass a `wanderers` array to the spawn method in your scene's `create()`: `this.spawnIdleCharacters({ wanderers: ["sister"] })`.
+- **Suppressing:** Set `disableIdleCharacter: true` in your `AdventureSceneConfig` to completely disable wanderers for that scene.
+
+You can also provide a `greeting` callback to `spawnIdleCharacters` to give them click-to-speak dialogue lines.
 
 ## Outfits (ADR 0006)
 

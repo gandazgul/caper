@@ -15,6 +15,7 @@ import { characters } from "./CharacterRegistry.js";
 import { store } from "../state/Store.js";
 import { UI_DEPTH } from "../ui/UIHelper.js";
 import { resolveCharacterPortrait } from "./portraits.js";
+import { IdleCharacter } from "../movement/IdleCharacter.js";
 
 // ─── Exported class ─────────────────────────────────────────────────────────
 
@@ -96,13 +97,100 @@ export class CharacterSwitcher {
             /** @param {any} _p @param {any} _x @param {any} _y @param {PointerEvent} event */
             (_p, _x, _y, event) => {
                 event?.stopPropagation?.();
-                if (this.opts.onSwitch) this.opts.onSwitch();
-                else {
-                    const s = /** @type {any} */ (this.scene);
-                    if (typeof s.switchActiveCharacter === "function") s.switchActiveCharacter();
-                }
+                this.switchActiveCharacter();
             },
         );
+    }
+
+    /** Switch the active playable character, falling back to game-agnostic logic if the scene doesn't provide it. */
+    switchActiveCharacter() {
+        if (this.opts.onSwitch) {
+            this.opts.onSwitch();
+            return;
+        }
+
+        const engineScene = /** @type {any} */ (this.scene);
+        if (typeof engineScene.switchActiveCharacter === "function") {
+            engineScene.switchActiveCharacter();
+            return;
+        }
+
+        // Game-agnostic default implementation
+        const walk = engineScene.walk;
+
+        if (!walk) return;
+        if (walk.locked) return; // don't switch mid-puzzle
+
+        const activeName = store.getActiveCharacter() ?? characters.defaultPlayer ?? "";
+        const playables = characters.playableIds();
+        if (playables.length < 2) return;
+        const nextName = playables[(playables.indexOf(activeName) + 1) % playables.length] ?? activeName;
+        if (nextName === activeName) return;
+
+        const activeX = walk.sprite.x;
+        const activeY = walk.sprite.y;
+
+        // Find the IdleCharacter instance for the character that is ABOUT TO BECOME ACTIVE
+        const nextIdleChar = engineScene.idleCharacters?.find(
+            /** @param {{ name?: string }} c */
+            (c) => c.name === nextName,
+        );
+
+        let inactiveX, inactiveY;
+        const isInactivePresent = nextIdleChar && nextIdleChar.isPresent();
+        if (isInactivePresent) {
+            const pos = nextIdleChar.getPosition();
+            inactiveX = pos ? pos.x : -150;
+            inactiveY = pos ? pos.y : activeY;
+        } else {
+            inactiveX = -150;
+            inactiveY = activeY;
+        }
+
+        const newActiveX = isInactivePresent ? inactiveX : activeX;
+        const newActiveY = isInactivePresent ? inactiveY : activeY;
+        const newInactiveX = activeX;
+        const newInactiveY = activeY;
+
+        // Preserve idle character options (like greetings) to recreate it
+        const idleOpts = engineScene.idleCharacters?.[0]?.opts ?? {};
+
+        store.setActiveCharacter(nextName);
+
+        walk.shutdown();
+        if (walk.sprite) walk.sprite.destroy();
+        engineScene.walk = null;
+
+        for (const c of engineScene.idleCharacters ?? []) c.destroy();
+        engineScene.idleCharacters = [];
+
+        if (typeof engineScene.spawnActiveCharacter === "function") {
+            engineScene.spawnActiveCharacter({ x: newActiveX, y: newActiveY });
+        }
+
+        if (typeof engineScene.spawnIdleCharacters === "function") {
+            engineScene.spawnIdleCharacters(idleOpts);
+        } else if (typeof engineScene.createIdleCharacter === "function") {
+            // Fallback for games that haven't updated yet
+            engineScene.idleCharacters = [engineScene.createIdleCharacter()];
+        } else {
+            engineScene.idleCharacters = engineScene.sceneConfig?.disableIdleCharacter
+                ? []
+                : playables.filter((id) => id !== nextName).map((id) =>
+                    new IdleCharacter(engineScene, { ...idleOpts, characterId: id })
+                );
+        }
+
+        // Make the newly inactive character stand where the active character just was
+        const newlyInactiveChar = engineScene.idleCharacters?.find(
+            /** @param {{ name?: string }} c */
+            (c) => c.name === activeName,
+        );
+        if (newlyInactiveChar) {
+            newlyInactiveChar.presentAt(newInactiveX, newInactiveY);
+        }
+
+        this.createPortrait();
     }
 
     /** @param {boolean} visible */

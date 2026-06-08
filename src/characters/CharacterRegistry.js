@@ -14,6 +14,7 @@
  * @property {Record<string, number>} [animationScales]
  * @property {Record<string, { x?: number, y?: number }>} [animationOrigins]
  * @property {boolean} [playable]
+ * @property {boolean} [wanderer] - whether the character wanders the scene when inactive (opt-in).
  * @property {boolean} [largeBubble]
  * @property {Record<string, CharacterConfig>} [outfits]
  * @property {{ scale?: number, texture?: string, offsetX?: number, offsetY?: number }} [portraitSettings]
