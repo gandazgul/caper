@@ -343,9 +343,9 @@ export class DialogueBubble extends Phaser.GameObjects.Container {
 	 * Register a new icon `type` so callers can pass `{ type, id }` without
 	 * knowing the atlas key. Returns a disposer for symmetry.
 	 * @param {string} type
-	 * @param {IconResolver} resolver
+	 * @param {IconResolver} [resolver]
 	 */
-	static registerIconType(type: string, resolver: IconResolver): () => void;
+	static registerIconType(type: string, resolver?: IconResolver): () => void;
 	/**
 	 * @param {import("phaser").Scene} scene
 	 * @param {DialogueBubbleOpts} opts
@@ -357,6 +357,7 @@ export class DialogueBubble extends Phaser.GameObjects.Container {
 	_followDx: number;
 	_followDy: number;
 	_stacked: boolean;
+	_bubbleScale: number;
 	bubble: Phaser.GameObjects.Image;
 	icons: Phaser.GameObjects.Image[];
 	hasText: boolean;
@@ -3399,6 +3400,8 @@ export type Critter = {
  * @property {string} [text] - text label (overrides icon).
  * @property {string} [icon] - named icon for drawIcon (default "fullscreen").
  * @property {(gfx: Phaser.GameObjects.Graphics, cx: number, cy: number) => void} [iconDrawFn] - custom draw callback.
+ * @property {{ texture: string, frame?: string | number, maxWidth?: number, maxHeight?: number, scale?: number }} [iconImage] - sprite icon.
+ * @property {boolean} [imageOnly] - if true, renders only the iconImage as an interactive sprite instead of a chunky button.
  */
 export class FullscreenButton {
 	/**
@@ -3407,8 +3410,8 @@ export class FullscreenButton {
 	 */
 	constructor(scene: import("phaser").Scene, opts?: FullscreenButtonOptions);
 	scene: Phaser.Scene;
-	/** @type {import("phaser").GameObjects.Container | null} */
-	btn: import("phaser").GameObjects.Container | null;
+	/** @type {(import("phaser").GameObjects.Container | import("phaser").GameObjects.Image) | null} */
+	btn: (import("phaser").GameObjects.Container | import("phaser").GameObjects.Image) | null;
 	/** @type {() => void} */
 	_onEnter: () => void;
 	/** @type {() => void} */
@@ -3456,6 +3459,20 @@ export type FullscreenButtonOptions = {
 	 * - custom draw callback.
 	 */
 	iconDrawFn?: (gfx: Phaser.GameObjects.Graphics, cx: number, cy: number) => void;
+	/**
+	 * - sprite icon.
+	 */
+	iconImage?: {
+		texture: string;
+		frame?: string | number;
+		maxWidth?: number;
+		maxHeight?: number;
+		scale?: number;
+	};
+	/**
+	 * - if true, renders only the iconImage as an interactive sprite instead of a chunky button.
+	 */
+	imageOnly?: boolean;
 };
 /**
  * @typedef {object} CompanionOptions
@@ -4012,11 +4029,11 @@ export type TransitionOpts = {
  * until the game configures it.
  *
  * @typedef {object} EngineAssetSlots
- * @property {{ atlas: string, frame: string }} [thoughtBubble] - cloud sprite for a "thought" DialogueBubble.
- * @property {{ atlas: string, frame: string }} [speechBubble] - cloud sprite for a "speech" DialogueBubble.
- * @property {{ atlas: string, frame: string }} [backButton] - the UIHelper back button.
- * @property {{ atlas: string, frames: string[] }} [leaves] - falling-leaf frames for WeatherLayer.
- * @property {{ atlas: string, frame: string }} [critter] - default atlas/frame for a critter spec that omits them.
+ * @property {{ atlas: string, frame: string, scale?: number }} [thoughtBubble] - cloud sprite for a "thought" DialogueBubble.
+ * @property {{ atlas: string, frame: string, scale?: number }} [speechBubble] - cloud sprite for a "speech" DialogueBubble.
+ * @property {{ atlas: string, frame: string, scale?: number }} [backButton] - the UIHelper back button.
+ * @property {{ atlas: string, frames: string[], scale?: number }} [leaves] - falling-leaf frames for WeatherLayer.
+ * @property {{ atlas: string, frame: string, scale?: number }} [critter] - default atlas/frame for a critter spec that omits them.
  * @property {string} [inventoryAtlas] - default atlas for the inventory bar (a scene may override via `inventoryAtlas`).
  * @property {string} [replayDefaultReturn] - scene key to return to from a replay when no return scene is stored (default none).
  * @property {(args: { scene: PhaserScene, targetKey: string, opts: import("../scene/transitions.js").TransitionOpts }) => (boolean | { returnScene?: string, onBegin?: () => void } | null | undefined)} [replayTransition] - optional game policy for transitions that should enter replay sandbox mode.
@@ -4059,6 +4076,7 @@ export type EngineAssetSlots = {
 	thoughtBubble?: {
 		atlas: string;
 		frame: string;
+		scale?: number;
 	};
 	/**
 	 * - cloud sprite for a "speech" DialogueBubble.
@@ -4066,6 +4084,7 @@ export type EngineAssetSlots = {
 	speechBubble?: {
 		atlas: string;
 		frame: string;
+		scale?: number;
 	};
 	/**
 	 * - the UIHelper back button.
@@ -4073,6 +4092,7 @@ export type EngineAssetSlots = {
 	backButton?: {
 		atlas: string;
 		frame: string;
+		scale?: number;
 	};
 	/**
 	 * - falling-leaf frames for WeatherLayer.
@@ -4080,6 +4100,7 @@ export type EngineAssetSlots = {
 	leaves?: {
 		atlas: string;
 		frames: string[];
+		scale?: number;
 	};
 	/**
 	 * - default atlas/frame for a critter spec that omits them.
@@ -4087,6 +4108,7 @@ export type EngineAssetSlots = {
 	critter?: {
 		atlas: string;
 		frame: string;
+		scale?: number;
 	};
 	/**
 	 * - default atlas for the inventory bar (a scene may override via `inventoryAtlas`).

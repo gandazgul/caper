@@ -147,8 +147,6 @@ export function drawIcon(gfx, cx, cy, name) {
  * (e.g. hiding the character switcher that shares this corner).
  */
 export const BACK_BUTTON_POSITION = Object.freeze({ x: 80, y: 50 });
-const BACK_BUTTON_SCALE = 0.4;
-const BACK_BUTTON_HOVER_SCALE = 0.44;
 
 /**
  * Create the standard "back" button — the registered arrow art pinned to the
@@ -171,16 +169,19 @@ export function createBackButton(scene, onClick, options = {}) {
     const { scrollFactor0 = false, visible = true, stopPropagation = false, replayReturn = true } = options;
 
     const backArt = engineAssets.get("backButton");
+    const baseScale = backArt?.scale ?? 1;
+    const hoverScale = baseScale * 1.1;
+
     const btn = scene.add.image(BACK_BUTTON_POSITION.x, BACK_BUTTON_POSITION.y, backArt?.atlas, backArt?.frame)
-        .setScale(BACK_BUTTON_SCALE)
+        .setScale(baseScale)
         .setDepth(UI_DEPTH)
         .setInteractive({ useHandCursor: true });
 
     if (scrollFactor0) btn.setScrollFactor(0);
     if (!visible) btn.setVisible(false);
 
-    btn.on("pointerover", () => btn.setScale(BACK_BUTTON_HOVER_SCALE));
-    btn.on("pointerout", () => btn.setScale(BACK_BUTTON_SCALE));
+    btn.on("pointerover", () => btn.setScale(hoverScale));
+    btn.on("pointerout", () => btn.setScale(baseScale));
     btn.on(
         "pointerdown",
         (

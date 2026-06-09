@@ -13,11 +13,11 @@
  * until the game configures it.
  *
  * @typedef {object} EngineAssetSlots
- * @property {{ atlas: string, frame: string }} [thoughtBubble] - cloud sprite for a "thought" DialogueBubble.
- * @property {{ atlas: string, frame: string }} [speechBubble] - cloud sprite for a "speech" DialogueBubble.
- * @property {{ atlas: string, frame: string }} [backButton] - the UIHelper back button.
- * @property {{ atlas: string, frames: string[] }} [leaves] - falling-leaf frames for WeatherLayer.
- * @property {{ atlas: string, frame: string }} [critter] - default atlas/frame for a critter spec that omits them.
+ * @property {{ atlas: string, frame: string, scale?: number }} [thoughtBubble] - cloud sprite for a "thought" DialogueBubble.
+ * @property {{ atlas: string, frame: string, scale?: number }} [speechBubble] - cloud sprite for a "speech" DialogueBubble.
+ * @property {{ atlas: string, frame: string, scale?: number }} [backButton] - the UIHelper back button.
+ * @property {{ atlas: string, frames: string[], scale?: number }} [leaves] - falling-leaf frames for WeatherLayer.
+ * @property {{ atlas: string, frame: string, scale?: number }} [critter] - default atlas/frame for a critter spec that omits them.
  * @property {string} [inventoryAtlas] - default atlas for the inventory bar (a scene may override via `inventoryAtlas`).
  * @property {string} [replayDefaultReturn] - scene key to return to from a replay when no return scene is stored (default none).
  * @property {(args: { scene: PhaserScene, targetKey: string, opts: import("../scene/transitions.js").TransitionOpts }) => (boolean | { returnScene?: string, onBegin?: () => void } | null | undefined)} [replayTransition] - optional game policy for transitions that should enter replay sandbox mode.

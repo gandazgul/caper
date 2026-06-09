@@ -22,7 +22,6 @@ import { UI_SAFE_TOP } from "../ui/UIHelper.js";
  * scenes plug in their own atlases without editing this file.
  */
 
-const BUBBLE_SCALE = 1;
 const BUBBLE_DEPTH = 799;
 
 /**
@@ -209,9 +208,10 @@ export class DialogueBubble extends Phaser.GameObjects.Container {
         // If we flipped the bubble (xOffsetSign = -1), the tail points to the bottom-right.
         // The variant selects which game-supplied sprite to use (speech vs thought).
         const bubbleArt = engineAssets.get(opts.variant === "speech" ? "speechBubble" : "thoughtBubble");
+        this._bubbleScale = bubbleArt?.scale ?? 1;
         this.bubble = scene.add.image(0, 0, bubbleArt?.atlas, bubbleArt?.frame)
             .setOrigin(0.5, 0.5)
-            .setScale(BUBBLE_SCALE);
+            .setScale(this._bubbleScale);
         this.add(this.bubble);
 
         this.icons = (opts.icons ?? [])
@@ -266,7 +266,7 @@ export class DialogueBubble extends Phaser.GameObjects.Container {
     /** @param {number} xOffsetSign */
     _applyLayout(xOffsetSign) {
         // Shift/flip the bubble image so the tail points correctly
-        this.bubble.setPosition(-CLOUD_BODY_DX * BUBBLE_SCALE * xOffsetSign, -CLOUD_BODY_DY * BUBBLE_SCALE);
+        this.bubble.setPosition(-CLOUD_BODY_DX * this._bubbleScale * xOffsetSign, -CLOUD_BODY_DY * this._bubbleScale);
         this.bubble.setFlipX(xOffsetSign === -1);
 
         // The cloud body's visible center sits ~10px off container origin in
@@ -376,10 +376,12 @@ export class DialogueBubble extends Phaser.GameObjects.Container {
      * Register a new icon `type` so callers can pass `{ type, id }` without
      * knowing the atlas key. Returns a disposer for symmetry.
      * @param {string} type
-     * @param {IconResolver} resolver
+     * @param {IconResolver} [resolver]
      */
     static registerIconType(type, resolver) {
-        ICON_TYPES[type] = resolver;
+        ICON_TYPES[type] = resolver || ((scene, id, scale) => {
+            return scene.add.image(0, 0, "ui_elements", id).setOrigin(0.5).setScale(scale);
+        });
         return () => {
             delete ICON_TYPES[type];
         };

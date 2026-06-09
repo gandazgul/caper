@@ -21,6 +21,8 @@ import { createChunkyButton } from "./UIHelper.js";
  * @property {string} [text] - text label (overrides icon).
  * @property {string} [icon] - named icon for drawIcon (default "fullscreen").
  * @property {(gfx: Phaser.GameObjects.Graphics, cx: number, cy: number) => void} [iconDrawFn] - custom draw callback.
+ * @property {{ texture: string, frame?: string | number, maxWidth?: number, maxHeight?: number, scale?: number }} [iconImage] - sprite icon.
+ * @property {boolean} [imageOnly] - if true, renders only the iconImage as an interactive sprite instead of a chunky button.
  */
 
 export class FullscreenButton {
@@ -30,7 +32,7 @@ export class FullscreenButton {
      */
     constructor(scene, opts = {}) {
         this.scene = scene;
-        /** @type {import("phaser").GameObjects.Container | null} */
+        /** @type {(import("phaser").GameObjects.Container | import("phaser").GameObjects.Image) | null} */
         this.btn = null;
 
         /** @type {() => void} */
@@ -73,18 +75,46 @@ export class FullscreenButton {
         const x = opts.x ?? 0;
         const y = opts.y ?? 0;
 
-        this.btn = createChunkyButton(this.scene, x, y, width, height, {
-            text: opts.text ?? null,
-            icon: opts.text ? undefined : (opts.icon ?? "fullscreen"),
-            iconDrawFn: opts.iconDrawFn ?? null,
-            onClick: () => {
+        if (opts.imageOnly && opts.iconImage) {
+            const frame = opts.iconImage.frame === undefined ? undefined : opts.iconImage.frame;
+            this.btn = this.scene.add.image(x + width / 2, y + height / 2, opts.iconImage.texture, frame);
+
+            // Replicate typical button behavior
+            this.btn.setInteractive({ useHandCursor: true });
+
+            // Need a container-like wrapper for setDepth/setScrollFactor compatibility with original
+            // Actually, Phaser Images have setDepth and setScrollFactor so it matches transparently.
+            const baseScale = opts.iconImage.scale ?? 1;
+            if (opts.iconImage.scale !== undefined) {
+                this.btn.setScale(baseScale);
+            }
+
+            this.btn.on("pointerover", () => this.btn?.setScale(baseScale * 1.05));
+            this.btn.on("pointerout", () => this.btn?.setScale(baseScale));
+            this.btn.on("pointerdown", () => this.btn?.setScale(baseScale * 0.95));
+            this.btn.on("pointerup", () => {
+                this.btn?.setScale(baseScale);
                 if (this.scene.scale.isFullscreen) {
                     this.scene.scale.stopFullscreen();
                 } else {
                     this.scene.scale.startFullscreen();
                 }
-            },
-        });
+            });
+        } else {
+            this.btn = createChunkyButton(this.scene, x, y, width, height, {
+                text: opts.text ?? null,
+                icon: opts.text || opts.iconImage ? undefined : (opts.icon ?? "fullscreen"),
+                iconDrawFn: opts.iconDrawFn ?? null,
+                iconImage: opts.iconImage ?? null,
+                onClick: () => {
+                    if (this.scene.scale.isFullscreen) {
+                        this.scene.scale.stopFullscreen();
+                    } else {
+                        this.scene.scale.startFullscreen();
+                    }
+                },
+            });
+        }
 
         if (opts.depth !== undefined) {
             this.btn.setDepth(opts.depth);
