@@ -163,7 +163,7 @@ export class AdventureScene extends Phaser.Scene {
     spawnIdleCharacters(opts) {
         for (const char of this.idleCharacters) char.destroy();
         this.idleCharacters = [];
-        
+
         // Scene-wide suppression?
         if (this.sceneConfig.disableIdleCharacter) return this.idleCharacters;
 
@@ -178,7 +178,7 @@ export class AdventureScene extends Phaser.Scene {
         }
 
         // Only spawn those that are actually inactive
-        const toSpawn = targetIds.filter(id => inactives.includes(id));
+        const toSpawn = targetIds.filter((id) => inactives.includes(id));
 
         for (const id of toSpawn) {
             this.idleCharacters.push(new IdleCharacter(this, { ...opts, characterId: id }));

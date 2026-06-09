@@ -54,6 +54,20 @@ function normalizeConfig(config) {
             }
         }
     }
+    if (copy.animationScales) {
+        copy.animationScales = { ...copy.animationScales };
+        for (const [key, value] of Object.entries(copy.animationScales)) {
+            const newKey = prefixKey(key);
+            if (newKey) copy.animationScales[newKey] = value;
+        }
+    }
+    if (copy.animationOrigins) {
+        copy.animationOrigins = { ...copy.animationOrigins };
+        for (const [key, value] of Object.entries(copy.animationOrigins)) {
+            const newKey = prefixKey(key);
+            if (newKey) copy.animationOrigins[newKey] = value;
+        }
+    }
     if (copy.outfits) {
         copy.outfits = { ...copy.outfits };
         for (const [name, outfit] of Object.entries(copy.outfits)) {

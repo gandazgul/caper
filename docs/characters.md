@@ -78,12 +78,17 @@ When more than one playable character is registered, the engine automatically of
 
 ## Wanderers (Inactive Characters)
 
-When multiple playable characters are registered, the currently unselected (inactive) characters can autonomously wander around the scene. The engine manages these characters through `engineScene.idleCharacters`.
+When multiple playable characters are registered, the currently unselected (inactive) characters can autonomously wander
+around the scene. The engine manages these characters through `engineScene.idleCharacters`.
 
 To enable wandering, you must opt-in:
-- **Registry Opt-in:** Set `wanderer: true` when registering the character. They will automatically wander whenever they are inactive.
-- **Explicit Override:** Pass a `wanderers` array to the spawn method in your scene's `create()`: `this.spawnIdleCharacters({ wanderers: ["sister"] })`.
-- **Suppressing:** Set `disableIdleCharacter: true` in your `AdventureSceneConfig` to completely disable wanderers for that scene.
+
+- **Registry Opt-in:** Set `wanderer: true` when registering the character. They will automatically wander whenever they
+  are inactive.
+- **Explicit Override:** Pass a `wanderers` array to the spawn method in your scene's `create()`:
+  `this.spawnIdleCharacters({ wanderers: ["sister"] })`.
+- **Suppressing:** Set `disableIdleCharacter: true` in your `AdventureSceneConfig` to completely disable wanderers for
+  that scene.
 
 You can also provide a `greeting` callback to `spawnIdleCharacters` to give them click-to-speak dialogue lines.
 
