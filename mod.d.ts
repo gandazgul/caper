@@ -584,15 +584,13 @@ export class WalkController {
 	updatePerFrame(): void;
 	/** Detach listeners + stop in-flight tweens/timers when the scene shuts down. */
 	/**
-	 * Shortcut for showing a thought bubble over the active character that auto-
-	 * follows the sprite. Mirrors NPC.speak so any character — active or
-	 * NPC — can speak the same way.
-	 *
+	 * Show a dialogue bubble with text from this character.
 	 * @param {string | import("../cutscene/DialogueBubble.js").DialogueBubbleOpts} textOrOpts
 	 * @param {number} [holdMs]
+	 * @param {"thought" | "speech"} [variant] - bubble art (default "thought").
 	 * @returns {DialogueBubble | null}
 	 */
-	speak(textOrOpts: string | DialogueBubbleOpts, holdMs?: number): DialogueBubble | null;
+	speak(textOrOpts: string | DialogueBubbleOpts, holdMs?: number, variant?: "thought" | "speech"): DialogueBubble | null;
 	shutdown(): void;
 	/** @param {Phaser.Input.Pointer} pointer */
 	handleSceneClick(pointer: Phaser.Input.Pointer): void;
