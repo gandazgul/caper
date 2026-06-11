@@ -23,6 +23,7 @@ import { createChunkyButton } from "./UIHelper.js";
  * @property {(gfx: Phaser.GameObjects.Graphics, cx: number, cy: number) => void} [iconDrawFn] - custom draw callback.
  * @property {{ texture: string, frame?: string | number, maxWidth?: number, maxHeight?: number, scale?: number }} [iconImage] - sprite icon.
  * @property {boolean} [imageOnly] - if true, renders only the iconImage as an interactive sprite instead of a chunky button.
+ * @property {boolean} [viewportFallback] - use fixed-position viewport fullscreen when native fullscreen is unsupported (default true).
  */
 
 export class FullscreenButton {
@@ -34,15 +35,27 @@ export class FullscreenButton {
         this.scene = scene;
         /** @type {(import("phaser").GameObjects.Container | import("phaser").GameObjects.Image) | null} */
         this.btn = null;
+        this._viewportFallback = opts.viewportFallback !== false;
+        this._pendingNativeFullscreen = false;
+        /** @type {any | null} */
+        this._viewportFullscreenState = null;
 
         /** @type {() => void} */
         this._onEnter = () => {
+            this._pendingNativeFullscreen = false;
             this.btn?.setVisible(false);
         };
         /** @type {() => void} */
         this._onLeave = () => {
+            this._pendingNativeFullscreen = false;
             // Only show if the GameUI hasn't externally hidden us.
             if (this._visible) this.btn?.setVisible(true);
+        };
+        /** @type {() => void} */
+        this._onFullscreenFailure = () => {
+            if (!this._pendingNativeFullscreen) return;
+            this._pendingNativeFullscreen = false;
+            this._enterViewportFullscreen();
         };
 
         this._visible = true;
@@ -52,6 +65,8 @@ export class FullscreenButton {
         // Listen for fullscreen transitions.
         scene.scale.on("enterfullscreen", this._onEnter);
         scene.scale.on("leavefullscreen", this._onLeave);
+        scene.scale.on("fullscreenfailed", this._onFullscreenFailure);
+        scene.scale.on("fullscreenunsupported", this._onFullscreenFailure);
 
         // Sync with current fullscreen state.
         if (scene.scale.isFullscreen) {
@@ -94,11 +109,7 @@ export class FullscreenButton {
             this.btn.on("pointerdown", () => this.btn?.setScale(baseScale * 0.95));
             this.btn.on("pointerup", () => {
                 this.btn?.setScale(baseScale);
-                if (this.scene.scale.isFullscreen) {
-                    this.scene.scale.stopFullscreen();
-                } else {
-                    this.scene.scale.startFullscreen();
-                }
+                this._toggleFullscreen();
             });
         } else {
             this.btn = createChunkyButton(this.scene, x, y, width, height, {
@@ -106,13 +117,7 @@ export class FullscreenButton {
                 icon: opts.text || opts.iconImage ? undefined : (opts.icon ?? "fullscreen"),
                 iconDrawFn: opts.iconDrawFn ?? null,
                 iconImage: opts.iconImage ?? null,
-                onClick: () => {
-                    if (this.scene.scale.isFullscreen) {
-                        this.scene.scale.stopFullscreen();
-                    } else {
-                        this.scene.scale.startFullscreen();
-                    }
-                },
+                onClick: () => this._toggleFullscreen(),
             });
         }
 
@@ -120,6 +125,104 @@ export class FullscreenButton {
             this.btn.setDepth(opts.depth);
         }
         this.btn.setScrollFactor(0);
+    }
+
+    _toggleFullscreen() {
+        if (this.scene.scale.isFullscreen) {
+            this.scene.scale.stopFullscreen();
+            return;
+        }
+
+        if (this._viewportFullscreenState) {
+            this._leaveViewportFullscreen();
+            return;
+        }
+
+        if (!this.scene.scale.fullscreen?.available) {
+            this._enterViewportFullscreen();
+            return;
+        }
+
+        this._pendingNativeFullscreen = true;
+
+        try {
+            this.scene.scale.startFullscreen();
+        } catch (_err) {
+            this._pendingNativeFullscreen = false;
+            this._enterViewportFullscreen();
+        }
+    }
+
+    _enterViewportFullscreen() {
+        if (!this._viewportFallback || this._viewportFullscreenState) return;
+
+        const target = resolveViewportFullscreenTarget(this.scene.scale);
+        if (!target) return;
+
+        const ownerDocument = target.ownerDocument ?? getGlobalDocument();
+        const body = isStyleableElement(ownerDocument?.body) ? ownerDocument.body : null;
+        const documentElement = isStyleableElement(ownerDocument?.documentElement)
+            ? ownerDocument.documentElement
+            : null;
+
+        this._viewportFullscreenState = {
+            target,
+            targetStyles: captureStyles(target, VIEWPORT_FULLSCREEN_TARGET_STYLES),
+            body,
+            bodyStyles: body ? captureStyles(body, VIEWPORT_FULLSCREEN_ROOT_STYLES) : null,
+            documentElement,
+            documentElementStyles: documentElement
+                ? captureStyles(documentElement, VIEWPORT_FULLSCREEN_ROOT_STYLES)
+                : null,
+        };
+
+        applyStyles(target, {
+            position: "fixed",
+            inset: "0",
+            width: "100vw",
+            height: "100dvh",
+            minHeight: "100vh",
+            zIndex: "2147483647",
+            margin: "0",
+            padding: "0",
+            backgroundColor: "#000",
+            overflow: "hidden",
+            touchAction: "none",
+        });
+        if (body) {
+            applyStyles(body, {
+                overflow: "hidden",
+                overscrollBehavior: "none",
+                height: "100%",
+                margin: "0",
+                padding: "0",
+            });
+        }
+        if (documentElement) {
+            applyStyles(documentElement, {
+                overflow: "hidden",
+                overscrollBehavior: "none",
+                height: "100%",
+                margin: "0",
+                padding: "0",
+            });
+        }
+
+        if (this._visible) this.btn?.setVisible(true);
+        this.scene.scale.refresh?.();
+    }
+
+    _leaveViewportFullscreen() {
+        const state = this._viewportFullscreenState;
+        if (!state) return;
+
+        restoreStyles(state.target, state.targetStyles);
+        if (state.body && state.bodyStyles) restoreStyles(state.body, state.bodyStyles);
+        if (state.documentElement && state.documentElementStyles) {
+            restoreStyles(state.documentElement, state.documentElementStyles);
+        }
+        this._viewportFullscreenState = null;
+        this.scene.scale.refresh?.();
     }
 
     /** @param {boolean} visible */
@@ -133,12 +236,104 @@ export class FullscreenButton {
     destroy() {
         this.scene.scale.off("enterfullscreen", this._onEnter);
         this.scene.scale.off("leavefullscreen", this._onLeave);
+        this.scene.scale.off("fullscreenfailed", this._onFullscreenFailure);
+        this.scene.scale.off("fullscreenunsupported", this._onFullscreenFailure);
         if (this._shutdownHandler) {
             this.scene.events.off("shutdown", this._shutdownHandler);
         }
+        this._leaveViewportFullscreen();
         if (this.btn) {
             this.btn.destroy();
             this.btn = null;
         }
+    }
+}
+
+const VIEWPORT_FULLSCREEN_TARGET_STYLES = [
+    "position",
+    "inset",
+    "width",
+    "height",
+    "minHeight",
+    "zIndex",
+    "margin",
+    "padding",
+    "backgroundColor",
+    "overflow",
+    "touchAction",
+];
+
+const VIEWPORT_FULLSCREEN_ROOT_STYLES = [
+    "overflow",
+    "overscrollBehavior",
+    "height",
+    "margin",
+    "padding",
+];
+
+/**
+ * @param {unknown} value
+ * @returns {boolean}
+ */
+function isStyleableElement(value) {
+    return !!value && typeof value === "object" && "style" in value;
+}
+
+/**
+ * @param {import("phaser").Scale.ScaleManager} scale
+ * @returns {any | null}
+ */
+function resolveViewportFullscreenTarget(scale) {
+    const scaleAny = /** @type {any} */ (scale);
+    const candidates = [
+        scaleAny.fullscreenTarget,
+        scaleAny.parent,
+        scaleAny.canvas?.parentElement,
+        scaleAny.canvas,
+    ];
+
+    for (const candidate of candidates) {
+        if (isStyleableElement(candidate)) return candidate;
+    }
+
+    return null;
+}
+
+/** @returns {any | null} */
+function getGlobalDocument() {
+    return typeof document === "undefined" ? null : document;
+}
+
+/**
+ * @param {any} element
+ * @param {string[]} properties
+ * @returns {Record<string, string | undefined>}
+ */
+function captureStyles(element, properties) {
+    /** @type {Record<string, string | undefined>} */
+    const snapshot = {};
+    for (const property of properties) {
+        snapshot[property] = element.style[property];
+    }
+    return snapshot;
+}
+
+/**
+ * @param {any} element
+ * @param {Record<string, string>} styles
+ */
+function applyStyles(element, styles) {
+    for (const [property, value] of Object.entries(styles)) {
+        element.style[property] = value;
+    }
+}
+
+/**
+ * @param {any} element
+ * @param {Record<string, string | undefined>} snapshot
+ */
+function restoreStyles(element, snapshot) {
+    for (const [property, value] of Object.entries(snapshot)) {
+        element.style[property] = value ?? "";
     }
 }

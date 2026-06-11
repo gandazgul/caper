@@ -121,7 +121,11 @@ export class NPC {
         this._onSelfClick = (/** @type {import("../interaction/HotspotManager.js").HotspotConfig} */ config) => {
             if (config?.data?.npc === this) this._behavior?.holdForGreeting?.();
         };
+        this._onSelfArrived = (/** @type {import("../interaction/HotspotManager.js").HotspotConfig} */ config) => {
+            if (config?.data?.npc === this) this.handleArrived();
+        };
         scene.bus?.on("hotspot:click", this._onSelfClick);
+        scene.bus?.on("hotspot:arrived", this._onSelfArrived);
 
         // Auto clean up when scene shuts down
         scene.events.once("shutdown", () => this.destroy());
@@ -587,6 +591,7 @@ export class NPC {
         if (this.scene) {
             this.scene.events.off("update", this.updateListener);
             this.scene.bus?.off("hotspot:click", this._onSelfClick);
+            this.scene.bus?.off("hotspot:arrived", this._onSelfArrived);
         }
         if (this.scene && this.scene.hotspots) {
             this.scene.hotspots.unregister(this.hotspotConfig.id);

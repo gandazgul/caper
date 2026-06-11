@@ -3400,6 +3400,7 @@ export type Critter = {
  * @property {(gfx: Phaser.GameObjects.Graphics, cx: number, cy: number) => void} [iconDrawFn] - custom draw callback.
  * @property {{ texture: string, frame?: string | number, maxWidth?: number, maxHeight?: number, scale?: number }} [iconImage] - sprite icon.
  * @property {boolean} [imageOnly] - if true, renders only the iconImage as an interactive sprite instead of a chunky button.
+ * @property {boolean} [viewportFallback] - use fixed-position viewport fullscreen when native fullscreen is unsupported (default true).
  */
 export class FullscreenButton {
 	/**
@@ -3410,16 +3411,25 @@ export class FullscreenButton {
 	scene: Phaser.Scene;
 	/** @type {(import("phaser").GameObjects.Container | import("phaser").GameObjects.Image) | null} */
 	btn: (import("phaser").GameObjects.Container | import("phaser").GameObjects.Image) | null;
+	_viewportFallback: boolean;
+	_pendingNativeFullscreen: boolean;
+	/** @type {any | null} */
+	_viewportFullscreenState: any | null;
 	/** @type {() => void} */
 	_onEnter: () => void;
 	/** @type {() => void} */
 	_onLeave: () => void;
+	/** @type {() => void} */
+	_onFullscreenFailure: () => void;
 	_visible: boolean;
 	_shutdownHandler: () => void;
 	/**
 	 * @param {FullscreenButtonOptions} opts
 	 */
 	_create(opts: FullscreenButtonOptions): void;
+	_toggleFullscreen(): void;
+	_enterViewportFullscreen(): void;
+	_leaveViewportFullscreen(): void;
 	/** @param {boolean} visible */
 	setVisible(visible: boolean): void;
 	destroy(): void;
@@ -3471,6 +3481,10 @@ export type FullscreenButtonOptions = {
 	 * - if true, renders only the iconImage as an interactive sprite instead of a chunky button.
 	 */
 	imageOnly?: boolean;
+	/**
+	 * - use fixed-position viewport fullscreen when native fullscreen is unsupported (default true).
+	 */
+	viewportFallback?: boolean;
 };
 /**
  * @typedef {object} CompanionOptions
