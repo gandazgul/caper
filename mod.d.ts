@@ -2243,6 +2243,7 @@ export class NPC {
 	hotspotConfig: HotspotConfig;
 	updateListener: () => void;
 	_onSelfClick: (config: HotspotConfig) => void;
+	_onSelfArrived: (config: HotspotConfig) => void;
 	/**
 	 * The key used to look up per-animation scale/origin/bounds overrides: the
 	 * playing animation's key, or the static texture key when nothing is
