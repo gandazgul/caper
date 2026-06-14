@@ -1,3 +1,5 @@
+import { walkablePolygons } from "../movement/pathfinding.js";
+
 /** @typedef {import("../interaction/HotspotManager.js").HotspotManager} HotspotManager */
 
 const ENABLE_SPRITE_LABELS = false;
@@ -7,7 +9,7 @@ const ENABLE_HOTSPOT_BOUNDS = true;
 const DEBUG_DEPTH = 9000;
 
 /**
- * Toggled with Shift+D. Draws the walkable polygon, Hotspot bounds, and each
+ * Toggled with Shift+D. Draws the walkable polygon(s), Hotspot bounds, and each
  * Hotspot's approach point with a small "facing" arrow. The primary scene-
  * authoring tool: edit JSON, save, reload, see the result.
  *
@@ -28,7 +30,7 @@ export class DebugOverlay {
     /**
      * @param {import("phaser").Scene} scene
      * @param {object} opts
-     * @param {Point[]} opts.walkable
+     * @param {import("../movement/pathfinding.js").WalkableArea} opts.walkable
      * @param {HotspotManager} opts.hotspotManager
      * @param {boolean} [opts.initialVisible] - start visible (Game's debug flag).
      */
@@ -110,12 +112,13 @@ export class DebugOverlay {
         ).subscenes?.isOpen?.() === true;
 
         if (!inSubscene) {
-            if (this.walkable.length > 1) {
+            for (const polygon of walkablePolygons(this.walkable)) {
+                if (polygon.length <= 1) continue;
                 g.lineStyle(2, 0x00ff00, 0.9);
                 g.beginPath();
-                g.moveTo(this.walkable[0].x, this.walkable[0].y);
-                for (let i = 1; i < this.walkable.length; i++) {
-                    g.lineTo(this.walkable[i].x, this.walkable[i].y);
+                g.moveTo(polygon[0].x, polygon[0].y);
+                for (let i = 1; i < polygon.length; i++) {
+                    g.lineTo(polygon[i].x, polygon[i].y);
                 }
                 g.closePath();
                 g.strokePath();

@@ -29,7 +29,7 @@ import { IdleCharacter } from "../movement/IdleCharacter.js";
  * @property {string} key
  * @property {string} [chapter] - the chapter/chapter this scene belongs to.
  * @property {Record<string, string>} backgroundsByChapter
- * @property {{ x: number, y: number }[]} walkable
+ * @property {import("../movement/pathfinding.js").WalkableArea} walkable
  * @property {SpawnPose} [activeCharacter] - spawn pose (+ optional sprite fields some helpers read).
  * @property {Record<string, number>} [animationScales]
  * @property {Record<string, { x?: number, y?: number }>} [animationOrigins]
@@ -208,6 +208,7 @@ export class AdventureScene extends Phaser.Scene {
             startPosition: startPos,
             initialFacing,
             walkable: cfg.walkable,
+            walkSpeed: conf.walkSpeed,
             spriteScale: scale,
             animationSet: conf.animationSet,
             animationScales: conf.animationScales,

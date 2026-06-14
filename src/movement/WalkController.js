@@ -1,6 +1,6 @@
 import Phaser from "phaser";
 import { computePerspectiveScale } from "../core/perspective.js";
-import { findPath, snapToPolygon } from "./pathfinding.js";
+import { findPathInWalkable, snapToWalkable } from "./pathfinding.js";
 import { DialogueBubble } from "../cutscene/DialogueBubble.js";
 import { WearableManager } from "../characters/Wearables.js";
 import { store } from "../state/Store.js";
@@ -17,7 +17,7 @@ import { characters } from "../characters/CharacterRegistry.js";
  * @typedef {object} WalkControllerOpts
  * @property {string} spriteKey
  * @property {{ x: number, y: number }} startPosition
- * @property {{ x: number, y: number }[]} walkable
+ * @property {import("./pathfinding.js").WalkableArea} walkable
  * @property {number} [walkSpeed]
  * @property {number} [spriteScale]
  * @property {Partial<Record<Direction, { still?: string, idle?: string, walk?: string, reach?: string }>>} [animationSet]
@@ -66,7 +66,7 @@ export class WalkController {
      * @param {object} opts
      * @param {string} opts.spriteKey - texture key used as the initial display and as the ultimate fallback
      * @param {Point} opts.startPosition
-     * @param {Point[]} opts.walkable
+     * @param {import("./pathfinding.js").WalkableArea} opts.walkable
      * @param {number} [opts.walkSpeed] - pixels/sec
      * @param {number} [opts.spriteScale]
      * @param {AnimationSet} [opts.animationSet]
@@ -289,17 +289,8 @@ export class WalkController {
         // an outside start, its visibility graph disconnects, and it falls
         // back to a straight diagonal through unwalkable space.
         const rawStart = { x: this.sprite.x, y: this.sprite.y };
-        const start = snapToPolygon(rawStart, this.walkable);
-        const polyTarget = snapToPolygon(target, this.walkable);
-        const path = findPath(start, polyTarget, this.walkable);
-        if (polyTarget.x !== target.x || polyTarget.y !== target.y) {
-            path.push(target);
-        }
-        // If the sprite is outside the polygon, walk to the boundary first.
-        if (start.x !== rawStart.x || start.y !== rawStart.y) {
-            path.unshift(start);
-        }
-        this.walkPath(path, 0, onArrive);
+        const { path, reachedTarget } = findPathInWalkable(rawStart, target, this.walkable);
+        this.walkPath(path, 0, reachedTarget ? onArrive : undefined);
     }
 
     /**
@@ -360,6 +351,10 @@ export class WalkController {
 
     /** @param {import("../interaction/HotspotManager.js").HotspotConfig} hotspot */
     walkToHotspot(hotspot) {
+        if (!hotspot.approachPoint) {
+            /** @type {any} */ (this.scene).bus.emit("hotspot:arrived", hotspot);
+            return;
+        }
         this.walkTo(hotspot.approachPoint, () => {
             this.applyFacing(hotspot.approachPoint.facing);
             /** @type {any} */ (this.scene).bus.emit("hotspot:arrived", hotspot);
@@ -535,7 +530,7 @@ export class WalkController {
 
     /** @param {Point} p @returns {Point} */
     snapToWalkable(p) {
-        return snapToPolygon(p, this.walkable);
+        return snapToWalkable(p, this.walkable);
     }
 }
 

@@ -5,7 +5,7 @@ import { WearableManager } from "../characters/Wearables.js";
 import { store } from "../state/Store.js";
 import { characters } from "../characters/CharacterRegistry.js";
 import { computePerspectiveScale } from "../core/perspective.js";
-import { findPath, pointInPolygon, snapToPolygon } from "../movement/pathfinding.js";
+import { findPathInWalkable, walkablePolygons } from "../movement/pathfinding.js";
 import { WanderBehavior } from "../movement/behaviors/WanderBehavior.js";
 import { PatrolBehavior } from "../movement/behaviors/PatrolBehavior.js";
 import { FollowBehavior } from "../movement/behaviors/FollowBehavior.js";
@@ -353,22 +353,15 @@ export class NPC {
         // shore strip — pathfinding would wrongly snap those targets back in).
         const walkable = this.scene.sceneConfig?.walkable;
         let path;
-        if (walkable && walkable.length >= 3 && !opts.direct) {
+        if (walkablePolygons(walkable).length > 0 && !opts.direct) {
             // If we START outside the polygon (e.g. spawned at an exit/approach
             // point just off the strip), `findPath` can't build a visibility
             // graph from that point and would fall back to a straight line that
             // ignores obstacles. So first hop to the nearest in-polygon point,
             // then route normally from there.
-            const start = { x: sprite.x, y: sprite.y };
-            const polyStart = pointInPolygon(start, walkable) ? start : snapToPolygon(start, walkable);
-
-            const polyTarget = snapToPolygon(target, walkable);
-            path = findPath(polyStart, polyTarget, walkable);
-            if (polyStart !== start) path.unshift(polyStart);
-            // If the requested target sat outside the polygon, add a final leg
-            // out to it so we still reach the actual point (e.g. a door just
-            // off the strip), matching WalkController's behavior.
-            if (polyTarget.x !== target.x || polyTarget.y !== target.y) path.push(target);
+            const route = findPathInWalkable({ x: sprite.x, y: sprite.y }, target, walkable);
+            path = route.path;
+            if (!route.reachedTarget) onArrive = undefined;
         } else {
             path = [target];
         }

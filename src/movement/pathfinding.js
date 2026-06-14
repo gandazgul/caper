@@ -1,6 +1,8 @@
 /** @typedef {Object} Point
  * @property {number} x
  * @property {number} y */
+/** @typedef {Point[]} WalkablePolygon */
+/** @typedef {Point[] | Point[][]} WalkableArea */
 
 /**
  * Lightweight 2D nav helpers for adventure-scene walking. The walkable region is
@@ -86,6 +88,111 @@ export function snapToPolygon(p, polygon) {
         }
     }
     return best ?? p;
+}
+
+/**
+ * Normalize a scene walkable config. Backwards-compatible shape:
+ *   - `Point[]`   = one polygon
+ *   - `Point[][]` = several disconnected polygons/islands
+ *
+ * @param {WalkableArea | null | undefined} walkable
+ * @returns {WalkablePolygon[]}
+ */
+export function walkablePolygons(walkable) {
+    if (!Array.isArray(walkable)) return [];
+    if (walkable.length > 0 && isPoint(walkable[0])) {
+        return /** @type {WalkablePolygon[]} */ ([walkable]).filter((polygon) => polygon.length >= 3);
+    }
+    return /** @type {WalkablePolygon[]} */ (walkable).filter((polygon) =>
+        Array.isArray(polygon) && polygon.length >= 3
+    );
+}
+
+/**
+ * @param {unknown} value
+ * @returns {value is Point}
+ */
+function isPoint(value) {
+    const point = /** @type {Partial<Point> | null} */ (
+        value && typeof value === "object" ? value : null
+    );
+    return typeof point?.x === "number" && typeof point.y === "number";
+}
+
+/**
+ * @param {Point} point
+ * @param {WalkablePolygon[]} polygons
+ * @returns {WalkablePolygon | null}
+ */
+export function containingWalkablePolygon(point, polygons) {
+    return polygons.find((polygon) => pointInPolygon(point, polygon)) ?? null;
+}
+
+/**
+ * @param {Point} point
+ * @param {WalkablePolygon[]} polygons
+ * @returns {WalkablePolygon | null}
+ */
+export function nearestWalkablePolygon(point, polygons) {
+    let best = null;
+    let bestDistance = Infinity;
+    for (const polygon of polygons) {
+        const snapped = snapToPolygon(point, polygon);
+        const distance = Math.hypot(point.x - snapped.x, point.y - snapped.y);
+        if (distance < bestDistance) {
+            best = polygon;
+            bestDistance = distance;
+        }
+    }
+    return best;
+}
+
+/**
+ * Snap a point to the polygon it is already in, or to the nearest polygon.
+ *
+ * @param {Point} point
+ * @param {WalkableArea | null | undefined} walkable
+ * @returns {Point}
+ */
+export function snapToWalkable(point, walkable) {
+    const polygons = walkablePolygons(walkable);
+    const polygon = containingWalkablePolygon(point, polygons) ?? nearestWalkablePolygon(point, polygons);
+    return polygon ? snapToPolygon(point, polygon) : point;
+}
+
+/**
+ * Build a path within the start polygon of a potentially multi-polygon walkable.
+ * If the requested target sits in another polygon, route only to the closest
+ * point on the start polygon and report `reachedTarget: false`.
+ *
+ * @param {Point} rawStart
+ * @param {Point} target
+ * @param {WalkableArea | null | undefined} walkable
+ * @returns {{ path: Point[], reachedTarget: boolean }}
+ */
+export function findPathInWalkable(rawStart, target, walkable) {
+    const polygons = walkablePolygons(walkable);
+    if (polygons.length === 0) return { path: [target], reachedTarget: true };
+
+    const startPolygon = containingWalkablePolygon(rawStart, polygons) ?? nearestWalkablePolygon(rawStart, polygons);
+    if (!startPolygon) return { path: [target], reachedTarget: true };
+
+    const targetPolygon = containingWalkablePolygon(target, polygons);
+    const canReachTarget = !targetPolygon || targetPolygon === startPolygon;
+    const routeTarget = canReachTarget ? target : snapToPolygon(target, startPolygon);
+
+    const start = snapToPolygon(rawStart, startPolygon);
+    const polyTarget = snapToPolygon(routeTarget, startPolygon);
+    const path = findPath(start, polyTarget, startPolygon);
+
+    if (polyTarget.x !== routeTarget.x || polyTarget.y !== routeTarget.y) {
+        path.push(routeTarget);
+    }
+    if (start.x !== rawStart.x || start.y !== rawStart.y) {
+        path.unshift(start);
+    }
+
+    return { path, reachedTarget: canReachTarget };
 }
 
 /**

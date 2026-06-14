@@ -10,6 +10,7 @@
  * @typedef {Object} CharacterConfig
  * @property {string} [spriteKey]
  * @property {number} [spriteScale]
+ * @property {number} [walkSpeed]
  * @property {import("../movement/WalkController.js").AnimationSet} [animationSet]
  * @property {Record<string, number>} [animationScales]
  * @property {Record<string, { x?: number, y?: number }>} [animationOrigins]

@@ -7,7 +7,7 @@ import Phaser from 'phaser';
  * @property {string} id
  * @property {HotspotType} type
  * @property {{ x: number, y: number, w: number, h: number }} bounds
- * @property {{ x: number, y: number, facing: "up" | "down" | "left" | "right" }} approachPoint
+ * @property {{ x: number, y: number, facing: "up" | "down" | "left" | "right" } | null} approachPoint
  * @property {Record<string, unknown>} [data]
  * @property {string} [cursor] - optional CSS cursor (e.g. `url('/objects/cursor_exit.png') 0 0, auto`). Overrides the default hand cursor.
  */
@@ -34,7 +34,7 @@ export class HotspotManager {
 	/** @returns {HotspotConfig[]} */
 	list(): HotspotConfig[];
 }
-export type HotspotType = "pickup" | "look" | "exit" | "subscene" | "use-with";
+export type HotspotType = string;
 export type HotspotConfig = {
 	id: string;
 	type: HotspotType;
@@ -48,7 +48,7 @@ export type HotspotConfig = {
 		x: number;
 		y: number;
 		facing: "up" | "down" | "left" | "right";
-	};
+	} | null;
 	data?: Record<string, unknown>;
 	/**
 	 * - optional CSS cursor (e.g. `url('/objects/cursor_exit.png') 0 0, auto`). Overrides the default hand cursor.
@@ -446,6 +446,11 @@ export type DialogueBubbleOpts = {
  * (atlas + frame) and a single-texture icon (no frame) coexist cleanly.
  */
 export type IconResolver = (scene: import("phaser").Scene, id: string, scale: number) => Phaser.GameObjects.Image | null;
+export type Point = {
+	x: number;
+	y: number;
+};
+export type WalkableArea = Point[] | Point[][];
 export type PerspectiveConfig = {
 	nearY: number;
 	farY: number;
@@ -473,7 +478,7 @@ export type PerspectiveConfig = {
  * @typedef {object} WalkControllerOpts
  * @property {string} spriteKey
  * @property {{ x: number, y: number }} startPosition
- * @property {{ x: number, y: number }[]} walkable
+ * @property {import("./pathfinding.js").WalkableArea} walkable
  * @property {number} [walkSpeed]
  * @property {number} [spriteScale]
  * @property {Partial<Record<Direction, { still?: string, idle?: string, walk?: string, reach?: string }>>} [animationSet]
@@ -520,7 +525,7 @@ export class WalkController {
 	 * @param {object} opts
 	 * @param {string} opts.spriteKey - texture key used as the initial display and as the ultimate fallback
 	 * @param {Point} opts.startPosition
-	 * @param {Point[]} opts.walkable
+	 * @param {import("./pathfinding.js").WalkableArea} opts.walkable
 	 * @param {number} [opts.walkSpeed] - pixels/sec
 	 * @param {number} [opts.spriteScale]
 	 * @param {AnimationSet} [opts.animationSet]
@@ -538,10 +543,7 @@ export class WalkController {
 	 */
 	constructor(scene: import("phaser").Scene, opts: WalkControllerOpts);
 	scene: Phaser.Scene;
-	walkable: {
-		x: number;
-		y: number;
-	}[];
+	walkable: WalkableArea;
 	walkSpeed: number;
 	defaultKey: string;
 	animationSet: Partial<Record<Direction, {
@@ -601,7 +603,7 @@ export class WalkController {
 	 *   target without polygon routing (for area-rect roamers, e.g. the
 	 *   inactive sibling strolling a shore strip outside the walkable).
 	 */
-	walkTo(target: Point, onArrive?: () => void, opts?: {
+	walkTo(target: Point$1, onArrive?: () => void, opts?: {
 		direct?: boolean;
 	}): void;
 	/**
@@ -612,7 +614,7 @@ export class WalkController {
 	 * @param {number} index
 	 * @param {(() => void) | undefined} onArrive
 	 */
-	walkPath(path: Point[], index: number, onArrive: (() => void) | undefined): void;
+	walkPath(path: Point$1[], index: number, onArrive: (() => void) | undefined): void;
 	/**
 	 * Cancel any in-flight walk and settle to the still pose. Satisfies the
 	 * `Walker` contract shared with `NPC` so behaviors can drive either.
@@ -632,7 +634,7 @@ export class WalkController {
 	 * @param {Point} point
 	 * @param {Facing} [facing]
 	 */
-	teleportTo(point: Point, facing?: Facing): void;
+	teleportTo(point: Point$1, facing?: Facing): void;
 	/** @param {Facing} facing */
 	applyFacing(facing: Facing): void;
 	/** Enter stationary state, show still texture, restart fidget timer. */
@@ -656,9 +658,9 @@ export class WalkController {
 	/** Pick & display the right asset for the current direction + state. */
 	applyAnimation(): void;
 	/** @param {Point} p @returns {Point} */
-	snapToWalkable(p: Point): Point;
+	snapToWalkable(p: Point$1): Point$1;
 }
-export type Point = {
+type Point$1 = {
 	x: number;
 	y: number;
 };
@@ -671,10 +673,7 @@ export type WalkControllerOpts = {
 		x: number;
 		y: number;
 	};
-	walkable: {
-		x: number;
-		y: number;
-	}[];
+	walkable: WalkableArea;
 	walkSpeed?: number;
 	spriteScale?: number;
 	animationSet?: Partial<Record<Direction, {
@@ -1015,7 +1014,7 @@ export type SubsceneConfig = {
 	onClose?: (scene: import("phaser").Scene) => void;
 };
 /**
- * Toggled with Shift+D. Draws the walkable polygon, Hotspot bounds, and each
+ * Toggled with Shift+D. Draws the walkable polygon(s), Hotspot bounds, and each
  * Hotspot's approach point with a small "facing" arrow. The primary scene-
  * authoring tool: edit JSON, save, reload, see the result.
  *
@@ -1036,17 +1035,17 @@ export class DebugOverlay {
 	/**
 	 * @param {import("phaser").Scene} scene
 	 * @param {object} opts
-	 * @param {Point[]} opts.walkable
+	 * @param {import("../movement/pathfinding.js").WalkableArea} opts.walkable
 	 * @param {HotspotManager} opts.hotspotManager
 	 * @param {boolean} [opts.initialVisible] - start visible (Game's debug flag).
 	 */
 	constructor(scene: import("phaser").Scene, opts: {
-		walkable: Point$1[];
+		walkable: WalkableArea;
 		hotspotManager: HotspotManager$1;
 		initialVisible?: boolean;
 	});
 	scene: Phaser.Scene;
-	walkable: Point$1[];
+	walkable: WalkableArea;
 	/** @type {HotspotManager} */
 	hotspotManager: HotspotManager$1;
 	visible: boolean;
@@ -1079,10 +1078,6 @@ export class DebugOverlay {
 	drawSpriteBoxes(list: Phaser.GameObjects.GameObject[], inSubscene: boolean): void;
 }
 type HotspotManager$1 = HotspotManager;
-type Point$1 = {
-	x: number;
-	y: number;
-};
 export class SceneEditor {
 	/** @param {import("phaser").Scene} scene */
 	constructor(scene: import("phaser").Scene);
@@ -1208,12 +1203,9 @@ export class SceneEditor {
 	copyProps(): Promise<void>;
 	copyCritters(): Promise<void>;
 	/**
-	 * @returns {{x: number, y: number}[] | null}
+	 * @returns {import("../movement/pathfinding.js").WalkableArea | null}
 	 */
-	_getWalkable(): {
-		x: number;
-		y: number;
-	}[] | null;
+	_getWalkable(): WalkableArea | null;
 	/** @param {string} text */
 	_writeClipboard(text: string): Promise<void>;
 	/** @param {string} msg */
@@ -1570,7 +1562,11 @@ export type PropState = {
 	 * - gate clickability separately from visibility.
 	 */
 	activeWhen?: Condition;
-	cursor?: "pickup" | "look" | "exit" | "subscene" | "use-with";
+	/**
+	 * - optional hotspot type override for custom game behavior.
+	 */
+	type?: string;
+	cursor?: string;
 	/**
 	 * - explicit hotspot bounds.
 	 */
@@ -1602,6 +1598,10 @@ export type PropState = {
  */
 export type Prop = {
 	id: string;
+	/**
+	 * - optional game-authored semantic type for custom behavior.
+	 */
+	type?: string;
 	/**
 	 * - editor comments for this prop.
 	 */
@@ -1636,7 +1636,11 @@ export type Prop = {
 		y: number;
 		facing: string;
 	} | "in-place";
-	cursor?: "pickup" | "look" | "exit" | "subscene" | "use-with";
+	cursor?: string;
+	/**
+	 * - optional game-authored metadata carried with the prop.
+	 */
+	data?: Record<string, any>;
 	/**
 	 * - explicit scene(s) this prop transitions to, used for return-approach resolution when the transition is hidden behind an `emit`.
 	 */
@@ -1669,10 +1673,7 @@ export type Walker = {
  */
 export type WanderHost = Walker & {
 	scene: Phaser.Scene;
-	walkable: {
-		x: number;
-		y: number;
-	}[];
+	walkable: WalkableArea;
 	getRandomPoint: () => {
 		x: number;
 		y: number;
@@ -2941,6 +2942,7 @@ export const characters: CharacterRegistry;
 export type CharacterConfig = {
 	spriteKey?: string;
 	spriteScale?: number;
+	walkSpeed?: number;
 	animationSet?: AnimationSet;
 	animationScales?: Record<string, number>;
 	animationOrigins?: Record<string, {
@@ -2976,6 +2978,8 @@ export type CharacterConfig = {
  *   come-and-go roll that may start absent / walk in from an exit).
  * @property {{ x: number, y: number } | null} [startPos] - explicit spawn point
  *   when present-on-entry (else a random walkable point).
+ * @property {"wander" | "follow"} [behavior] - inactive-character movement style. Default "wander".
+ * @property {import("./behaviors/FollowBehavior.js").FollowOptions} [follow] - loose-follow options when behavior is "follow".
  */
 /**
  * The idle character (ADR 0005): the player-controllable character that ISN'T
@@ -2999,8 +3003,8 @@ export class IdleCharacter {
 	walker: WalkController | null;
 	/** @type {Phaser.GameObjects.Sprite | null} */
 	sprite: Phaser.GameObjects.Sprite | null;
-	/** @type {WanderBehavior | null} */
-	behavior: WanderBehavior | null;
+	/** @type {WanderBehavior | FollowBehavior | null} */
+	behavior: WanderBehavior | FollowBehavior | null;
 	/** @type {string} */
 	activeName: string;
 	name: string;
@@ -3059,6 +3063,14 @@ export type IdleCharacterOptions = {
 		x: number;
 		y: number;
 	} | null;
+	/**
+	 * - inactive-character movement style. Default "wander".
+	 */
+	behavior?: "wander" | "follow";
+	/**
+	 * - loose-follow options when behavior is "follow".
+	 */
+	follow?: FollowOptions;
 };
 /**
  * @typedef {object} SpawnPose
@@ -3073,7 +3085,7 @@ export type IdleCharacterOptions = {
  * @property {string} key
  * @property {string} [chapter] - the chapter/chapter this scene belongs to.
  * @property {Record<string, string>} backgroundsByChapter
- * @property {{ x: number, y: number }[]} walkable
+ * @property {import("../movement/pathfinding.js").WalkableArea} walkable
  * @property {SpawnPose} [activeCharacter] - spawn pose (+ optional sprite fields some helpers read).
  * @property {Record<string, number>} [animationScales]
  * @property {Record<string, { x?: number, y?: number }>} [animationOrigins]
@@ -3230,10 +3242,7 @@ export type AdventureSceneConfig = {
 	 */
 	chapter?: string;
 	backgroundsByChapter: Record<string, string>;
-	walkable: {
-		x: number;
-		y: number;
-	}[];
+	walkable: WalkableArea;
 	/**
 	 * - spawn pose (+ optional sprite fields some helpers read).
 	 */

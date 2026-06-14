@@ -3,7 +3,9 @@ import { characters } from "../characters/CharacterRegistry.js";
 import { store } from "../state/Store.js";
 import { DialogueBubble } from "../cutscene/DialogueBubble.js";
 import { WanderBehavior } from "./behaviors/WanderBehavior.js";
+import { FollowBehavior } from "./behaviors/FollowBehavior.js";
 import { walkControllerWanderHost } from "./behaviors/walker.js";
+import { walkablePolygons } from "./pathfinding.js";
 
 /**
  * @typedef {object} IdleCharacterOptions
@@ -14,6 +16,8 @@ import { walkControllerWanderHost } from "./behaviors/walker.js";
  *   come-and-go roll that may start absent / walk in from an exit).
  * @property {{ x: number, y: number } | null} [startPos] - explicit spawn point
  *   when present-on-entry (else a random walkable point).
+ * @property {"wander" | "follow"} [behavior] - inactive-character movement style. Default "wander".
+ * @property {import("./behaviors/FollowBehavior.js").FollowOptions} [follow] - loose-follow options when behavior is "follow".
  */
 
 /**
@@ -38,11 +42,11 @@ export class IdleCharacter {
         this.walker = null;
         /** @type {Phaser.GameObjects.Sprite | null} */
         this.sprite = null;
-        /** @type {WanderBehavior | null} */
+        /** @type {WanderBehavior | FollowBehavior | null} */
         this.behavior = null;
 
         const sceneConfig = scene.sceneConfig;
-        if (!sceneConfig?.walkable || sceneConfig.disableIdleCharacter) return;
+        if (walkablePolygons(sceneConfig?.walkable).length === 0 || sceneConfig.disableIdleCharacter) return;
 
         const playables = characters.playableIds();
         /** @type {string} */
@@ -65,6 +69,13 @@ export class IdleCharacter {
             make: (x, y) => this.spawn(x, y),
             teardown: () => this.destroyWalker(),
         });
+
+        if (opts.behavior === "follow") {
+            const startPos = opts.startPos ?? companionStartPosition(scene);
+            this.spawn(startPos.x, startPos.y);
+            this.behavior = new FollowBehavior(/** @type {any} */ (idleCharacterFollowHost(this)), opts.follow ?? {});
+            return;
+        }
 
         this.behavior = new WanderBehavior(this.host, {
             presentChance: 0.33,
@@ -101,7 +112,7 @@ export class IdleCharacter {
                 spriteKey: this.config.spriteKey,
                 startPosition: { x, y },
                 walkable: this.walkable,
-                walkSpeed: 150,
+                walkSpeed: this.config.walkSpeed ?? 150,
                 spriteScale: finalScale,
                 animationSet: this.config.animationSet,
                 animationScales: this.config.animationScales,
@@ -153,7 +164,11 @@ export class IdleCharacter {
     // ─── Public API (consumers) ─────────────────────────────────────────────
     /** Force present at (x, y), wandering — used by the char-switch handoff. @param {number} x @param {number} y */
     presentAt(x, y) {
-        this.behavior?.becomePresentAt(x, y);
+        if (this.opts.behavior === "follow") {
+            this.spawn(x, y);
+            return;
+        }
+        /** @type {WanderBehavior | null} */ (this.behavior)?.becomePresentAt(x, y);
     }
 
     /**
@@ -162,9 +177,14 @@ export class IdleCharacter {
      */
     keepWanderingAt(x, y, area = null) {
         if (!this.behavior) return;
-        this.behavior.walksRange = null;
-        this.behavior.area = area;
-        this.behavior.becomePresentAt(x, y);
+        if (this.opts.behavior === "follow") {
+            this.spawn(x, y);
+            return;
+        }
+        const behavior = /** @type {WanderBehavior} */ (this.behavior);
+        behavior.walksRange = null;
+        behavior.area = area;
+        behavior.becomePresentAt(x, y);
     }
 
     /** Freeze movement (mini-game takeover). */
@@ -174,7 +194,8 @@ export class IdleCharacter {
     }
 
     isPresent() {
-        return !!this.sprite && this.behavior?.state !== "absent";
+        if (this.opts.behavior === "follow") return !!this.sprite;
+        return !!this.sprite && /** @type {WanderBehavior | null} */ (this.behavior)?.state !== "absent";
     }
 
     getPosition() {
@@ -197,4 +218,23 @@ export class IdleCharacter {
         this.behavior = null;
         this.destroyWalker();
     }
+}
+
+/** @param {IdleCharacter} idle */
+function idleCharacterFollowHost(idle) {
+    return {
+        scene: idle.scene,
+        get sprite() {
+            return idle.sprite;
+        },
+        walkTo: (/** @type {{ x: number, y: number }} */ target) => idle.walker?.walkTo(target),
+        stopWalking: () => idle.walker?.stopWalking(),
+    };
+}
+
+/** @param {any} scene */
+function companionStartPosition(scene) {
+    const active = scene.walk?.sprite;
+    if (!active) return { x: 248, y: 566 };
+    return { x: active.x - 120, y: active.y };
 }

@@ -1,5 +1,5 @@
 import Phaser from "phaser";
-import { snapToPolygon } from "../pathfinding.js";
+import { snapToWalkable, walkablePolygons } from "../pathfinding.js";
 
 /**
  * @typedef {object} CompanionOptions
@@ -48,7 +48,7 @@ export class CompanionBehavior {
         this.onFrame = opts.onFrame ?? null;
 
         const walkable = this.scene.sceneConfig?.walkable;
-        this.walkable = walkable && walkable.length >= 3 ? walkable : null;
+        this.walkable = walkablePolygons(walkable).length > 0 ? walkable : null;
 
         this._onUpdate = () => this.tick();
         this.scene.events.on("update", this._onUpdate);
@@ -70,7 +70,7 @@ export class CompanionBehavior {
         let targetX = target.sprite.x + offsetX;
         let targetY = target.sprite.y + offsetY;
         if (this.walkable) {
-            const snapped = snapToPolygon({ x: targetX, y: targetY }, this.walkable);
+            const snapped = snapToWalkable({ x: targetX, y: targetY }, this.walkable);
             targetX = snapped.x;
             targetY = snapped.y;
         }

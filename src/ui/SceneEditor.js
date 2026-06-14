@@ -1,4 +1,5 @@
 import { pauseCritterAnimations } from "../environment/CritterHelper.js";
+import { walkablePolygons } from "../movement/pathfinding.js";
 import { arrowTip } from "./DebugOverlay.js";
 
 /**
@@ -31,7 +32,7 @@ const TOAST_DEPTH = 9700;
 /** Single source of truth for keybindings — drives the HUD strip. */
 const KEYBINDINGS = [
     { key: "Shift+E", desc: "toggle editor" },
-    { key: "W", desc: "copy walkable polygon" },
+    { key: "W", desc: "copy walkable polygon(s)" },
     { key: "N", desc: "copy NightLayer windows" },
     { key: "P", desc: "copy props" },
     { key: "C", desc: "copy critters" },
@@ -145,23 +146,24 @@ export class SceneEditor {
     }
 
     createWalkableHandles() {
-        const walkable = this._getWalkable();
-        if (!walkable) return;
-        for (let i = 0; i < walkable.length; i++) {
-            const node = walkable[i];
-            const handle = this._makeSquareHandle(node.x, node.y, 0x00ff00);
-            handle.on(
-                "drag",
-                (/** @type {Phaser.Input.Pointer} */ _p, /** @type {number} */ dx, /** @type {number} */ dy) => {
-                    const x = Math.round(dx);
-                    const y = Math.round(dy);
-                    handle.x = x;
-                    handle.y = y;
-                    node.x = x;
-                    node.y = y;
-                },
-            );
-            this.handles.push(handle);
+        const polygons = walkablePolygons(this._getWalkable());
+        for (const polygon of polygons) {
+            for (let i = 0; i < polygon.length; i++) {
+                const node = polygon[i];
+                const handle = this._makeSquareHandle(node.x, node.y, 0x00ff00);
+                handle.on(
+                    "drag",
+                    (/** @type {Phaser.Input.Pointer} */ _p, /** @type {number} */ dx, /** @type {number} */ dy) => {
+                        const x = Math.round(dx);
+                        const y = Math.round(dy);
+                        handle.x = x;
+                        handle.y = y;
+                        node.x = x;
+                        node.y = y;
+                    },
+                );
+                this.handles.push(handle);
+            }
         }
     }
 
@@ -502,13 +504,17 @@ export class SceneEditor {
 
     async copyWalkable() {
         const walkable = this._getWalkable();
-        if (!walkable) {
-            this.showToast("No walkable polygon on this scene");
+        const polygons = walkablePolygons(walkable);
+        if (polygons.length === 0) {
+            this.showToast("No walkable polygon(s) on this scene");
             return;
         }
         const js = formatWalkable(walkable);
         await this._writeClipboard(js);
-        this.showToast(`Copied walkable (${walkable.length} nodes)`);
+        const nodeCount = polygons.reduce((sum, polygon) => sum + polygon.length, 0);
+        this.showToast(
+            `Copied walkable (${polygons.length} polygon${polygons.length === 1 ? "" : "s"}, ${nodeCount} nodes)`,
+        );
     }
 
     async copyWindows() {
@@ -548,7 +554,7 @@ export class SceneEditor {
     }
 
     /**
-     * @returns {{x: number, y: number}[] | null}
+     * @returns {import("../movement/pathfinding.js").WalkableArea | null}
      */
     _getWalkable() {
         const anyScene = /** @type {any} */ (this.scene);
@@ -636,10 +642,18 @@ function shortDesc(d) {
     return d.replace(/^copy\s+/, "").replace(/^toggle\s+/, "").split(" ")[0];
 }
 
-/** @param {{x: number, y: number}[]} arr */
-function formatWalkable(arr) {
-    const lines = arr.map((n) => `    { x: ${Math.round(n.x)}, y: ${Math.round(n.y)} },`);
-    return `walkable: [\n${lines.join("\n")}\n],`;
+/** @param {import("../movement/pathfinding.js").WalkableArea} walkable */
+function formatWalkable(walkable) {
+    const polygons = walkablePolygons(walkable);
+    if (polygons.length <= 1) {
+        const lines = (polygons[0] ?? []).map((n) => `    { x: ${Math.round(n.x)}, y: ${Math.round(n.y)} },`);
+        return `walkable: [\n${lines.join("\n")}\n],`;
+    }
+    const polygonBlocks = polygons.map((polygon) => {
+        const lines = polygon.map((n) => `        { x: ${Math.round(n.x)}, y: ${Math.round(n.y)} },`);
+        return `    [\n${lines.join("\n")}\n    ],`;
+    });
+    return `walkable: [\n${polygonBlocks.join("\n")}\n],`;
 }
 
 /** @param {import("../environment/NightLayer.js").LitWindow[]} arr */

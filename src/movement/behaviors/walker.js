@@ -1,5 +1,6 @@
 import Phaser from "phaser";
 import { exitApproaches } from "../../interaction/PropEngine.js";
+import { walkablePolygons } from "../pathfinding.js";
 export { exitApproaches };
 
 /**
@@ -21,7 +22,7 @@ export { exitApproaches };
  *
  * @typedef {Walker & {
  *   scene: Phaser.Scene,
- *   walkable: {x: number, y: number}[],
+ *   walkable: import("../pathfinding.js").WalkableArea,
  *   getRandomPoint: () => {x: number, y: number},
  *   spawnAt: (x: number, y: number) => void,
  *   despawn: () => void,
@@ -35,14 +36,16 @@ export { exitApproaches };
  * Extracted from the six near-identical copies across the old controllers.
  *
  * @param {import("phaser").Scene} scene
- * @param {{x: number, y: number}[]} walkable
+ * @param {import("../pathfinding.js").WalkableArea} walkable
  * @param {(p: {x: number, y: number}) => {x: number, y: number}} [snap]
  * @param {number} [exitClearance]
  * @returns {{x: number, y: number}}
  */
 export function getRandomWalkablePoint(scene, walkable, snap, exitClearance = 150) {
+    const polygons = walkablePolygons(walkable);
+    const polygon = polygons.length > 0 ? Phaser.Utils.Array.GetRandom(polygons) : [];
     let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
-    for (const p of walkable) {
+    for (const p of polygon) {
         if (p.x < minX) minX = p.x;
         if (p.x > maxX) maxX = p.x;
         if (p.y < minY) minY = p.y;
@@ -75,7 +78,7 @@ export function getRandomWalkablePoint(scene, walkable, snap, exitClearance = 15
  * in), falling back to a screen edge at a random walkable Y.
  *
  * @param {import("phaser").Scene} scene
- * @param {{x: number, y: number}[]} walkable
+ * @param {import("../pathfinding.js").WalkableArea} walkable
  * @returns {{x: number, y: number}}
  */
 export function randomExitSpawn(scene, walkable) {
@@ -86,7 +89,9 @@ export function randomExitSpawn(scene, walkable) {
         return { x: exit.x, y: exit.y };
     }
     const edge = Math.random() < 0.5 ? -100 : 1476;
-    const wp = walkable.length > 0 ? Phaser.Utils.Array.GetRandom(walkable) : { y: 660 };
+    const polygons = walkablePolygons(walkable);
+    const polygon = polygons.length > 0 ? Phaser.Utils.Array.GetRandom(polygons) : [];
+    const wp = polygon.length > 0 ? Phaser.Utils.Array.GetRandom(polygon) : { y: 660 };
     return { x: edge, y: wp.y };
 }
 

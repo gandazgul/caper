@@ -1,6 +1,4 @@
-/**
- * @typedef {"pickup" | "look" | "exit" | "subscene" | "use-with"} HotspotType
- */
+/** @typedef {string} HotspotType */
 
 /**
  * Default CSS cursors per hotspot type. Per-hotspot `cursor` overrides.
@@ -8,6 +6,7 @@
  * (fingertip, claw tip, arrow tip).
  *
  * Note: `exit` is direction-aware — see `defaultCursorFor()` below.
+ * @type {Readonly<Record<string, string>>}
  */
 export const DEFAULT_CURSORS = Object.freeze({
     pickup: "url('/objects/cursor_grab.png') 21 21, grab",
@@ -19,15 +18,15 @@ export const DEFAULT_CURSORS = Object.freeze({
 
 /**
  * Direction-aware exit cursors. Each cursor's tip is on the side it points
- * toward; the hotspot coords aim at that tip. `up` reuses the right-pointing
- * arrow (per design — "going further into the scene" reads as a right-arrow
- * cue); `down` is unused for now and falls back to the default rotated arrow.
+ * toward; the hotspot coords aim at that tip. New projects can provide all
+ * four `arrow_*.png` files; the old left/right cursor art remains as fallback.
  * @type {Partial<Record<"up" | "down" | "left" | "right", string>>}
  */
 const EXIT_CURSORS_BY_FACING = Object.freeze({
-    left: "url('/objects/cursor_exit_left.png') 5 40, pointer",
-    right: "url('/objects/cursor_exit_right.png') 100 40, pointer",
-    up: "url('/objects/cursor_exit_right.png') 100 40, pointer",
+    left: "url('/objects/arrow_left.png') 1 38, url('/objects/cursor_exit_left.png') 5 40, pointer",
+    right: "url('/objects/arrow_right.png') 95 38, url('/objects/cursor_exit_right.png') 100 40, pointer",
+    up: "url('/objects/arrow_up.png') 36 1, url('/objects/cursor_exit_right.png') 100 40, pointer",
+    down: "url('/objects/arrow_down.png') 38 95, url('/objects/cursor_exit_right.png') 100 40, pointer",
 });
 
 /**
@@ -50,7 +49,7 @@ function defaultCursorFor(config) {
  * @property {string} id
  * @property {HotspotType} type
  * @property {{ x: number, y: number, w: number, h: number }} bounds
- * @property {{ x: number, y: number, facing: "up" | "down" | "left" | "right" }} approachPoint
+ * @property {{ x: number, y: number, facing: "up" | "down" | "left" | "right" } | null} approachPoint
  * @property {Record<string, unknown>} [data]
  * @property {string} [cursor] - optional CSS cursor (e.g. `url('/objects/cursor_exit.png') 0 0, auto`). Overrides the default hand cursor.
  */

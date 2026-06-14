@@ -42,12 +42,14 @@ import { DialogueBubble } from "../cutscene/DialogueBubble.js";
  * @property {PropEffect[]} [onClick]
  * @property {{ accepts: import("../core/conditions.js").Condition, effects: PropEffect[] }} [onDrop]
  * @property {import("../core/conditions.js").Condition} [activeWhen] - gate clickability separately from visibility.
- * @property {"pickup"|"look"|"exit"|"subscene"|"use-with"} [cursor]
+ * @property {string} [type] - optional hotspot type override for custom game behavior.
+ * @property {string} [cursor]
  * @property {{ x: number, y: number, w: number, h: number }} [bounds] - explicit hotspot bounds.
  * @property {{ x: number, y: number, facing: string } | "in-place"} [approach]
  *
  * @typedef {object} Prop
  * @property {string} id
+ * @property {string} [type] - optional game-authored semantic type for custom behavior.
  * @property {string} [notes] - editor comments for this prop.
  * @property {string} [atlas]
  * @property {string} [anim] - default animation key to play.
@@ -57,7 +59,8 @@ import { DialogueBubble } from "../cutscene/DialogueBubble.js";
  * @property {PropStackConfig} [stack] - default options for rendering as a stack.
  * @property {{ x: number, y: number, w: number, h: number }} [bounds]
  * @property {{ x: number, y: number, facing: string } | "in-place"} [approach]
- * @property {"pickup"|"look"|"exit"|"subscene"|"use-with"} [cursor]
+ * @property {string} [cursor]
+ * @property {Record<string, any>} [data] - optional game-authored metadata carried with the prop.
  * @property {string | string[]} [transitionsTo] - explicit scene(s) this prop transitions to, used for return-approach resolution when the transition is hidden behind an `emit`.
  * @property {PropState[]} states
  */
@@ -329,11 +332,26 @@ export class PropEngine {
     ensureZone(prop, st) {
         const approach = st.approach ?? prop.approach;
         const sprite = this.sprites.get(prop.id);
+        const hotspotType = st.type ?? prop.type ?? st.cursor ?? prop.cursor ?? "look";
 
         if (approach === "in-place") {
             this.removeZone(prop.id);
-            if (!sprite) return;
-            const cursor = INPLACE_CURSORS[st.cursor ?? prop.cursor ?? "look"];
+            if (!sprite) {
+                const bounds = st.bounds ?? prop.bounds ?? this.deriveBounds(prop.id);
+                if (!bounds) return;
+                const zoneId = `prop:${prop.id}`;
+                this.scene.hotspots.unregister(zoneId);
+                this.scene.hotspots.register({
+                    id: zoneId,
+                    type: /** @type {any} */ (hotspotType),
+                    bounds,
+                    approachPoint: null,
+                    data: { propId: prop.id },
+                });
+                this.zoneState.set(prop.id, st);
+                return;
+            }
+            const cursor = INPLACE_CURSORS[st.cursor ?? prop.cursor ?? hotspotType];
             if (this.inPlaceSprites.has(prop.id)) {
                 // Already wired — just keep the cursor in sync; the pointerdown
                 // handler always reads the current state, so it's correct as-is.
@@ -374,7 +392,7 @@ export class PropEngine {
         this.scene.hotspots.unregister(zoneId);
         this.scene.hotspots.register({
             id: zoneId,
-            type: /** @type {any} */ (st.cursor ?? prop.cursor ?? "look"),
+            type: /** @type {any} */ (hotspotType),
             bounds,
             approachPoint: /** @type {any} */ (approach),
             data: { propId: prop.id },
