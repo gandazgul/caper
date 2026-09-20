@@ -1,3 +1,5 @@
+import { isSaveData } from "./saveFormat.js";
+
 /**
  * Engine — generic reactive state Store (ADR 0005).
  *
@@ -40,9 +42,21 @@ function engineCollectionDefaults() {
     return { inventory: new Set(), world: new Set() };
 }
 
+/**
+ * @typedef {{ state: "ready" | "saved" | "unavailable" | "invalid" | "incompatible", operation: "load" | "save", message?: string }} SaveStatus
+ */
+
 export class Store {
     constructor() {
         this._saveKey = "";
+        this._saveVersion = 0;
+        /** @type {((data: import("./saveFormat.js").SaveData, from: number, to: number) => import("./saveFormat.js").SaveData | null) | undefined} */
+        this._migrateSave = undefined;
+        this._saveProtected = false;
+        /** @type {Readonly<SaveStatus>} */
+        this._saveStatus = Object.freeze({ state: "ready", operation: "load" });
+        /** @type {Set<(status: Readonly<SaveStatus>) => void>} */
+        this._saveStatusSubs = new Set();
         /** @type {() => RunState} */
         this._createFreshState = () => ({ values: {}, collections: {}, items: {} });
         /** @type {Record<string, string>} */
@@ -75,6 +89,8 @@ export class Store {
      * Install a Game's schema and load any save. Call once at boot.
      * @param {{
      *   saveKey: string,
+     *   saveVersion?: number,
+     *   migrateSave?: (data: import("./saveFormat.js").SaveData, from: number, to: number) => import("./saveFormat.js").SaveData | null,
      *   createFreshState: () => RunState,
      *   aliases?: Record<string, string>,
      *   defaultReplayReturnScene?: string,
@@ -83,7 +99,13 @@ export class Store {
      * }} cfg
      */
     configure(cfg) {
+        if (!Number.isSafeInteger(cfg.saveVersion ?? 0) || (cfg.saveVersion ?? 0) < 0) {
+            throw new Error("Store: saveVersion must be a non-negative integer.");
+        }
         this._saveKey = cfg.saveKey;
+        this._saveVersion = cfg.saveVersion ?? 0;
+        this._migrateSave = cfg.migrateSave;
+        this._saveProtected = false;
         this._createFreshState = cfg.createFreshState;
         this._aliases = cfg.aliases ?? {};
         this._defaultReplayReturnScene = cfg.defaultReplayReturnScene ?? "";
@@ -132,17 +154,81 @@ export class Store {
     _loadState() {
         const fresh = this._createFresh();
         this._collectionNames = Object.keys(fresh.collections);
-        if (typeof localStorage === "undefined") return fresh;
+        let raw;
         try {
-            const raw = localStorage.getItem(this._saveKey);
-            if (!raw) return fresh;
-            const parsed = JSON.parse(raw);
-            // Unknown/old shape doesn't migrate (clean break) — boot fresh.
-            if (!parsed || typeof parsed !== "object" || !parsed.values) return fresh;
-            return this._hydrate(parsed, fresh);
-        } catch (_e) {
+            if (typeof localStorage === "undefined") throw new Error("Storage is unavailable.");
+            raw = localStorage.getItem(this._saveKey);
+        } catch {
+            // We cannot tell whether progress exists: don't overwrite it later
+            // with this fresh state if storage suddenly becomes accessible.
+            this._saveProtected = true;
+            this._setSaveStatus(
+                "unavailable",
+                "load",
+                "Progress could not be read. Reload to retry, or reset to start fresh.",
+            );
             return fresh;
         }
+        if (raw === null) {
+            this._setSaveStatus("ready", "load");
+            return fresh;
+        }
+        let parsed;
+        try {
+            parsed = JSON.parse(raw);
+            if (!isSaveData(parsed)) throw new Error("Invalid save envelope.");
+        } catch {
+            this._saveProtected = true;
+            this._setSaveStatus("invalid", "load", "Saved progress is unreadable and has been preserved.");
+            return fresh;
+        }
+        const from = parsed.version ?? 0;
+        if (from !== this._saveVersion) {
+            try {
+                if (from > this._saveVersion || !this._migrateSave) throw new Error("Unsupported version.");
+                parsed = this._migrateSave(parsed, from, this._saveVersion);
+                if (!isSaveData(parsed)) throw new Error("Migration returned invalid data.");
+            } catch {
+                this._saveProtected = true;
+                this._setSaveStatus(
+                    "incompatible",
+                    "load",
+                    `Save version ${from} cannot be loaded by version ${this._saveVersion}. The original is preserved.`,
+                );
+                return fresh;
+            }
+        }
+        this._setSaveStatus("ready", "load");
+        return this._hydrate(parsed, fresh);
+    }
+
+    /** @returns {Readonly<SaveStatus>} */
+    get saveStatus() {
+        return this._saveStatus;
+    }
+
+    /** Subscribe and immediately receive the current status. @param {(status: Readonly<SaveStatus>) => void} listener */
+    onSaveStatusChange(listener) {
+        this._saveStatusSubs.add(listener);
+        listener(this._saveStatus);
+        return () => {
+            this._saveStatusSubs.delete(listener);
+        };
+    }
+
+    /** @param {SaveStatus["state"]} state @param {SaveStatus["operation"]} operation @param {string} [message] */
+    _setSaveStatus(state, operation, message) {
+        if (
+            state === this._saveStatus.state && operation === this._saveStatus.operation &&
+            message === this._saveStatus.message
+        ) return;
+        this._saveStatus = Object.freeze({ state, operation, ...(message ? { message } : {}) });
+        for (const listener of this._saveStatusSubs) listener(this._saveStatus);
+    }
+
+    /** Retry a failed write. Protected unreadable/incompatible saves require explicit reset first. @returns {boolean} */
+    save() {
+        return this._saveState();
     }
 
     /**
@@ -160,25 +246,37 @@ export class Store {
         return {
             values: { ...fresh.values, ...parsed.values },
             collections,
-            items: { ...(parsed.items ?? {}) },
+            items: { ...fresh.items, ...(parsed.items ?? {}) },
         };
     }
 
-    /** Serialize (Sets → arrays) and persist. Skipped while replaying. */
+    /** Serialize and persist. Replay and protected saves never write. @returns {boolean} */
     _saveState() {
-        if (this._replaying) return;
-        if (typeof localStorage === "undefined") return;
+        if (this._replaying || this._saveProtected) return false;
         try {
+            if (typeof localStorage === "undefined") throw new Error("Storage is unavailable.");
             /** @type {Record<string, string[]>} */
             const collections = {};
             for (const [k, v] of Object.entries(this._state.collections)) collections[k] = [...v];
             localStorage.setItem(
                 this._saveKey,
-                JSON.stringify({ values: this._state.values, collections, items: this._state.items }),
+                JSON.stringify({
+                    version: this._saveVersion,
+                    values: this._state.values,
+                    collections,
+                    items: this._state.items,
+                }),
             );
-        } catch (_e) {
-            // quota / private mode — next change retries.
+        } catch {
+            this._setSaveStatus(
+                "unavailable",
+                "save",
+                "Progress is only in memory. Retry saving before closing this page.",
+            );
+            return false;
         }
+        this._setSaveStatus("saved", "save");
+        return true;
     }
 
     /** @param {RunState} s @returns {RunState} deep-ish clone (Sets rebuilt). */
@@ -404,8 +502,8 @@ export class Store {
     // ─── Save / scene resume / lifecycle ────────────────────────────────────
     /** @returns {boolean} */
     hasSave() {
-        if (typeof localStorage === "undefined") return false;
         try {
+            if (typeof localStorage === "undefined") return false;
             return localStorage.getItem(this._saveKey) !== null;
         } catch (_e) {
             return false;
@@ -469,6 +567,9 @@ export class Store {
 
     /** Reset to a fresh state and notify. */
     reset() {
+        this._saveProtected = false;
+        this._replaying = false;
+        this._replaySnapshot = null;
         this._state = this._createFresh();
         this.handleChange();
     }
@@ -487,7 +588,8 @@ export class Store {
      * @param {any} parsed
      */
     loadSaveData(parsed) {
-        if (!parsed || typeof parsed !== "object" || !parsed.values) return;
+        if (!isSaveData(parsed)) return;
+        this._saveProtected = false;
         this._state = this._hydrate(parsed, this._createFresh());
         this.handleChange();
     }

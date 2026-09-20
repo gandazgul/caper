@@ -97,3 +97,9 @@ The engine evolves under Architectural Decision Records in [docs/adr/](adr/). Ke
 | 0004 | [Declarative NPC cast](adr/0004-declarative-npc-cast.md)                                   |
 | 0005 | [Engine / game boundary](adr/0005-engine-game-boundary.md)                                 |
 | 0006 | [Character outfits](adr/0006-character-outfits.md)                                         |
+
+## Authoring and presentation
+
+- [Runnable two-room starter](../examples/starter/README.md)
+- [Content diagnostics](diagnostics.md)
+- [Quest hints and speech](hints-and-speech.md)

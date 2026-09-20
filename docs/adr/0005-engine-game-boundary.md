@@ -12,8 +12,8 @@ standard "batteries" for the point-and-click genre. Where the Engine needs Game-
 populates at boot.
 
 API design **leans on Phaser's mental model** so the engine is legible to Phaser developers: registries you populate at
-boot and query by key (mirroring `TextureManager`/`anims`/`registry`/`Cache`), Scene Plugins for cross-cutting systems,
-and base-scene subclassing — not injected resolver callbacks or app-framework DI.
+boot and query by key (mirroring `TextureManager`/`anims`/`registry`/`Cache`), scene-owned helpers for cross-cutting
+systems, and base-scene subclassing — not injected resolver callbacks or app-framework DI.
 
 The boundary interfaces:
 
@@ -31,13 +31,11 @@ The boundary interfaces:
 4. **Config inversion** — Engine reads a single Game-provided `Config` for dimensions, palette, inventory layout, tuning
    numbers, dev flags, and asset paths. `objects/` and `scenes/` are convention locations; concrete paths come from
    Config.
-5. **Base scene** — `AdventureScene` composes a **thin Engine base scene + Engine Scene Plugins**; Game scenes subclass
-   it. The **Character** system is Engine-generic with the **roster** supplied via Config; game-specific quest logic
-   lives in the Game layer.
+5. **Base scene** — `AdventureScene` composes **scene-owned engine helpers**; Game scenes subclass it. The **Character**
+   system is Engine-generic with the **roster** supplied via Config; game-specific quest logic lives in the Game layer.
 6. **Bootstrap** — Engine exports a thin **`createAdventureGame(manifest)`** factory that internally does the
-   Phaser-native thing (`new Phaser.Game` with `plugins: { scene: ENGINE_PLUGINS }`) and seeds the registries. It is a
-   convenience front door, **not** a replacement: the plugins, registries, and base scenes stay directly usable so a
-   Phaser dev can bypass the factory.
+   Phaser-native thing (`new Phaser.Game(config)`) after seeding the registries. It is a convenience front door, **not**
+   a replacement: the helpers, registries, and base scenes stay directly usable so a Phaser dev can bypass the factory.
 
 ## Context
 
@@ -58,8 +56,8 @@ enters through registries at boot.
   idiom and were rejected to keep the engine legible to Phaser devs.
 - **Behaviors: Engine ships standard set (chosen)** vs. Engine ships only the contract. Every comparable engine ships
   locomotion/AI batteries; making each Game re-supply the basics was rejected.
-- **Base scene: thin base + Scene Plugins (chosen)** vs. fat inheritance-only base vs. no base scene. Plugins are
-  Phaser's native answer to cross-cutting systems and avoid a 698-line god-class.
+- **Base scene: composition with scene-owned helpers (chosen)**. The base scene wires lifecycle and delegates each
+  capability to its own helper. Scene Plugins remain an option if a concrete reuse need warrants them.
 
 ## Consequences
 

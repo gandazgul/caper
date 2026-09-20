@@ -1,48 +1,6 @@
 /** @typedef {string} HotspotType */
-
-/**
- * Default CSS cursors per hotspot type. Per-hotspot `cursor` overrides.
- * Hotspot coords (x y) target the part of the cursor that actually points
- * (fingertip, claw tip, arrow tip).
- *
- * Note: `exit` is direction-aware — see `defaultCursorFor()` below.
- * @type {Readonly<Record<string, string>>}
- */
-export const DEFAULT_CURSORS = Object.freeze({
-    pickup: "url('/objects/cursor_grab.png') 21 21, grab",
-    "use-with": "url('/objects/cursor_point.png') 21 21, grab",
-    look: "url('/objects/cursor_look.png') 20 20, pointer",
-    subscene: "url('/objects/cursor_point.png') 0 0, pointer",
-    exit: "url('/objects/cursor_exit.png') 16 16, pointer",
-});
-
-/**
- * Direction-aware exit cursors. Each cursor's tip is on the side it points
- * toward; the hotspot coords aim at that tip. New projects can provide all
- * four `arrow_*.png` files; the old left/right cursor art remains as fallback.
- * @type {Partial<Record<"up" | "down" | "left" | "right", string>>}
- */
-const EXIT_CURSORS_BY_FACING = Object.freeze({
-    left: "url('/objects/arrow_left.png') 1 38, url('/objects/cursor_exit_left.png') 5 40, pointer",
-    right: "url('/objects/arrow_right.png') 95 38, url('/objects/cursor_exit_right.png') 100 40, pointer",
-    up: "url('/objects/arrow_up.png') 36 1, url('/objects/cursor_exit_right.png') 100 40, pointer",
-    down: "url('/objects/arrow_down.png') 38 95, url('/objects/cursor_exit_right.png') 100 40, pointer",
-});
-
-/**
- * Resolve the cursor for a hotspot: explicit `config.cursor` wins, then
- * direction-aware exit, then per-type default.
- * @param {HotspotConfig} config
- * @returns {string | undefined}
- */
-function defaultCursorFor(config) {
-    if (config.cursor) return config.cursor;
-    if (config.type === "exit") {
-        const dirCursor = EXIT_CURSORS_BY_FACING[config.approachPoint?.facing];
-        if (dirCursor) return dirCursor;
-    }
-    return DEFAULT_CURSORS[config.type];
-}
+import { cursorFor } from "./cursors.js";
+export { DEFAULT_CURSORS } from "./cursors.js";
 
 /**
  * @typedef {object} HotspotConfig
@@ -76,7 +34,7 @@ export class HotspotManager {
     /** @param {HotspotConfig} config */
     register(config) {
         const { id, bounds } = config;
-        let cursor = defaultCursorFor(config);
+        let cursor = cursorFor(config.type, config.approachPoint?.facing, config.cursor);
         const sceneAny = /** @type {any} */ (this.scene);
         const isDisabled = typeof sceneAny.isExitDisabled === "function" && sceneAny.isExitDisabled(config);
         if (isDisabled && config.type === "exit") {
@@ -93,7 +51,7 @@ export class HotspotManager {
             if (currentIsDisabled && config.type === "exit") {
                 zone.input.cursor = "default";
             } else {
-                zone.input.cursor = defaultCursorFor(config);
+                zone.input.cursor = cursorFor(config.type, config.approachPoint?.facing, config.cursor);
             }
             /** @type {any} */ (this.scene).bus.emit("hotspot:hover", config);
         });

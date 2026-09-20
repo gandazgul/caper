@@ -110,3 +110,18 @@ engineAssets.configure({
 2. **`BootScene`** — loads globally-shared atlases (`ui-atlas`, character spritesheets)
 3. **Chapter intro scene** — preloads assets for the current chapter using `chapterLoadSet()`
 4. **Per scene** — loads its remaining assets in `preload()` via `loadAssetKeys()`
+
+## Cursor assets and subdirectory hosting
+
+All engine cursor paths (walking hotspots, in-place props, and inventory dragging) share the asset registry. Legacy
+`/objects/` paths remain the default. Configure a deployment prefix or use standard CSS cursors without image assets:
+
+```js
+engineAssets.configure({
+    cursorBaseUrl: `${import.meta.env.BASE_URL}objects/`,
+    cursors: { pickup: "grab", "use-with": "grab", look: "help", subscene: "pointer", exit: "pointer" },
+    exitCursors: { left: "w-resize", right: "e-resize" },
+});
+```
+
+Per-hotspot CSS overrides take precedence over registered cursors.

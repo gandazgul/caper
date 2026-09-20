@@ -1,3 +1,4 @@
+import { cursorFor } from "./cursors.js";
 import Phaser from "phaser";
 import { store } from "../state/Store.js";
 import { transitionTo } from "../scene/transitions.js";
@@ -64,15 +65,6 @@ import { DialogueBubble } from "../cutscene/DialogueBubble.js";
  * @property {string | string[]} [transitionsTo] - explicit scene(s) this prop transitions to, used for return-approach resolution when the transition is hidden behind an `emit`.
  * @property {PropState[]} states
  */
-
-/** CSS cursors for the in-place click path (the walk path goes through HotspotManager). */
-/** @type {Record<string, string>} */
-const INPLACE_CURSORS = {
-    pickup: "url('/objects/cursor_grab.png') 21 21, grab",
-    "use-with": "url('/objects/cursor_grab.png') 21 21, grab",
-    look: "url('/objects/cursor_look.png') 20 20, pointer",
-    subscene: "url('/objects/cursor_point.png') 0 0, pointer",
-};
 
 export class PropEngine {
     /** @param {import("phaser").Scene} scene */
@@ -351,7 +343,7 @@ export class PropEngine {
                 this.zoneState.set(prop.id, st);
                 return;
             }
-            const cursor = INPLACE_CURSORS[st.cursor ?? prop.cursor ?? hotspotType];
+            const cursor = cursorFor(st.cursor ?? prop.cursor ?? hotspotType);
             if (this.inPlaceSprites.has(prop.id)) {
                 // Already wired — just keep the cursor in sync; the pointerdown
                 // handler always reads the current state, so it's correct as-is.
@@ -461,7 +453,7 @@ export class PropEngine {
                 // base interactive state).
                 sprite.setInteractive({
                     draggable: true,
-                    cursor: "url('/objects/cursor_grab.png') 21 21, grab",
+                    cursor: cursorFor("pickup"),
                 });
             }
         }

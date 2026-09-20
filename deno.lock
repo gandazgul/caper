@@ -10,7 +10,8 @@
     "npm:jimp@*": "1.6.1",
     "npm:phaser@^3.86.0": "3.90.0",
     "npm:typescript@*": "6.0.3",
-    "npm:vite@*": "8.0.8"
+    "npm:vite@*": "8.0.8",
+    "npm:vite@8.0.8": "8.0.8"
   },
   "jsr": {
     "@std/assert@1.0.19": {

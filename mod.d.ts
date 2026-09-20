@@ -1287,6 +1287,66 @@ export function exitApproaches(propsConfig: Prop[] | undefined): {
 	y: number;
 	facing?: string;
 }[];
+/**
+ * Declarative prop engine (see docs/adr/0002-declarative-prop-framework.md).
+ *
+ * A scene declares `sceneConfig.props: Prop[]`. Each prop is art + an ordered
+ * list of `states`; the engine selects the first state whose `when` passes,
+ * renders it, and - when that state has an `onClick`/`onDrop` and its optional
+ * `activeWhen` holds - binds a hotspot. Everything re-evaluates reactively on
+ * `store.onChange`, so effects only ever mutate state and props self-update.
+ *
+ * Click flow reuses the existing plumbing: a walk-approach interaction registers
+ * a HotspotManager zone (click → WalkController walks → `hotspot:arrived` →
+ * effects); an `approach: "in-place"` interaction binds the sprite directly with
+ * no walk.
+ *
+ * @typedef {Record<string, any>} PropEffect - exactly one verb key per object.
+ *
+ * @typedef {object} PropStackConfig
+ * @property {number} [count]
+ * @property {number} [xOffset]
+ * @property {number} [yOffset]
+ * @property {number} [xSpread]
+ * @property {number} [ySpread]
+ * @property {[number, number]} [rotationRange]
+ * @property {[number, number]} [scaleRange]
+ *
+ * @typedef {object} PropState
+ * @property {string} [notes] - editor comments for this state.
+ * @property {import("../core/conditions.js").Condition} [when] - gate for this state.
+ * @property {string} [frame] - atlas frame; omit for a pure interaction zone.
+ * @property {string} [atlas] - overrides the prop's atlas for this state.
+ * @property {string} [anim] - animation key to play.
+ * @property {number} [x] @property {number} [y] @property {number} [depth]
+ * @property {number} [scale] @property {number} [rotation] @property {boolean} [flipX]
+ * @property {{ x?: number, y?: number }} [origin]
+ * @property {PropStackConfig} [stack] - options for rendering as a stack of multiple sprites.
+ * @property {PropEffect[]} [onClick]
+ * @property {{ accepts: import("../core/conditions.js").Condition, effects: PropEffect[] }} [onDrop]
+ * @property {import("../core/conditions.js").Condition} [activeWhen] - gate clickability separately from visibility.
+ * @property {string} [type] - optional hotspot type override for custom game behavior.
+ * @property {string} [cursor]
+ * @property {{ x: number, y: number, w: number, h: number }} [bounds] - explicit hotspot bounds.
+ * @property {{ x: number, y: number, facing: string } | "in-place"} [approach]
+ *
+ * @typedef {object} Prop
+ * @property {string} id
+ * @property {string} [type] - optional game-authored semantic type for custom behavior.
+ * @property {string} [notes] - editor comments for this prop.
+ * @property {string} [atlas]
+ * @property {string} [anim] - default animation key to play.
+ * @property {number} [x] @property {number} [y] @property {number} [depth]
+ * @property {number} [scale] @property {number} [rotation] @property {boolean} [flipX]
+ * @property {{ x?: number, y?: number }} [origin]
+ * @property {PropStackConfig} [stack] - default options for rendering as a stack.
+ * @property {{ x: number, y: number, w: number, h: number }} [bounds]
+ * @property {{ x: number, y: number, facing: string } | "in-place"} [approach]
+ * @property {string} [cursor]
+ * @property {Record<string, any>} [data] - optional game-authored metadata carried with the prop.
+ * @property {string | string[]} [transitionsTo] - explicit scene(s) this prop transitions to, used for return-approach resolution when the transition is hidden behind an `emit`.
+ * @property {PropState[]} states
+ */
 export class PropEngine {
 	/** @param {import("phaser").Scene} scene */
 	constructor(scene: import("phaser").Scene);
@@ -3082,6 +3142,7 @@ export type IdleCharacterOptions = {
  */
 /**
  * @typedef {object} AdventureSceneConfig
+ * @property {"warn" | "error"} [diagnostics] - opt-in authored content checks after preload.
  * @property {string} key
  * @property {string} [chapter] - the chapter/chapter this scene belongs to.
  * @property {Record<string, string>} backgroundsByChapter
@@ -3236,6 +3297,10 @@ export type SpawnPose = {
 	}>;
 };
 export type AdventureSceneConfig = {
+	/**
+	 * - opt-in authored content checks after preload.
+	 */
+	diagnostics?: "warn" | "error";
 	key: string;
 	/**
 	 * - the chapter/chapter this scene belongs to.
@@ -3880,6 +3945,70 @@ export type RenderableItem = {
  */
 /** @type {RenderableItem} */
 export const RenderableItem: RenderableItem;
+export type SpeechOptions = {
+	/**
+	 * - default either; manual waits for click/Enter/Space.
+	 */
+	advance?: "auto" | "manual" | "either";
+	/**
+	 * - fallback reading duration (default 2800).
+	 */
+	holdMs?: number;
+	/**
+	 * - preloaded Phaser audio key; successful playback controls automatic duration.
+	 */
+	voice?: string;
+	/**
+	 * - ignore the input that opened the line (default 150).
+	 */
+	minAdvanceMs?: number;
+};
+/**
+ * Show one awaitable speech line. Standalone shutdown resolves quietly; passing
+ * a cutscene token propagates cancellation to prevent later story mutations.
+ * @param {import("phaser").Scene} scene
+ * @param {Omit<import("./DialogueBubble.js").DialogueBubbleOpts, "autoDestroyMs"> & import("./SpeechPlayback.js").SpeechOptions} opts
+ * @param {Cutscene} [cs]
+ * @returns {Promise<void>}
+ */
+export function showSpeech(scene: import("phaser").Scene, opts: Omit<DialogueBubbleOpts, "autoDestroyMs"> & SpeechOptions, cs?: Cutscene): Promise<void>;
+/**
+ * @typedef {object} QuestHintOptions
+ * @property {string} quest - registered quest id.
+ * @property {string | { sprite: import("phaser").GameObjects.Sprite, bubble?: DialogueBubble | null }} actor - cast id, "player", or a live actor.
+ * @property {import("../core/conditions.js").Condition} [when] - optional game-owned visibility condition.
+ * @property {{ x?: number, y?: number }} [offset]
+ */
+/**
+ * Follow an actor with the next incomplete quest step's icon. Yields to speech,
+ * hidden/absent actors, and close-up scenes; cleans itself up on scene shutdown.
+ * Game-specific hint selection belongs in the quest's icon definitions.
+ * @param {import("../scene/AdventureScene.js").AdventureScene} scene
+ * @param {QuestHintOptions} opts
+ * @returns {() => void} dispose
+ */
+export function attachQuestHint(scene: AdventureScene, opts: QuestHintOptions): () => void;
+export type QuestHintOptions = {
+	/**
+	 * - registered quest id.
+	 */
+	quest: string;
+	/**
+	 * - cast id, "player", or a live actor.
+	 */
+	actor: string | {
+		sprite: import("phaser").GameObjects.Sprite;
+		bubble?: DialogueBubble | null;
+	};
+	/**
+	 * - optional game-owned visibility condition.
+	 */
+	when?: Condition;
+	offset?: {
+		x?: number;
+		y?: number;
+	};
+};
 /**
  * Engine — content registry (ADR 0005).
  *
@@ -4056,6 +4185,9 @@ export type TransitionOpts = {
  * @property {{ atlas: string, frame: string, scale?: number }} [backButton] - the UIHelper back button.
  * @property {{ atlas: string, frames: string[], scale?: number }} [leaves] - falling-leaf frames for WeatherLayer.
  * @property {{ atlas: string, frame: string, scale?: number }} [critter] - default atlas/frame for a critter spec that omits them.
+ * @property {string} [cursorBaseUrl] - cursor image directory, including deployment prefix (default /objects/).
+ * @property {Record<string, string>} [cursors] - CSS cursors keyed by interaction type.
+ * @property {Partial<Record<"up" | "down" | "left" | "right", string>>} [exitCursors] - CSS cursors for directional exits.
  * @property {string} [inventoryAtlas] - default atlas for the inventory bar (a scene may override via `inventoryAtlas`).
  * @property {string} [replayDefaultReturn] - scene key to return to from a replay when no return scene is stored (default none).
  * @property {(args: { scene: PhaserScene, targetKey: string, opts: import("../scene/transitions.js").TransitionOpts }) => (boolean | { returnScene?: string, onBegin?: () => void } | null | undefined)} [replayTransition] - optional game policy for transitions that should enter replay sandbox mode.
@@ -4133,6 +4265,18 @@ export type EngineAssetSlots = {
 		scale?: number;
 	};
 	/**
+	 * - cursor image directory, including deployment prefix (default /objects/).
+	 */
+	cursorBaseUrl?: string;
+	/**
+	 * - CSS cursors keyed by interaction type.
+	 */
+	cursors?: Record<string, string>;
+	/**
+	 * - CSS cursors for directional exits.
+	 */
+	exitCursors?: Partial<Record<"up" | "down" | "left" | "right", string>>;
+	/**
 	 * - default atlas for the inventory bar (a scene may override via `inventoryAtlas`).
 	 */
 	inventoryAtlas?: string;
@@ -4152,8 +4296,28 @@ export type EngineAssetSlots = {
 		onBegin?: () => void;
 	} | null | undefined);
 };
+/**
+ * JSON representation of a save. Unversioned saves are version 0.
+ */
+export type SaveData = {
+	version?: number;
+	values: Record<string, any>;
+	collections?: Record<string, string[]>;
+	items?: Record<string, string>;
+};
+/**
+ * @typedef {{ state: "ready" | "saved" | "unavailable" | "invalid" | "incompatible", operation: "load" | "save", message?: string }} SaveStatus
+ */
 export class Store {
 	_saveKey: string;
+	_saveVersion: number;
+	/** @type {((data: import("./saveFormat.js").SaveData, from: number, to: number) => import("./saveFormat.js").SaveData | null) | undefined} */
+	_migrateSave: ((data: SaveData, from: number, to: number) => SaveData | null) | undefined;
+	_saveProtected: boolean;
+	/** @type {Readonly<SaveStatus>} */
+	_saveStatus: Readonly<SaveStatus>;
+	/** @type {Set<(status: Readonly<SaveStatus>) => void>} */
+	_saveStatusSubs: Set<(status: Readonly<SaveStatus>) => void>;
 	/** @type {() => RunState} */
 	_createFreshState: () => RunState;
 	/** @type {Record<string, string>} */
@@ -4179,6 +4343,8 @@ export class Store {
 	 * Install a Game's schema and load any save. Call once at boot.
 	 * @param {{
 	 *   saveKey: string,
+	 *   saveVersion?: number,
+	 *   migrateSave?: (data: import("./saveFormat.js").SaveData, from: number, to: number) => import("./saveFormat.js").SaveData | null,
 	 *   createFreshState: () => RunState,
 	 *   aliases?: Record<string, string>,
 	 *   defaultReplayReturnScene?: string,
@@ -4188,6 +4354,8 @@ export class Store {
 	 */
 	configure(cfg: {
 		saveKey: string;
+		saveVersion?: number;
+		migrateSave?: (data: SaveData, from: number, to: number) => SaveData | null;
 		createFreshState: () => RunState;
 		aliases?: Record<string, string>;
 		defaultReplayReturnScene?: string;
@@ -4211,14 +4379,22 @@ export class Store {
 	_createFresh(): RunState;
 	/** @returns {RunState} */
 	_loadState(): RunState;
+	/** @returns {Readonly<SaveStatus>} */
+	get saveStatus(): Readonly<SaveStatus>;
+	/** Subscribe and immediately receive the current status. @param {(status: Readonly<SaveStatus>) => void} listener */
+	onSaveStatusChange(listener: (status: Readonly<SaveStatus>) => void): () => void;
+	/** @param {SaveStatus["state"]} state @param {SaveStatus["operation"]} operation @param {string} [message] */
+	_setSaveStatus(state: SaveStatus["state"], operation: SaveStatus["operation"], message?: string): void;
+	/** Retry a failed write. Protected unreadable/incompatible saves require explicit reset first. @returns {boolean} */
+	save(): boolean;
 	/**
 	 * Merge a parsed save over a fresh state: values shallow-merged, named
 	 * collections rebuilt as Sets, items copied.
 	 * @param {any} parsed @param {RunState} fresh @returns {RunState}
 	 */
 	_hydrate(parsed: any, fresh: RunState): RunState;
-	/** Serialize (Sets → arrays) and persist. Skipped while replaying. */
-	_saveState(): void;
+	/** Serialize and persist. Replay and protected saves never write. @returns {boolean} */
+	_saveState(): boolean;
 	/** @param {RunState} s @returns {RunState} deep-ish clone (Sets rebuilt). */
 	_cloneState(s: RunState): RunState;
 	/** @param {(subject: any) => void} func @returns {() => void} unsubscribe */
@@ -4338,6 +4514,11 @@ export type RunState = {
 	values: Record<string, any>;
 	collections: Record<string, Set<string>>;
 	items: Record<string, string>;
+};
+export type SaveStatus = {
+	state: "ready" | "saved" | "unavailable" | "invalid" | "incompatible";
+	operation: "load" | "save";
+	message?: string;
 };
 /**
  * Register quest definitions (merges with any already registered). Throws if a
@@ -4734,5 +4915,26 @@ export function bakeCircularCrop(scene: import("phaser").Scene, sourceKey: strin
  * @returns {string | null} texture key, or null if not yet available.
  */
 export function resolveCharacterPortrait(scene: import("phaser").Scene, characterId: string, config?: CharacterConfig): string | null;
+/** @typedef {{ path: string, message: string }} ContentDiagnostic */
+/**
+ * Inspect authored scene data after preload/atlas registration. Does not mutate
+ * the scene or execute effects, guards, or game scripts. Dynamic $dragged item
+ * references are intentionally deferred to runtime.
+ * @param {import("../scene/AdventureScene.js").AdventureScene} scene
+ * @returns {ContentDiagnostic[]}
+ */
+export function inspectSceneContent(scene: AdventureScene): ContentDiagnostic[];
+/**
+ * Report all diagnostics together. Error mode fails before creating the room;
+ * warn mode leaves runtime behavior unchanged. Call again after loading dynamic content.
+ * @param {import("../scene/AdventureScene.js").AdventureScene} scene
+ * @param {"warn" | "error"} [mode]
+ * @returns {ContentDiagnostic[]}
+ */
+export function validateSceneContent(scene: AdventureScene, mode?: "warn" | "error"): ContentDiagnostic[];
+export type ContentDiagnostic = {
+	path: string;
+	message: string;
+};
 
 export {};

@@ -5,3 +5,5 @@ dist/
 types/
 
 .DS_Store
+
+.vite/

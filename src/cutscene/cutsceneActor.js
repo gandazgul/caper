@@ -1,3 +1,4 @@
+import { showSpeech } from "./showSpeech.js";
 import Phaser from "phaser";
 
 /**
@@ -22,17 +23,24 @@ function actorFor(npc, scene, cs) {
                 (done) => npc.walkTo(target, done),
                 () => npc.stopWalking(),
             ),
-        /** @param {string} text @param {number} [holdMs] @param {"thought" | "speech"} [variant] */
-        speak: (text, holdMs = 2800, variant = "thought") => {
+        /** @param {string} text @param {number | import("./SpeechPlayback.js").SpeechOptions} [options] @param {"thought" | "speech"} [variant] */
+        speak: (text, options = 2800, variant = "thought") => {
+            if (typeof options !== "number") {
+                return showSpeech(scene, { character: npc.sprite, text, variant, ...options }, cs);
+            }
+            // Preserve NPC.bubble for existing game-owned hint helpers, along
+            // with the original numeric call's timing and visual behavior.
             /** @type {Phaser.Time.TimerEvent | undefined} */
             let timer;
-            return cs.wait(
-                (done) => {
-                    npc.speak(text, holdMs, variant);
-                    timer = scene.time.delayedCall(holdMs, done);
-                },
-                () => timer?.remove(false),
-            );
+            /** @type {import("./DialogueBubble.js").DialogueBubble | null} */
+            let bubble = null;
+            return cs.wait((done) => {
+                bubble = npc.speak(text, options, variant);
+                timer = scene.time.delayedCall(options, done);
+            }, () => {
+                timer?.remove(false);
+                bubble?.destroy();
+            });
         },
         facePlayer: () => {
             npc.facePlayer();

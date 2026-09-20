@@ -1,3 +1,5 @@
+import { validateSceneContent } from "../debug/contentDiagnostics.js";
+import { resolveAllowedModes, resolveAmbient } from "../environment/modes.js";
 import Phaser from "phaser";
 import { HotspotManager } from "../interaction/HotspotManager.js";
 import { WalkController } from "../movement/WalkController.js";
@@ -26,6 +28,7 @@ import { IdleCharacter } from "../movement/IdleCharacter.js";
 
 /**
  * @typedef {object} AdventureSceneConfig
+ * @property {"warn" | "error"} [diagnostics] - opt-in authored content checks after preload.
  * @property {string} key
  * @property {string} [chapter] - the chapter/chapter this scene belongs to.
  * @property {Record<string, string>} backgroundsByChapter
@@ -242,6 +245,7 @@ export class AdventureScene extends Phaser.Scene {
         const cfg = this.sceneConfig;
 
         registerAssetKeys(this, this.collectAssetKeys());
+        if (cfg.diagnostics) validateSceneContent(this, cfg.diagnostics);
 
         const chapter = store.get("chapter");
 
@@ -278,13 +282,11 @@ export class AdventureScene extends Phaser.Scene {
 
         // Weather: resolve allowed precipitation + ambient for the chapter.
         const allowedWeather = resolveAllowedModes(cfg.weather, chapter);
-        const allowedAmbient = resolveAllowedModes(cfg.ambient, chapter);
         const hasWeatherConfig = !!cfg.weather;
         const hasAmbientConfig = !!cfg.ambient;
         const globalWeather = store.get("weatherMode") ?? "none";
         const initialWeather = hasWeatherConfig && allowedWeather.includes(globalWeather) ? globalWeather : "none";
-        const fallbackAmbient = chapter === "fall" ? "falling-leaves" : "none";
-        const initialAmbient = hasAmbientConfig && allowedAmbient.includes(fallbackAmbient) ? fallbackAmbient : "none";
+        const initialAmbient = resolveAmbient(cfg.ambient, chapter);
 
         this.weather = new WeatherLayer(this, {
             weather: /** @type {import("../environment/WeatherLayer.js").PrecipitationMode} */ (initialWeather),
@@ -312,7 +314,7 @@ export class AdventureScene extends Phaser.Scene {
         this.currentChapter = chapter;
         this.currentWeather = initialWeather;
         /** @type {import("../environment/WeatherLayer.js").AmbientMode} */
-        this.currentAmbient = initialAmbient;
+        this.currentAmbient = /** @type {import("../environment/WeatherLayer.js").AmbientMode} */ (initialAmbient);
         this.currentTimeOfDay = store.getTimeOfDay();
         const unsubscribe = store.onChange(() => {
             const newChapter = store.get("chapter");
@@ -337,7 +339,7 @@ export class AdventureScene extends Phaser.Scene {
                 // Default ambient = the first non-"none" mode the scene allows
                 // for this chapter (no chapter-specific knowledge in the engine).
                 const na = /** @type {import("../environment/WeatherLayer.js").AmbientMode} */ (
-                    resolveAllowedModes(cfg.ambient, this.currentChapter).find((m) => m !== "none") ?? "none"
+                    resolveAmbient(cfg.ambient, this.currentChapter)
                 );
                 if (this.currentAmbient !== na) {
                     this.currentAmbient = na;
@@ -416,15 +418,4 @@ function findReturnApproach(cfg, previousSceneKey) {
         }
     }
     return null;
-}
-
-/**
- * The weather/ambient modes a scene allows for a chapter — a direct lookup with
- * no inheritance. The engine knows nothing about chapters or their order; a
- * chapter the scene doesn't list simply allows only "none". Whatever modes a
- * game declares for a chapter are allowed as-is; the engine validates nothing.
- * @param {Record<string, string[]> | undefined} configBlock @param {string} chapter @returns {string[]}
- */
-function resolveAllowedModes(configBlock, chapter) {
-    return configBlock?.[chapter] ?? ["none"];
 }

@@ -3,6 +3,10 @@
 This guide walks through creating a minimal point-and-click game from scratch. By the end you'll have a player character
 who can walk around a room, pick up an item, and exit to another scene.
 
+For a complete runnable project with artwork and deployment configuration, start with
+[The Garden Gate](../examples/starter/README.md): run `deno task starter` from the repository root. The snippets below
+explain the pieces; they are not a standalone project.
+
 ## Prerequisites
 
 - Node.js 18+ or Deno

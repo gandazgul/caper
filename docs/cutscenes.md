@@ -128,3 +128,5 @@ director.cutscene(async (d) => {
 
 - `CutsceneCancelled` is swallowed by the runner (silent unwind)
 - Any other error propagates after cleanup (ambient resumed, player unlocked)
+
+See [Quest hints and speech](hints-and-speech.md) for manual advance, optional voice timing, and cancellation.

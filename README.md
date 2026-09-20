@@ -22,6 +22,11 @@ npx jsr add @caper/engine
 npm install phaser
 ```
 
+## Runnable starter
+
+Run `deno task starter` for [The Garden Gate](examples/starter/README.md), a complete two-room adventure with local
+artwork, an inventory puzzle, an NPC, and resume. Build it for static hosting with `deno task starter:build`.
+
 ## Usage
 
 Everything is imported from the package entry point:
@@ -30,8 +35,8 @@ Everything is imported from the package entry point:
 import { AdventureScene, createAdventureGame } from "@caper/engine";
 
 const game = createAdventureGame({
-    scenes: [MyScene],
-    // ...game config
+    config: { scene: [MyScene], width: 960, height: 640 },
+    // register: registerGameContent
 });
 ```
 

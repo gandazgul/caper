@@ -154,17 +154,6 @@ re-checks clickability — all automatically. No manual destroy/recreate.
 
 ## Accessibility
 
-The PropEngine has a special mode for screen-reader accessibility. When `accessibilityMode` is enabled, each prop
-registers interactive elements with ARIA roles, live regions for state changes, and managed tab order. Set via:
-
-```js
-// In game configuration
-{
-    set: {
-        accessibilityMode: true;
-    }
-}
-```
-
-In this mode, props expose `aria-label`, `role="button"`, `tabindex="0"`, and screen-reader announcements on state
-changes. Focus management follows the standard one-click interaction model.
+Props currently use Phaser pointer input. The engine does not provide a DOM accessibility tree, ARIA announcements, or
+keyboard focus navigation. Games requiring those capabilities must supply an accessible UI alongside the canvas; there
+is no `accessibilityMode` setting.

@@ -70,3 +70,6 @@ export { bakeCircularCrop, resolveCharacterPortrait } from "./src/characters/por
 export { randomInt } from "./src/core/random.js";
 export { RenderableItem } from "./src/inventory/itemDef.js";
 export { transitionIn, TRANSITIONS, transitionTo } from "./src/scene/transitions.js";
+export { inspectSceneContent, validateSceneContent } from "./src/debug/contentDiagnostics.js";
+export { showSpeech } from "./src/cutscene/showSpeech.js";
+export { attachQuestHint } from "./src/ui/QuestHint.js";
