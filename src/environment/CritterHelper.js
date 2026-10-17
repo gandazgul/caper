@@ -92,7 +92,8 @@ function createCritter(scene, critter) {
         rotation = 0,
     } = critter;
 
-    const critterImg = scene.add.image(x, y, atlas, frame)
+    const critterImg = scene.add
+        .image(x, y, atlas, frame)
         .setOrigin(originX, originY)
         .setScale(scale)
         .setDepth(depth)
@@ -292,15 +293,15 @@ export function createCritters(scene, critters) {
     // minigames / unrelated scenes shouldn't empty their skies just because
     // it's raining elsewhere.
     const weatherCfg = /** @type {any} */ (scene).sceneConfig?.weather;
-    const weatherEligible = !!weatherCfg && typeof weatherCfg === "object" && Object.values(weatherCfg).some(
-        (/** @type {string[]} */ modes) => modes.some((m) => m !== "none"),
-    );
+    const weatherEligible =
+        !!weatherCfg &&
+        typeof weatherCfg === "object" &&
+        Object.values(weatherCfg).some((/** @type {string[]} */ modes) => modes.some((m) => m !== "none"));
     if (weatherEligible) {
         const applyVisibility = () => {
             const night = store.isNight();
             const mode = store.get("weatherMode") ?? "none";
-            const raining = mode === "light-rain" || mode === "heavy-rain" ||
-                mode === "snow" || mode === "heavy-snow";
+            const raining = mode === "light-rain" || mode === "heavy-rain" || mode === "snow" || mode === "heavy-snow";
             for (const s of sprites) {
                 if (night) {
                     s.setVisible(false);

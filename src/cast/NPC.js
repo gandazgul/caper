@@ -68,7 +68,8 @@ export class NPC {
         let finalScale = config.scale ?? 1.0;
         const sceneCfg = scene.sceneConfig;
         if (sceneCfg && sceneCfg.characterScales) {
-            const override = sceneCfg.characterScales[this.id.toLowerCase()] ??
+            const override =
+                sceneCfg.characterScales[this.id.toLowerCase()] ??
                 sceneCfg.characterScales[this.id] ??
                 sceneCfg.characterScales[this.name.toLowerCase()] ??
                 sceneCfg.characterScales[this.name];
@@ -84,7 +85,8 @@ export class NPC {
         this.configOrigin = config.origin ?? { x: 0.5, y: 1.0 };
         this.animationOverrides = config.animationOverrides ?? {};
 
-        this.sprite = scene.add.sprite(config.x, config.y, config.texture, config.frame ?? 0)
+        this.sprite = scene.add
+            .sprite(config.x, config.y, config.texture, config.frame ?? 0)
             .setDepth(this.perspective ? config.y : (config.depth ?? 0));
         // Mark as a night actor so NightLayer lifts + tints it after dark
         // (every NPC, whether Director-managed or ad-hoc).
@@ -246,7 +248,7 @@ export class NPC {
 
         // Eagerly create the wearable manager on first update so persistent
         // wearables (e.g. a companion-held item) auto-reconcile.
-        if (!this.__wearables) this._wearables;
+        if (!this.__wearables) void this._wearables;
         if (this.__wearables) this.__wearables.sync();
 
         const bounds = this.getBounds();

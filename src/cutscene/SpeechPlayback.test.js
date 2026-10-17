@@ -1,10 +1,10 @@
-// @ts-nocheck: model Phaser's external event, timer, input, and audio APIs without a renderer.
-import { assertEquals, assertRejects } from "@std/assert";
+import { expect, test } from "bun:test";
 import { EventEmitter } from "node:events";
 import { Cutscene, CutsceneCancelled } from "./Cutscene.js";
 import { waitForSpeech } from "./SpeechPlayback.js";
 
 function fixture({ locked = false, muted = false, available = true, playable = true } = {}) {
+    /** @type {{ ms: number, fn: () => void, removed: boolean, remove(): void }[]} */
     const timers = [];
     const keyboard = new EventEmitter();
     const voice = Object.assign(new EventEmitter(), {
@@ -46,7 +46,7 @@ function fixture({ locked = false, muted = false, available = true, playable = t
         scale: { width: 960, height: 640 },
         add: { zone: () => blocker },
         time: {
-            delayedCall: (ms, fn) => {
+            delayedCall: (/** @type {number} */ ms, /** @type {() => void} */ fn) => {
                 const t = {
                     ms,
                     fn,
@@ -62,70 +62,78 @@ function fixture({ locked = false, muted = false, available = true, playable = t
         sound: { locked, mute: muted, add: () => voice },
         cache: { audio: { exists: () => available } },
     };
-    return { scene, bubble, timers, keyboard, voice, blocker };
+    // Only the external Phaser scene and display object are partial fixtures.
+    return {
+        scene: /** @type {typeof scene & import("phaser").Scene} */ (/** @type {unknown} */ (scene)),
+        bubble: /** @type {typeof bubble & import("phaser").GameObjects.Container} */ (/** @type {unknown} */ (bubble)),
+        timers,
+        keyboard,
+        voice,
+        blocker,
+    };
 }
 
-Deno.test("speech waits for voice completion and destroys owned resources", async () => {
+test("speech waits for voice completion and destroys owned resources", async () => {
     const f = fixture();
     const done = waitForSpeech(f.scene, f.bubble, { voice: "hello", advance: "auto" });
-    assertEquals(f.timers.length, 0);
+    expect(f.timers.length).toStrictEqual(0);
     f.voice.emit("complete");
     await done;
-    assertEquals(f.voice.destroyed, true);
-    assertEquals(f.bubble.destroyed, true);
-    assertEquals(f.scene.events.listenerCount("shutdown"), 0);
+    expect(f.voice.destroyed).toStrictEqual(true);
+    expect(f.bubble.destroyed).toStrictEqual(true);
+    expect(f.scene.events.listenerCount("shutdown")).toStrictEqual(0);
 });
 
-Deno.test("manual speech ignores opening input, then consumes advance input and cleans listeners", async () => {
+test("manual speech ignores opening input, then consumes advance input and cleans listeners", async () => {
     const f = fixture();
     const done = waitForSpeech(f.scene, f.bubble, { advance: "manual" });
     let stopped = 0;
     const click = () => f.blocker.emit("pointerdown", {}, 0, 0, { stopPropagation: () => stopped++ });
     click();
-    assertEquals(f.bubble.destroyed, false);
+    expect(f.bubble.destroyed).toStrictEqual(false);
     f.timers[0].fn(); // arm the advance control
     click();
     await done;
-    assertEquals(stopped, 2);
-    assertEquals(f.blocker.destroyed, true);
-    assertEquals(f.keyboard.listenerCount("keydown-SPACE"), 0);
-    assertEquals(f.keyboard.listenerCount("keydown-ENTER"), 0);
+    expect(stopped).toStrictEqual(2);
+    expect(f.blocker.destroyed).toStrictEqual(true);
+    expect(f.keyboard.listenerCount("keydown-SPACE")).toStrictEqual(0);
+    expect(f.keyboard.listenerCount("keydown-ENTER")).toStrictEqual(0);
 });
 
-Deno.test("blocked, muted, absent and rejected audio all fall back to reading duration", async () => {
+test("blocked, muted, absent and rejected audio all fall back to reading duration", async () => {
     for (const options of [{ locked: true }, { muted: true }, { available: false }, { playable: false }]) {
         const f = fixture(options);
         const done = waitForSpeech(f.scene, f.bubble, { voice: "hello", advance: "auto", holdMs: 4000 });
-        assertEquals(f.timers.length, 1);
-        assertEquals(f.timers[0].ms, 4000);
+        expect(f.timers.length).toStrictEqual(1);
+        expect(f.timers[0].ms).toStrictEqual(4000);
         f.timers[0].fn();
         await done;
     }
 });
 
-Deno.test("cutscene cancellation stops voice and prevents subsequent story effects", async () => {
+test("cutscene cancellation stops voice and prevents subsequent story effects", async () => {
     const f = fixture();
     const cs = new Cutscene();
     let mutated = false;
-    const done = waitForSpeech(f.scene, f.bubble, { voice: "hello" }, cs).then(() => mutated = true);
+    const done = waitForSpeech(f.scene, f.bubble, { voice: "hello" }, cs).then(() => (mutated = true));
     cs.cancel();
-    await assertRejects(() => done, CutsceneCancelled);
+    await expect(done).rejects.toThrow(CutsceneCancelled);
     f.voice.emit("complete");
-    assertEquals(mutated, false);
-    assertEquals(f.voice.destroyed, true);
-    assertEquals(f.blocker.destroyed, true);
-    assertEquals(f.timers.every((t) => t.removed), true);
+    expect(mutated).toStrictEqual(false);
+    expect(f.voice.destroyed).toStrictEqual(true);
+    expect(f.blocker.destroyed).toStrictEqual(true);
+    expect(f.timers.every((t) => t.removed)).toStrictEqual(true);
 });
 
-Deno.test("scene shutdown cancels manual speech and an already cancelled sequence creates no input", async () => {
+test("scene shutdown cancels manual speech and an already cancelled sequence creates no input", async () => {
     const f = fixture();
     const done = waitForSpeech(f.scene, f.bubble, { advance: "manual" });
     f.scene.events.emit("shutdown");
-    await assertRejects(() => done, CutsceneCancelled);
-    assertEquals(f.bubble.destroyed, true);
+    await expect(done).rejects.toThrow(CutsceneCancelled);
+    expect(f.bubble.destroyed).toStrictEqual(true);
     const cs = new Cutscene();
     cs.cancel();
     const second = fixture();
-    await assertRejects(() => waitForSpeech(second.scene, second.bubble, {}, cs), CutsceneCancelled);
-    assertEquals(second.timers.length, 0);
+    await expect(waitForSpeech(second.scene, second.bubble, {}, cs)).rejects.toThrow(CutsceneCancelled);
+    expect(second.timers.length).toStrictEqual(0);
 });

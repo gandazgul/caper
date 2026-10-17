@@ -135,13 +135,15 @@ export class WeatherLayer {
         const count = heavy ? HEAVY_DROP_COUNT : LIGHT_DROP_COUNT;
 
         // Faint blue-grey tint so the scene reads as overcast/wet.
-        const tintAlpha = heavy ? 0.20 : 0.09;
-        this.tint = this.scene.add.rectangle(0, 0, this.scene.scale.width, this.scene.scale.height, 0x2b3a55, tintAlpha)
+        const tintAlpha = heavy ? 0.2 : 0.09;
+        this.tint = this.scene.add
+            .rectangle(0, 0, this.scene.scale.width, this.scene.scale.height, 0x2b3a55, tintAlpha)
             .setOrigin(0, 0)
             .setDepth(WEATHER_DEPTH)
             .setScrollFactor(0);
 
-        this.gfx = this.scene.add.graphics()
+        this.gfx = this.scene.add
+            .graphics()
             .setDepth(WEATHER_DEPTH + 1)
             .setScrollFactor(0);
 
@@ -158,12 +160,14 @@ export class WeatherLayer {
         const count = heavy ? HEAVY_SNOW_COUNT : LIGHT_SNOW_COUNT;
 
         const tintAlpha = heavy ? 0.18 : 0.08;
-        this.tint = this.scene.add.rectangle(0, 0, this.scene.scale.width, this.scene.scale.height, 0xb8d3ff, tintAlpha)
+        this.tint = this.scene.add
+            .rectangle(0, 0, this.scene.scale.width, this.scene.scale.height, 0xb8d3ff, tintAlpha)
             .setOrigin(0, 0)
             .setDepth(WEATHER_DEPTH)
             .setScrollFactor(0);
 
-        this.gfx = this.scene.add.graphics()
+        this.gfx = this.scene.add
+            .graphics()
             .setDepth(WEATHER_DEPTH + 1)
             .setScrollFactor(0);
 
@@ -232,10 +236,11 @@ export class WeatherLayer {
         const frames = leafArt?.frames ?? [];
         const frame = frames.length ? Phaser.Utils.Array.GetRandom(frames) : undefined;
         // Tiny on screen — leaves are ~170px source, scale down hard.
-        const scale = Phaser.Math.FloatBetween(.1, .2);
+        const scale = Phaser.Math.FloatBetween(0.1, 0.2);
         const baseX = Phaser.Math.Between(-60, this.scene.scale.width + 60);
         const y = initial ? Phaser.Math.Between(-80, this.scene.scale.height) : Phaser.Math.Between(-160, -40);
-        const sprite = this.scene.add.image(baseX, y, leafArt?.atlas, frame)
+        const sprite = this.scene.add
+            .image(baseX, y, leafArt?.atlas, frame)
             .setScale(scale)
             .setDepth(WEATHER_DEPTH + 1)
             .setScrollFactor(0)

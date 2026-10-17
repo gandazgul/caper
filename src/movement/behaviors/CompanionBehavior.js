@@ -93,10 +93,7 @@ export class CompanionBehavior {
         npc.sprite.setFlipX(flipX);
 
         const t = this.lerpFn(dist, isMoving);
-        npc.setPosition(
-            npc.sprite.x + (targetX - npc.sprite.x) * t,
-            npc.sprite.y + (targetY - npc.sprite.y) * t,
-        );
+        npc.setPosition(npc.sprite.x + (targetX - npc.sprite.x) * t, npc.sprite.y + (targetY - npc.sprite.y) * t);
         npc.sprite.setDepth(target.sprite.depth - this.depthOffset);
 
         if (this.onFrame) this.onFrame({ dir, flipX, isMoving });

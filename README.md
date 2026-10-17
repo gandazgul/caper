@@ -7,32 +7,32 @@ props, inventory, NPC/cast behavior, weather, cutscenes, transitions, UI helpers
 
 ## Install
 
-Caper is published to [JSR](https://jsr.io/@caper/engine) and depends on Phaser 3 as a runtime dependency.
+Install Caper from [npm](https://www.npmjs.com/package/@gandazgul/caper-engine). Phaser 3 is a peer dependency;
+install it in the game so that the game and engine share one copy.
 
-**Deno:**
+**npm:**
 
 ```bash
-deno add jsr:@caper/engine
+npm install @gandazgul/caper-engine phaser@^3.86.0
 ```
 
-**Node / npm (Vite, webpack, etc.):**
+**Bun:**
 
 ```bash
-npx jsr add @caper/engine
-npm install phaser
+bun add @gandazgul/caper-engine phaser@^3.86.0
 ```
 
 ## Runnable starter
 
-Run `deno task starter` for [The Garden Gate](examples/starter/README.md), a complete two-room adventure with local
-artwork, an inventory puzzle, an NPC, and resume. Build it for static hosting with `deno task starter:build`.
+Run `bun run starter` for [The Garden Gate](examples/starter/README.md), a complete two-room adventure with local
+artwork, an inventory puzzle, an NPC, and resume. Build it for static hosting with `bun run starter:build`.
 
 ## Usage
 
 Everything is imported from the package entry point:
 
 ```js
-import { AdventureScene, createAdventureGame } from "@caper/engine";
+import { AdventureScene, createAdventureGame } from "@gandazgul/caper-engine";
 
 const game = createAdventureGame({
     config: { scene: [MyScene], width: 960, height: 640 },
@@ -45,7 +45,7 @@ See the [public API](mod.js) for the full list of exports.
 ## Module map
 
 `src/` is organized into capability slices. The folders are internal — everything is re-exported from the package root
-(`@caper/engine`) — but each slice is "everything for one capability," including the boot-time registry the game fills.
+(`@gandazgul/caper-engine`) — but each slice is "everything for one capability," including the boot-time registry the game fills.
 
 | Slice (`src/`) | What it owns                             | Modules                                                                                |
 | -------------- | ---------------------------------------- | -------------------------------------------------------------------------------------- |
@@ -77,38 +77,59 @@ Useful entry points:
 
 ## Local development against an unpublished checkout
 
-To work on a game and the engine side by side without publishing, map the package in your game's `deno.json`:
+To work on a game and the engine side by side, add a local dependency in the game's `package.json`:
 
 ```json
 {
-    "imports": {
-        "@caper/engine": "../Caper/mod.js"
+    "dependencies": {
+        "@gandazgul/caper-engine": "file:../Caper"
     }
 }
 ```
 
+Run `bun install` in the game. Keep `resolve.dedupe: ["phaser"]` in its Vite config so the game and engine use the
+same Phaser runtime.
+
 ## Development
 
+Install [Bun](https://bun.sh) at the version in `.bun-version`, then run:
+
 ```bash
-deno task ci      # lint + fmt:check + check + dts:check + test
-deno task test
-deno task dts     # regenerate the bundled mod.d.ts from JSDoc
+bun install --frozen-lockfile
+bun run ci      # lint + fmt:check + check + dts:check + test
+bun run test
+bun run dts     # regenerate the bundled mod.d.ts from JSDoc
 ```
 
 ## Types
 
-The engine is authored in JavaScript with JSDoc. To ship real types (and satisfy JSR fast-check without
-`--allow-slow-types`), `deno task dts` compiles the JSDoc to declarations with `tsc`, rolls them into a single
-self-contained `mod.d.ts`, and `mod.js` points at it via `// @ts-self-types`. `deno task dts:check` (run in CI)
-regenerates it and fails if the committed `mod.d.ts` is stale, so types can never drift from the source.
+The engine is authored in JavaScript with JSDoc. `bun run dts` compiles the JSDoc with `tsc`, bundles the declarations
+with `dts-bundle-generator`, then corrects Phaser namespace references in the generated `mod.d.ts`.
+`package.json` exposes this file through `exports.types` and `types`. `bun run dts:check` regenerates the file and fails
+if it differs from the committed version.
 
 ## Publishing
 
+### First publish and trusted publisher setup
+
+After this change is merged, log in to npm as `gandazgul`. From the merged `main` checkout at version `0.5.0`, run:
+
 ```bash
-deno task dts && deno publish
+bun install --frozen-lockfile
+bun run ci
+npm login
+npm publish
 ```
 
-Requires the `@caper` scope on JSR. Pushing a `v*` tag runs this via `.github/workflows/publish.yml`.
+The package sets public access. After the first publish, open the package's Settings on npmjs.com and add a GitHub
+Actions trusted publisher for owner `gandazgul`, repository `caper`, and workflow filename `publish.yml`.
+
+### Later releases
+
+Bump `version` in `package.json`, regenerate and commit any type changes, then commit the version bump. Tag that commit
+`v<version>` and push the tag. `.github/workflows/publish.yml` runs the checks, rejects a tag that differs from the
+package version, and publishes to npm with OIDC trusted publishing. No npm token secret is needed. npm adds provenance
+for trusted publishing on GitHub-hosted runners.
 
 ## License
 

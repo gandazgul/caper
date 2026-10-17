@@ -73,8 +73,12 @@ export async function waitForSpeech(scene, bubble, opts = {}, cs = new Cutscene(
             if (advance !== "auto") {
                 // Consume input above inventory and props so advancing cannot also
                 // move the character, pick up an item, or start a second dialogue.
-                blocker = scene.add.zone(0, 0, scene.scale.width, scene.scale.height)
-                    .setOrigin(0, 0).setScrollFactor(0).setDepth(10000).setInteractive();
+                blocker = scene.add
+                    .zone(0, 0, scene.scale.width, scene.scale.height)
+                    .setOrigin(0, 0)
+                    .setScrollFactor(0)
+                    .setDepth(10000)
+                    .setInteractive();
                 blocker.on(
                     "pointerdown",
                     (
@@ -90,7 +94,7 @@ export async function waitForSpeech(scene, bubble, opts = {}, cs = new Cutscene(
                 bubble.setDepth(10001);
                 scene.input.keyboard?.on("keydown-SPACE", onKey);
                 scene.input.keyboard?.on("keydown-ENTER", onKey);
-                armTimer = scene.time.delayedCall(opts.minAdvanceMs ?? 150, () => ready = true);
+                armTimer = scene.time.delayedCall(opts.minAdvanceMs ?? 150, () => (ready = true));
             }
             let playing = false;
             if (opts.voice && !scene.sound.locked && !scene.sound.mute && scene.cache.audio.exists(opts.voice)) {

@@ -7,7 +7,7 @@ accounts are required.
 From the Caper repository root:
 
 ```sh
-deno task starter
+bun run starter
 ```
 
 Open the URL printed by Vite. Click the key on the bench, drag it from the inventory to the gate, click the gate, and
@@ -28,15 +28,15 @@ Shift+E lets you move prop/approach coordinates; P copies the edited prop defini
 ## Build and deploy
 
 ```sh
-deno task starter:build
-deno task starter:preview
+bun run starter:build
+bun run starter:preview
 ```
 
 Upload the contents of `examples/starter/dist/` to any static host. The relative base and bundled asset URLs support
 hosting below a path such as `/games/garden/`. Serve through HTTP; opening index.html through a file URL is unsupported.
 
 This checkout uses the local engine through the Vite alias. To move the starter into its own repository, install Phaser
-and Vite, add `@caper/engine` through JSR, and remove the local engine alias. Keep the Phaser dedupe setting so the
+3 and Vite, add `@gandazgul/caper-engine` from npm, and remove the local engine alias. Keep the Phaser dedupe setting so the
 engine and game share one runtime.
 
 SVGs use `?no-inline` because Phaser's SVG loader expects a URL or a base64 data URI, whereas Vite can otherwise produce

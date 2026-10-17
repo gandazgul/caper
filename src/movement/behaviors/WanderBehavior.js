@@ -67,7 +67,7 @@ export class WanderBehavior {
     }
 
     start() {
-        const present = this.startPresent ?? (Math.random() < this.presentChance);
+        const present = this.startPresent ?? Math.random() < this.presentChance;
 
         if (!present) {
             // Absent on entry — hidden until the return timer rolls a walk-in
@@ -253,16 +253,17 @@ export class WanderBehavior {
         const propsConfig = this.scene.sceneConfig?.props;
         const out = [];
         for (const p of propsConfig ?? []) {
-            const hasExitCursor = p.cursor === "exit" ||
-                (p.states ?? []).some((/** @type {import("../../interaction/PropEngine.js").PropState} */ st) =>
-                    st.cursor === "exit"
+            const hasExitCursor =
+                p.cursor === "exit" ||
+                (p.states ?? []).some(
+                    (/** @type {import("../../interaction/PropEngine.js").PropState} */ st) => st.cursor === "exit",
                 );
             if (!hasExitCursor) continue;
             const approach = p.approach;
             if (!approach || approach === "in-place") continue;
 
             let goesInside = false;
-            for (const st of (/** @type {import("../../interaction/PropEngine.js").PropState[]} */ (p.states ?? []))) {
+            for (const st of /** @type {import("../../interaction/PropEngine.js").PropState[]} */ (p.states ?? [])) {
                 if (st.onClick) {
                     for (const action of st.onClick) {
                         if (action.goToScene) {

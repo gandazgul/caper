@@ -147,7 +147,7 @@ export class FullscreenButton {
 
         try {
             this.scene.scale.startFullscreen();
-        } catch (_err) {
+        } catch {
             this._pendingNativeFullscreen = false;
             this._enterViewportFullscreen();
         }
@@ -263,13 +263,7 @@ const VIEWPORT_FULLSCREEN_TARGET_STYLES = [
     "touchAction",
 ];
 
-const VIEWPORT_FULLSCREEN_ROOT_STYLES = [
-    "overflow",
-    "overscrollBehavior",
-    "height",
-    "margin",
-    "padding",
-];
+const VIEWPORT_FULLSCREEN_ROOT_STYLES = ["overflow", "overscrollBehavior", "height", "margin", "padding"];
 
 /**
  * @param {unknown} value
@@ -285,12 +279,7 @@ function isStyleableElement(value) {
  */
 function resolveViewportFullscreenTarget(scale) {
     const scaleAny = /** @type {any} */ (scale);
-    const candidates = [
-        scaleAny.fullscreenTarget,
-        scaleAny.parent,
-        scaleAny.canvas?.parentElement,
-        scaleAny.canvas,
-    ];
+    const candidates = [scaleAny.fullscreenTarget, scaleAny.parent, scaleAny.canvas?.parentElement, scaleAny.canvas];
 
     for (const candidate of candidates) {
         if (isStyleableElement(candidate)) return candidate;

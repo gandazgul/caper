@@ -9,7 +9,7 @@ The engine resolves an item id — `"apple"`, `"key"`, `"fishing_rod"` — to a 
 `ContentRegistry`. The game populates this at boot:
 
 ```js
-import { content } from "@caper/engine";
+import { content } from "@gandazgul/caper-engine";
 
 content.registerItems({
     apple: { atlas: "props-atlas", frame: "apple", scale: 0.8 },
@@ -35,7 +35,8 @@ change.
 // Created in AdventureScene.create():
 this.inventory = new InventoryLayer(this, {
     atlasKey: "inventory-atlas", // default atlas for items without explicit atlas
-    layout: { // override defaults
+    layout: {
+        // override defaults
         stripHeight: 90,
         slotPadding: 10,
         padding: 60,
@@ -53,7 +54,7 @@ this.inventory.setVisible(false); // hide (for puzzles that need the bottom of t
 ## Inventory operations
 
 ```js
-import { store } from "@caper/engine";
+import { store } from "@gandazgul/caper-engine";
 
 // Standard:
 store.addTo("inventory", "apple"); // add one

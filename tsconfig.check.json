@@ -1,0 +1,6 @@
+{
+    "extends": "./tsconfig.json",
+    "compilerOptions": { "noEmit": true, "types": ["bun"] },
+    "include": ["mod.js", "src/**/*.js", "src/**/*.test.js"],
+    "exclude": ["node_modules"]
+}

@@ -41,7 +41,8 @@ export class HotspotManager {
             cursor = "default";
         }
         const interactiveOpts = cursor ? { cursor } : { useHandCursor: true };
-        const zone = this.scene.add.zone(bounds.x, bounds.y, bounds.w, bounds.h)
+        const zone = this.scene.add
+            .zone(bounds.x, bounds.y, bounds.w, bounds.h)
             .setOrigin(0, 0)
             .setInteractive(interactiveOpts)
             .setName(`hotspot:${id}`)

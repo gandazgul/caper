@@ -1,0 +1,15 @@
+{
+    "printWidth": 120,
+    "tabWidth": 4,
+    "useTabs": false,
+    "semi": true,
+    "singleQuote": false,
+    "ignorePatterns": [
+        "docs/plans/**",
+        "docs/adr/**",
+        "mod.d.ts",
+        "types/**",
+        "**/dist/**",
+        "**/.vite/**"
+    ]
+}

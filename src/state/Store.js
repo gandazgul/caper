@@ -219,9 +219,11 @@ export class Store {
     /** @param {SaveStatus["state"]} state @param {SaveStatus["operation"]} operation @param {string} [message] */
     _setSaveStatus(state, operation, message) {
         if (
-            state === this._saveStatus.state && operation === this._saveStatus.operation &&
+            state === this._saveStatus.state &&
+            operation === this._saveStatus.operation &&
             message === this._saveStatus.message
-        ) return;
+        )
+            return;
         this._saveStatus = Object.freeze({ state, operation, ...(message ? { message } : {}) });
         for (const listener of this._saveStatusSubs) listener(this._saveStatus);
     }
@@ -505,7 +507,7 @@ export class Store {
         try {
             if (typeof localStorage === "undefined") return false;
             return localStorage.getItem(this._saveKey) !== null;
-        } catch (_e) {
+        } catch {
             return false;
         }
     }

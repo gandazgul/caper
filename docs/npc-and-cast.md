@@ -11,7 +11,7 @@ The engine provides two complementary systems for non-player characters:
 Create an NPC directly for scene-local characters:
 
 ```js
-import { NPC } from "@caper/engine";
+import { NPC } from "@gandazgul/caper-engine";
 
 const npc = new NPC(this, {
     id: "shopkeeper",
@@ -30,7 +30,8 @@ const npc = new NPC(this, {
     onClick: (npc) => {
         npc.speak("Nice to meet you!");
     },
-    fidget: { // optional: occasional idle animation
+    fidget: {
+        // optional: occasional idle animation
         stillKey: "shopkeeper-still",
         idleAnimKey: "shopkeeper-idle",
         intervalMs: 8000,
@@ -56,11 +57,12 @@ spawns each character's per-chapter ambient behavior, and wires reactions.
 ### Cast entry structure
 
 ```js
-import { registerCast } from "@caper/engine";
+import { registerCast } from "@gandazgul/caper-engine";
 
 registerCast({
     shopkeeper: {
-        defaults: { // shared across chapters
+        defaults: {
+            // shared across chapters
             scale: 0.5,
             approachOffset: { x: 80, y: 0, facing: "left" },
             boundsOffset: { x: -40, y: -200, w: 80, h: 180 },

@@ -9,7 +9,7 @@ awaitable NPC/player primitives — strongly typed, full control flow, no nested
 into cancellable promises.
 
 ```js
-import { Cutscene } from "@caper/engine";
+import { Cutscene } from "@gandazgul/caper-engine";
 
 const cs = new Cutscene();
 
@@ -39,8 +39,12 @@ the actor context. It guarantees:
 
 ```js
 const runner = new CutsceneRunner({
-    suspend: (cast) => {/* pause NPC ambient */},
-    resume: (cast) => {/* restore NPC ambient */},
+    suspend: (cast) => {
+        /* pause NPC ambient */
+    },
+    resume: (cast) => {
+        /* restore NPC ambient */
+    },
     lockPlayer: () => scene.walk.lock(),
     unlockPlayer: () => scene.walk.unlock(),
     buildContext: (cs) => buildCutsceneContext(scene, cs, presentNPCs),
@@ -52,13 +56,16 @@ const runner = new CutsceneRunner({
 The `CastDirector` exposes a `cutscene()` method that wraps `CutsceneRunner.run()`:
 
 ```js
-director.cutscene(async (d) => {
-    await d.hero.speak("What's this?");
-    await d.npc.facePlayer();
-    await d.npc.speak("A secret passage!");
-    await d.hero.walkTo({ x: 400, y: 300 });
-    await d.wait(500); // pause, cancellable
-}, { lockPlayer: true, cast: ["npc"] });
+director.cutscene(
+    async (d) => {
+        await d.hero.speak("What's this?");
+        await d.npc.facePlayer();
+        await d.npc.speak("A secret passage!");
+        await d.hero.walkTo({ x: 400, y: 300 });
+        await d.wait(500); // pause, cancellable
+    },
+    { lockPlayer: true, cast: ["npc"] },
+);
 ```
 
 ### Options
@@ -112,16 +119,19 @@ reactions: [
 ## Writing cancellable async sequences
 
 ```js
-director.cutscene(async (d) => {
-    await d.npc.speak("Follow me!");
-    await d.npc.walkTo({ x: 200, y: 300 });
+director.cutscene(
+    async (d) => {
+        await d.npc.speak("Follow me!");
+        await d.npc.walkTo({ x: 200, y: 300 });
 
-    // If the cutscene is cancelled here (scene shutdown or preemption),
-    // the await rejects with CutsceneCancelled — the rest never runs.
-    // The NPC's ambient behavior is still resumed once.
+        // If the cutscene is cancelled here (scene shutdown or preemption),
+        // the await rejects with CutsceneCancelled — the rest never runs.
+        // The NPC's ambient behavior is still resumed once.
 
-    await d.npc.speak("We're here.");
-}, { lockPlayer: true });
+        await d.npc.speak("We're here.");
+    },
+    { lockPlayer: true },
+);
 ```
 
 ## Error handling

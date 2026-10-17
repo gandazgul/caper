@@ -68,7 +68,7 @@ See [architecture.md](architecture.md) for details.
 ## Module map
 
 `src/` is organized into **capability slices** — each folder is "everything for one capability," including the boot-time
-registry the game fills. The folders are internal; everything is re-exported from the package root (`@caper/engine`).
+registry the game fills. The folders are internal; everything is re-exported from the package root (`@gandazgul/caper-engine`).
 
 | Slice (`src/`) | Modules                                                                                | Docs                                                                                          |
 | -------------- | -------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |

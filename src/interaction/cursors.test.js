@@ -1,17 +1,17 @@
-import { assertEquals } from "@std/assert";
+import { expect, test } from "bun:test";
 import { engineAssets } from "../assets/EngineAssets.js";
 import { cursorFor } from "./cursors.js";
 
-Deno.test("cursors honor deployment prefixes, overrides and legacy defaults", () => {
+test("cursors honor deployment prefixes, overrides and legacy defaults", () => {
     try {
         engineAssets.configure({ cursorBaseUrl: "/games/demo/art", cursors: { look: "help" } });
-        assertEquals(cursorFor("pickup"), "url('/games/demo/art/cursor_grab.png') 21 21, grab");
-        assertEquals(cursorFor("look"), "help");
-        assertEquals(cursorFor("exit", "left").includes("/games/demo/art/arrow_left.png"), true);
-        assertEquals(cursorFor("exit", "left", "crosshair"), "crosshair");
-        assertEquals(cursorFor("crosshair"), "crosshair");
+        expect(cursorFor("pickup")).toStrictEqual("url('/games/demo/art/cursor_grab.png') 21 21, grab");
+        expect(cursorFor("look")).toStrictEqual("help");
+        expect(cursorFor("exit", "left").includes("/games/demo/art/arrow_left.png")).toStrictEqual(true);
+        expect(cursorFor("exit", "left", "crosshair")).toStrictEqual("crosshair");
+        expect(cursorFor("crosshair")).toStrictEqual("crosshair");
     } finally {
         engineAssets.configure({ cursorBaseUrl: "/objects/", cursors: {}, exitCursors: {} });
     }
-    assertEquals(cursorFor("pickup"), "url('/objects/cursor_grab.png') 21 21, grab");
+    expect(cursorFor("pickup")).toStrictEqual("url('/objects/cursor_grab.png') 21 21, grab");
 });

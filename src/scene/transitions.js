@@ -71,7 +71,7 @@ export function transitionTo(scene, targetKey, opts = {}) {
 
     const o = typeof opts === "string" ? { preset: opts } : { ...opts };
     const replayPolicy = engineAssets.get("replayTransition");
-    const replay = o.replay === false ? null : o.replay ?? replayPolicy?.({ scene, targetKey, opts: o });
+    const replay = o.replay === false ? null : (o.replay ?? replayPolicy?.({ scene, targetKey, opts: o }));
     if (replay) {
         const replayOpts = replay === true ? {} : replay;
         store.beginReplay({ returnScene: replayOpts.returnScene ?? scene.scene.key });
@@ -111,7 +111,7 @@ export function exitReplay(scene) {
  */
 function fadeAndStart(scene, targetKey, opts) {
     const o = typeof opts === "string" ? { preset: opts } : opts;
-    const name = o.preset ?? (/** @type {any} */ (scene).sceneConfig?.transition) ?? DEFAULT_TRANSITION;
+    const name = o.preset ?? /** @type {any} */ (scene).sceneConfig?.transition ?? DEFAULT_TRANSITION;
     const base = TRANSITIONS[name] ?? TRANSITIONS[DEFAULT_TRANSITION];
     const duration = o.duration ?? base.duration;
     const color = o.color ?? base.color;
@@ -137,7 +137,7 @@ function fadeAndStart(scene, targetKey, opts) {
  */
 export function transitionIn(scene, opts = {}) {
     const o = typeof opts === "string" ? { preset: opts } : opts;
-    const name = o.preset ?? (/** @type {any} */ (scene).sceneConfig?.transition) ?? DEFAULT_TRANSITION;
+    const name = o.preset ?? /** @type {any} */ (scene).sceneConfig?.transition ?? DEFAULT_TRANSITION;
     const base = TRANSITIONS[name] ?? TRANSITIONS[DEFAULT_TRANSITION];
 
     if (o.fadeIn ?? base.fadeIn) {

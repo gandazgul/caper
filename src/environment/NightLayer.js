@@ -97,7 +97,8 @@ export class NightLayer {
         this.moonParts = [];
 
         this.tintColor = config.tintColor ?? 0x3050a0;
-        const overlay = scene.add.rectangle(0, 0, scene.scale.width, scene.scale.height, this.tintColor)
+        const overlay = scene.add
+            .rectangle(0, 0, scene.scale.width, scene.scale.height, this.tintColor)
             .setOrigin(0, 0)
             .setDepth(DEPTH_TINT)
             .setScrollFactor(0)
@@ -145,7 +146,8 @@ export class NightLayer {
         ensureSoftGlowTexture(this.scene);
 
         // Wide, faint atmospheric halo — bleeds the moonlight into the sky.
-        const outerGlow = this.scene.add.image(cfg.x, cfg.y, SOFT_GLOW_TEXTURE_KEY)
+        const outerGlow = this.scene.add
+            .image(cfg.x, cfg.y, SOFT_GLOW_TEXTURE_KEY)
             .setDisplaySize(r * 5 * glowScale, r * 5 * glowScale)
             .setTint(color)
             .setDepth(DEPTH_MOON - 2)
@@ -155,7 +157,8 @@ export class NightLayer {
         this.children.push(outerGlow);
 
         // Tighter bloom hugging the disc for a soft halo edge.
-        const innerGlow = this.scene.add.image(cfg.x, cfg.y, SOFT_GLOW_TEXTURE_KEY)
+        const innerGlow = this.scene.add
+            .image(cfg.x, cfg.y, SOFT_GLOW_TEXTURE_KEY)
             .setDisplaySize(r * 2.4 * glowScale, r * 2.4 * glowScale)
             .setTint(color)
             .setDepth(DEPTH_MOON - 1)
@@ -176,9 +179,7 @@ export class NightLayer {
         });
 
         // The solid full-moon disc on top of the glow.
-        const disc = this.scene.add.circle(cfg.x, cfg.y, r, color)
-            .setScrollFactor(0)
-            .setDepth(DEPTH_MOON);
+        const disc = this.scene.add.circle(cfg.x, cfg.y, r, color).setScrollFactor(0).setDepth(DEPTH_MOON);
 
         // Keep references so scenes with manual scrolling can reposition.
         this.moonParts = [outerGlow, innerGlow, disc];
@@ -220,7 +221,8 @@ export class NightLayer {
             // boundary is fuzzy and forgiving of imprecise placement. Best for
             // arched / skewed window shapes that hard rects/ovals can't match.
             ensureSoftGlowTexture(this.scene);
-            glow = this.scene.add.image(win.x + w / 2, win.y + h / 2, SOFT_GLOW_TEXTURE_KEY)
+            glow = this.scene.add
+                .image(win.x + w / 2, win.y + h / 2, SOFT_GLOW_TEXTURE_KEY)
                 .setDisplaySize(w, h)
                 .setTint(color);
         } else if (win.type === "rect") {
@@ -231,9 +233,7 @@ export class NightLayer {
         } else {
             glow = this.scene.add.ellipse(win.x, win.y, w, h, color);
         }
-        glow.setDepth(DEPTH_WINDOWS)
-            .setBlendMode(Phaser.BlendModes.ADD)
-            .setAlpha(0.8);
+        glow.setDepth(DEPTH_WINDOWS).setBlendMode(Phaser.BlendModes.ADD).setAlpha(0.8);
 
         // Flicker amplitude per window. `false` disables; a number scales
         // the default wobble (1 = default, 0 = effectively off, 2 = double).

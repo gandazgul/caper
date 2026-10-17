@@ -199,17 +199,13 @@ export function registerAtlasFrames(scene, key) {
         // Apply trim only for atlases the Game declared as trimmed — preserves
         // exact prior behavior while keeping atlas names out of the engine.
         if (
-            trimmedAtlases.has(key) && frame && s.originalWidth && s.originalHeight &&
+            trimmedAtlases.has(key) &&
+            frame &&
+            s.originalWidth &&
+            s.originalHeight &&
             (s.trimOffsetX !== undefined || s.trimOffsetY !== undefined)
         ) {
-            frame.setTrim(
-                s.originalWidth,
-                s.originalHeight,
-                s.trimOffsetX ?? 0,
-                s.trimOffsetY ?? 0,
-                s.width,
-                s.height,
-            );
+            frame.setTrim(s.originalWidth, s.originalHeight, s.trimOffsetX ?? 0, s.trimOffsetY ?? 0, s.width, s.height);
         }
     }
 }

@@ -36,7 +36,8 @@ export class SubsceneStack {
     push(config) {
         const bgX = config.offset?.x ?? 0;
         const bgY = config.offset?.y ?? 0;
-        const bg = this.scene.add.image(bgX, bgY, config.backgroundKey)
+        const bg = this.scene.add
+            .image(bgX, bgY, config.backgroundKey)
             .setOrigin(0, 0)
             .setScale(config.backgroundScale ?? 1)
             .setDepth(SUBSCENE_BG_DEPTH)

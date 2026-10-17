@@ -75,7 +75,7 @@ export class InventoryLayer {
         /** @type {(import("phaser").GameObjects.Image | import("phaser").GameObjects.Text)[]} */
         this.decorSprites = [];
         this.allowed = true;
-        (/** @type {any} */ (this.scene)).inventory = this;
+        /** @type {any} */ (this.scene).inventory = this;
 
         // Auto-hide when a subscene opens
         this._onSubsceneToggle = () => this.applyVisibility();
@@ -130,7 +130,8 @@ export class InventoryLayer {
         // item flies to the slot it's about to create at the end of the strip.
         const existing = this.findSprite(itemId);
         const target = existing ? { x: existing.x, y: existing.y } : this.predictNextSlotPosition(meta);
-        const flying = this.scene.add.image(fromX, fromY, meta.atlas, meta.frame)
+        const flying = this.scene.add
+            .image(fromX, fromY, meta.atlas, meta.frame)
             .setScale(meta.scale)
             .setDepth(INVENTORY_SPRITE_DEPTH + 100);
 
@@ -232,10 +233,10 @@ export class InventoryLayer {
         // const slotPadding = index === 0 ? 0 : this.layout.slotPadding;
         const currentWidth = this.slotSprites.slice(0, index).reduce((prev, curr) => {
             const extra = curr.getData("isStack") ? STACK_SLOT_EXTRA : 0;
-            return prev += curr.displayWidth + this.layout.slotPadding + extra;
+            return (prev += curr.displayWidth + this.layout.slotPadding + extra);
         }, 0);
-        const x = this.layout.padding + this.layout.slotPadding + currentWidth +
-            this.slotSprites[index].displayWidth / 2;
+        const x =
+            this.layout.padding + this.layout.slotPadding + currentWidth + this.slotSprites[index].displayWidth / 2;
         const y = this.stripY + this.layout.stripHeight / 2;
         return { x, y };
     }
@@ -252,29 +253,28 @@ export class InventoryLayer {
      * @param {number} count
      */
     renderStack(sprite, meta, count) {
-        const shadow = this.scene.add.image(
-            sprite.x + STACK_OFFSET.x,
-            sprite.y + STACK_OFFSET.y,
-            meta.atlas,
-            meta.frame,
-        )
+        const shadow = this.scene.add
+            .image(sprite.x + STACK_OFFSET.x, sprite.y + STACK_OFFSET.y, meta.atlas, meta.frame)
             .setScale(meta.scale)
             .setDepth(INVENTORY_SPRITE_DEPTH - 0.5);
         this.decorSprites.push(shadow);
 
-        const badge = this.scene.add.text(
-            sprite.x + sprite.displayWidth / 2 + STACK_OFFSET.x,
-            sprite.y - sprite.displayHeight / 2 + STACK_OFFSET.y,
-            `${count}`,
-            {
-                fontSize: "18px",
-                fontFamily: "Arial",
-                fontStyle: "bold",
-                color: "#ffffff",
-                backgroundColor: "#d24c2a",
-                padding: { x: 4, y: 1 },
-            },
-        ).setOrigin(0.5).setDepth(INVENTORY_SPRITE_DEPTH + 1);
+        const badge = this.scene.add
+            .text(
+                sprite.x + sprite.displayWidth / 2 + STACK_OFFSET.x,
+                sprite.y - sprite.displayHeight / 2 + STACK_OFFSET.y,
+                `${count}`,
+                {
+                    fontSize: "18px",
+                    fontFamily: "Arial",
+                    fontStyle: "bold",
+                    color: "#ffffff",
+                    backgroundColor: "#d24c2a",
+                    padding: { x: 4, y: 1 },
+                },
+            )
+            .setOrigin(0.5)
+            .setDepth(INVENTORY_SPRITE_DEPTH + 1);
         this.decorSprites.push(badge);
     }
 
@@ -303,12 +303,8 @@ export class InventoryLayer {
             const meta = lookupInventoryItem(itemId);
             if (!meta) continue;
 
-            const itemSprite = this.scene.add.image(
-                sprite.x + cfg.dx,
-                sprite.y + cfg.dy,
-                meta.atlas,
-                meta.frame,
-            )
+            const itemSprite = this.scene.add
+                .image(sprite.x + cfg.dx, sprite.y + cfg.dy, meta.atlas, meta.frame)
                 .setScale(meta.scale) // slightly smaller so they fit nicely
                 .setAngle(cfg.angle)
                 .setDepth(INVENTORY_SPRITE_DEPTH + 0.5);
@@ -335,7 +331,8 @@ export class InventoryLayer {
             const count = store.getInventoryCount(toyId);
             const isStack = count > 1 || (toyId === "pencil_case" && store.list("pencilCaseItems").length > 0);
 
-            const sprite = this.scene.add.image(0, 0, meta.atlas, meta.frame)
+            const sprite = this.scene.add
+                .image(0, 0, meta.atlas, meta.frame)
                 .setScale(meta.scale)
                 .setDepth(INVENTORY_SPRITE_DEPTH);
             this.slotSprites.push(sprite);
@@ -360,8 +357,8 @@ export class InventoryLayer {
         // visibility calculation.
         this.applyVisibility();
 
-        if (this.scene && typeof (/** @type {any} */ (this.scene)).enableInventoryDrag === "function") {
-            (/** @type {any} */ (this.scene)).enableInventoryDrag();
+        if (this.scene && typeof (/** @type {any} */ (this.scene).enableInventoryDrag) === "function") {
+            /** @type {any} */ (this.scene).enableInventoryDrag();
         }
     }
 }

@@ -1,7 +1,7 @@
-import { assert, assertEquals } from "@std/assert";
+import { expect, test } from "bun:test";
 import { findPathInWalkable, snapToWalkable, walkablePolygons } from "./pathfinding.js";
 
-Deno.test("walkablePolygons accepts one polygon or several polygons", () => {
+test("walkablePolygons accepts one polygon or several polygons", () => {
     const one = [
         { x: 0, y: 0 },
         { x: 10, y: 0 },
@@ -16,11 +16,11 @@ Deno.test("walkablePolygons accepts one polygon or several polygons", () => {
         ],
     ];
 
-    assertEquals(walkablePolygons(one).length, 1);
-    assertEquals(walkablePolygons(two).length, 2);
+    expect(walkablePolygons(one).length).toStrictEqual(1);
+    expect(walkablePolygons(two).length).toStrictEqual(2);
 });
 
-Deno.test("normal pathing cannot cross disconnected walkable islands", () => {
+test("normal pathing cannot cross disconnected walkable islands", () => {
     const left = [
         { x: 0, y: 0 },
         { x: 10, y: 0 },
@@ -35,12 +35,12 @@ Deno.test("normal pathing cannot cross disconnected walkable islands", () => {
     ];
 
     const route = findPathInWalkable({ x: 5, y: 5 }, { x: 35, y: 5 }, [left, right]);
-    assertEquals(route.reachedTarget, false);
-    assert(route.path.length > 0);
-    assertEquals(route.path.at(-1), { x: 10, y: 5 });
+    expect(route.reachedTarget).toStrictEqual(false);
+    expect(route.path.length > 0).toBeTruthy();
+    expect(route.path.at(-1)).toStrictEqual({ x: 10, y: 5 });
 });
 
-Deno.test("snapToWalkable snaps to the island containing or nearest the point", () => {
+test("snapToWalkable snaps to the island containing or nearest the point", () => {
     const left = [
         { x: 0, y: 0 },
         { x: 10, y: 0 },
@@ -54,6 +54,6 @@ Deno.test("snapToWalkable snaps to the island containing or nearest the point", 
         { x: 30, y: 10 },
     ];
 
-    assertEquals(snapToWalkable({ x: 35, y: 5 }, [left, right]), { x: 35, y: 5 });
-    assertEquals(snapToWalkable({ x: 22, y: 5 }, [left, right]), { x: 30, y: 5 });
+    expect(snapToWalkable({ x: 35, y: 5 }, [left, right])).toStrictEqual({ x: 35, y: 5 });
+    expect(snapToWalkable({ x: 22, y: 5 }, [left, right])).toStrictEqual({ x: 30, y: 5 });
 });

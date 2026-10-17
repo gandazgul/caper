@@ -101,8 +101,7 @@ export class IdleCharacter {
         const sceneCfg = this.scene.sceneConfig;
         const baseScale = 0.55;
         let finalScale = baseScale * (this.config.spriteScale ?? 1);
-        const override = sceneCfg?.characterScales?.[this.name.toLowerCase()] ??
-            sceneCfg?.characterScales?.[this.name];
+        const override = sceneCfg?.characterScales?.[this.name.toLowerCase()] ?? sceneCfg?.characterScales?.[this.name];
         if (override !== undefined) finalScale = override;
 
         this.walker = new WalkController(
