@@ -74,10 +74,10 @@ export class PropEngine {
         /** @type {any} */
         this.scene = scene;
         /** @type {Prop[]} */
-        this.props = (/** @type {any} */ (scene).sceneConfig?.props) ?? [];
+        this.props = /** @type {any} */ (scene).sceneConfig?.props ?? [];
         /** Sprites are shared with the scene so the editor / subclasses can reach them. */
         /** @type {Map<string, import("phaser").GameObjects.Sprite | PropStack>} */
-        this.sprites = (/** @type {any} */ (scene)).propSprites;
+        this.sprites = /** @type {any} */ (scene).propSprites;
         /** propId → the PropState whose hotspot zone is currently registered. */
         /** @type {Map<string, PropState>} */
         this.zoneState = new Map();
@@ -269,7 +269,7 @@ export class PropEngine {
         if (sprite && stackConfig && !(sprite instanceof PropStack)) {
             sprite.destroy();
             sprite = null;
-        } else if (sprite && !stackConfig && (sprite instanceof PropStack)) {
+        } else if (sprite && !stackConfig && sprite instanceof PropStack) {
             sprite.destroy();
             sprite = null;
         }
@@ -512,10 +512,7 @@ export class PropEngine {
             return;
         }
         if (this.scene.walk?.walkTo) {
-            this.scene.walk.walkTo(
-                { x: dt.approach.x, y: dt.approach.y, facing: dt.approach.facing },
-                run,
-            );
+            this.scene.walk.walkTo({ x: dt.approach.x, y: dt.approach.y, facing: dt.approach.facing }, run);
         } else {
             run();
         }
@@ -671,9 +668,8 @@ export class PropEngine {
         }
 
         if (eff.pushSubscene) {
-            const backgroundKey = typeof eff.pushSubscene === "string"
-                ? eff.pushSubscene
-                : eff.pushSubscene.backgroundKey;
+            const backgroundKey =
+                typeof eff.pushSubscene === "string" ? eff.pushSubscene : eff.pushSubscene.backgroundKey;
             this.scene.subscenes?.push({ backgroundKey });
             return;
         }
@@ -712,8 +708,8 @@ export function exitApproaches(propsConfig) {
     /** @type {{ x: number, y: number, facing?: string }[]} */
     const out = [];
     for (const p of propsConfig ?? []) {
-        const hasExitCursor = p.cursor === "exit" ||
-            (p.states ?? []).some((st) => /** @type {any} */ (st).cursor === "exit");
+        const hasExitCursor =
+            p.cursor === "exit" || (p.states ?? []).some((st) => /** @type {any} */ (st).cursor === "exit");
         if (!hasExitCursor) continue;
         const approach = p.approach;
         if (!approach || approach === "in-place") continue;
@@ -783,7 +779,7 @@ export class PropStack extends Phaser.GameObjects.Container {
         const scaleRange = this.config.scaleRange ?? [0.9, 1.1];
 
         // Seeded random for determinism (consistent piles)
-        let seed = (this.x * 17 + this.y * 31) || 42;
+        let seed = this.x * 17 + this.y * 31 || 42;
         const random = () => {
             seed = (seed * 1664525 + 1013904223) % 4294967296;
             return seed / 4294967296;

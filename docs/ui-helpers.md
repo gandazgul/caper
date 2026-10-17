@@ -6,16 +6,20 @@ The `createBackButton` helper creates a consistent back-arrow button in the top-
 — during a replay, clicking it calls `exitReplay` instead of the custom handler.
 
 ```js
-import { createBackButton } from "@caper/engine";
+import { createBackButton } from "@gandazgul/caper-engine";
 
-const backBtn = createBackButton(scene, () => {
-    scene.scene.start("PreviousScene");
-}, {
-    scrollFactor0: false, // pinned to camera
-    visible: true,
-    stopPropagation: true, // prevent walk/hotspot click-through
-    replayReturn: true, // default: during replay, return to the replay owner scene
-});
+const backBtn = createBackButton(
+    scene,
+    () => {
+        scene.scene.start("PreviousScene");
+    },
+    {
+        scrollFactor0: false, // pinned to camera
+        visible: true,
+        stopPropagation: true, // prevent walk/hotspot click-through
+        replayReturn: true, // default: during replay, return to the replay owner scene
+    },
+);
 ```
 
 ## Chunky buttons
@@ -23,7 +27,7 @@ const backBtn = createBackButton(scene, () => {
 The `createChunkyButton` helper creates a wooden-panel styled button with optional drawn icons.
 
 ```js
-import { createChunkyButton, drawCameraIcon } from "@caper/engine";
+import { createChunkyButton, drawCameraIcon } from "@gandazgul/caper-engine";
 
 const btn = createChunkyButton(scene, 400, 300, 80, 80, {
     onClick: () => console.log("clicked"),
@@ -34,7 +38,7 @@ const btn = createChunkyButton(scene, 400, 300, 80, 80, {
 ### Built-in icon functions
 
 ```js
-import { drawCameraIcon, drawFullscreenIcon, drawReloadIcon, drawTrashIcon } from "@caper/engine";
+import { drawCameraIcon, drawFullscreenIcon, drawReloadIcon, drawTrashIcon } from "@gandazgul/caper-engine";
 
 // Usage inside a chunky button's drawIcon callback:
 drawTrashIcon(gfx, cx, cy); // trash bin

@@ -4,12 +4,12 @@ This guide walks through creating a minimal point-and-click game from scratch. B
 who can walk around a room, pick up an item, and exit to another scene.
 
 For a complete runnable project with artwork and deployment configuration, start with
-[The Garden Gate](../examples/starter/README.md): run `deno task starter` from the repository root. The snippets below
+[The Garden Gate](../examples/starter/README.md): run `bun run starter` from the repository root. The snippets below
 explain the pieces; they are not a standalone project.
 
 ## Prerequisites
 
-- Node.js 18+ or Deno
+- Node.js 18+ or Bun
 - A Phaser 3 project setup (Vite recommended)
 - A Phaser 3 project that imports the engine package
 
@@ -21,7 +21,7 @@ Every game needs a single entry point that populates the engine's registries and
 ```js
 // src/main.js
 import Phaser from "phaser";
-import { createAdventureGame } from "@caper/engine";
+import { createAdventureGame } from "@gandazgul/caper-engine";
 import { registerGameContent } from "./registerContent.js";
 import { MyRoomScene } from "./MyRoomScene.js";
 
@@ -44,11 +44,11 @@ Create a registration file that the engine calls once at boot. This is where you
 
 ```js
 // src/registerContent.js
-import { store } from "@caper/engine";
-import { characters } from "@caper/engine";
-import { content } from "@caper/engine";
-import { engineAssets } from "@caper/engine";
-import { wearables } from "@caper/engine";
+import { store } from "@gandazgul/caper-engine";
+import { characters } from "@gandazgul/caper-engine";
+import { content } from "@gandazgul/caper-engine";
+import { engineAssets } from "@gandazgul/caper-engine";
+import { wearables } from "@gandazgul/caper-engine";
 
 export function registerGameContent() {
     // ─── Engine widget art ─────────────────────────────────────────────
@@ -115,8 +115,8 @@ and cast.
 
 ```js
 // src/MyRoomScene.js
-import { AdventureScene } from "@caper/engine";
-import { transitionIn } from "@caper/engine";
+import { AdventureScene } from "@gandazgul/caper-engine";
+import { transitionIn } from "@gandazgul/caper-engine";
 
 export class MyRoomScene extends AdventureScene {
     constructor() {
@@ -146,10 +146,7 @@ export class MyRoomScene extends AdventureScene {
                             when: { hasKey: { ne: true } },
                             frame: "key",
                             cursor: "pickup",
-                            onClick: [
-                                { pickup: { id: "key_item" } },
-                                { set: { hasKey: true } },
-                            ],
+                            onClick: [{ pickup: { id: "key_item" } }, { set: { hasKey: true } }],
                         },
                     ],
                 },
@@ -162,9 +159,7 @@ export class MyRoomScene extends AdventureScene {
                         {
                             cursor: "exit",
                             approach: { x: 900, y: 400, facing: "right" },
-                            onClick: [
-                                { goToScene: "MySecondRoom" },
-                            ],
+                            onClick: [{ goToScene: "MySecondRoom" }],
                         },
                     ],
                 },
@@ -186,7 +181,7 @@ With Vite configured, start the dev server:
 ```bash
 npm run dev
 # or
-deno task dev
+bun run dev
 ```
 
 You'll see your character standing in the room. Click the walkable floor to move. Click the key to pick it up. Click the

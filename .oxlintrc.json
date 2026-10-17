@@ -1,0 +1,11 @@
+{
+    "ignorePatterns": ["mod.d.ts", "types/", "dist/", "**/.vite/", "examples/starter/dist/"],
+    "rules": {
+        // Some loops need a snapshot because their callbacks mutate the collection.
+        "unicorn/no-useless-spread": "off",
+        // Length-based arrays are intentional in pathfinding and weather particle pools.
+        "unicorn/no-new-array": "off",
+        // Keep explicit defaults for optional configuration in the existing source.
+        "unicorn/no-useless-fallback-in-spread": "off"
+    }
+}

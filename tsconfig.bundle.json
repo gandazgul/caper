@@ -1,5 +1,5 @@
 {
-    "//": "Used only by `deno task dts` to roll the emitted ./types declarations into a single mod.d.ts.",
+    "//": "Used only by `bun run dts` to roll the emitted ./types declarations into a single mod.d.ts.",
     "compilerOptions": {
         "allowJs": false,
         "declaration": true,

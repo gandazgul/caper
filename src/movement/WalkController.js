@@ -115,7 +115,8 @@ export class WalkController {
         /** @type {MotionState} */
         this.currentState = "still";
 
-        this.sprite = scene.add.sprite(opts.startPosition.x, opts.startPosition.y, opts.spriteKey)
+        this.sprite = scene.add
+            .sprite(opts.startPosition.x, opts.startPosition.y, opts.spriteKey)
             .setOrigin(0.5, 1)
             .setDepth(this.perspective ? opts.startPosition.y : 10);
         this.sprite.setData("nightActor", true);

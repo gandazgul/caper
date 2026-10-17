@@ -1,4 +1,4 @@
-name: Publish to JSR
+name: Publish to npm
 
 on:
     push:
@@ -10,12 +10,24 @@ jobs:
         runs-on: ubuntu-latest
         permissions:
             contents: read
-            id-token: write # required for JSR OIDC authentication
+            id-token: write
         steps:
             - uses: actions/checkout@v4
-            - uses: denoland/setup-deno@v2
+            - uses: oven-sh/setup-bun@v2
               with:
-                  deno-version: v2.x
-            - run: deno install # materialize node_modules (phaser) so tsc can resolve types
-            - run: deno task dts:check # regenerate + fail the release if committed mod.d.ts is stale
-            - run: deno publish # tree is clean (dts:check verified it), so no --allow-dirty
+                  bun-version-file: .bun-version
+            - run: bun install --frozen-lockfile
+            - run: bun run ci
+            - name: Check release tag
+              run: |
+                  version=$(bun -p 'require("./package.json").version')
+                  test "$GITHUB_REF_NAME" = "v$version" || {
+                      echo "Release tag $GITHUB_REF_NAME must match v$version"
+                      exit 1
+                  }
+            - uses: actions/setup-node@v4
+              with:
+                  node-version: 24
+                  registry-url: https://registry.npmjs.org
+            - run: npm install --global npm@11.19.0
+            - run: npm publish

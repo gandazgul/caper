@@ -15,15 +15,17 @@ export function isSaveData(data) {
     if (data.collections !== undefined) {
         if (!record(data.collections)) return false;
         if (
-            !Object.values(data.collections).every((items) =>
-                Array.isArray(items) && items.every((id) => typeof id === "string")
+            !Object.values(data.collections).every(
+                (items) => Array.isArray(items) && items.every((id) => typeof id === "string"),
             )
-        ) return false;
+        )
+            return false;
     }
     if (
         data.items !== undefined &&
         (!record(data.items) || !Object.values(data.items).every((v) => typeof v === "string"))
-    ) return false;
+    )
+        return false;
     const values = data.values;
     if (values.currentScene !== undefined && typeof values.currentScene !== "string") return false;
     if (values.timeOfDay !== undefined && !["day", "night"].includes(values.timeOfDay)) return false;

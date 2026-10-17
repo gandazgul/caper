@@ -57,8 +57,8 @@ Extract and formalize domain terminology from the codebase.
 | File                                       | Purpose                                                                                                                                            |
 | ------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `mod.js`                                   | Package entry point — re-exports all public API symbols from every capability slice                                                                |
-| `mod.d.ts`                                 | Bundled type declarations (auto-generated from JSDoc via `deno task dts`)                                                                          |
-| `deno.json`                                | Deno project config: tasks, imports (Phaser 3, std/assert, std/fs), fmt/lint rules, publish config                                                 |
+| `mod.d.ts`                                 | Bundled type declarations (auto-generated from JSDoc via `bun run dts`)                                                                          |
+| `package.json`                                | Project manifest: scripts, Phaser peer dependency, dev tools, exports and npm publish config                                                 |
 | `src/scene/AdventureScene.js`              | **Engine base scene** — composes all engine systems, hooks for game override (`getActiveCharacterId`, `handleChapterTransition`, `isExitDisabled`) |
 | `src/scene/createAdventureGame.js`         | **Bootstrap factory** — runs `register()` then creates `Phaser.Game`                                                                               |
 | `src/state/Store.js`                       | **Reactive state store** — values/collections/items buckets, persistence, change events, batching, replay sandbox                                  |
@@ -99,16 +99,16 @@ Extract and formalize domain terminology from the codebase.
 | `docs/adr/`                                | **Architecture Decision Records** — 6 ADRs covering interaction model, prop framework, weather, NPC cast, engine boundary, character outfits       |
 | `README.md`                                | **Project overview** — install, usage, development, publishing, module map                                                                         |
 | `LICENSE`                                  | MIT License                                                                                                                                        |
-| `.github/workflows/publish.yml`            | **CI/CD** — publish to JSR on `v*` tag push                                                                                                        |
+| `.github/workflows/publish.yml`            | **CI/CD** — publish to npm on `v*` tag push                                                                                                        |
 
 ## Patterns & Conventions
 
 ### Coding Conventions
 
 - **Language**: JavaScript with extensive JSDoc type annotations (`@typedef`, `@param`, `@returns`, `@property`)
-- **Runtime/Module**: Deno (ES modules, `.js` extensions in all imports, `npm:` and `jsr:` import specifiers)
-- **Formatting** (from `deno.json`): 4-space indent, 120 line width, semicolons required, double quotes
-- **Linting** (from `deno.json`): excludes `no-window-prefix` and `no-slow-types` rules
+- **Runtime/Module**: Bun tooling; browser runtime (ES modules, `.js` extensions in local imports, bare package imports)
+- **Formatting** (from `.oxfmtrc.json`): 4-space indent, 120 line width, semicolons required, double quotes
+- **Linting**: Oxlint, configured in `.oxlintrc.json`
 - **Compiler options**: strict mode, but `strictNullChecks: false`, `strictPropertyInitialization: false`,
   `noImplicitOverride: false`
 
@@ -169,24 +169,25 @@ User Click → HotspotManager → WalkController (walks to approach point)
 
 ### Testing
 
-- **Framework**: Deno's built-in test runner (`Deno.test()`)
-- **Assertions**: `@std/assert` (`assertEquals`)
+- **Framework**: Bun built-in test runner (`bun:test`)
+- **Assertions**: `expect` from `bun:test` (strict deep equality, identity, truthiness and error assertions)
 - **Location**: Test files are co-located with source as `*.test.js` files in `src/`
-- **Files**: 5 test files found: `conditions.test.js`, `Cutscene.test.js`, `CutsceneRunner.test.js`,
-  `CritterHelper.test.js`, `assetLoading.test.js`
+- **Files**: 13 co-located test files.
 - **Coverage**: Tests exist for core logic (conditions, cutscene contract, critter helper, asset loading) but UI/system
   integration is untested
-- **CI task**: `deno task test` runs `deno test --permit-no-files --allow-read src/`
+- **CI task**: `bun run test` runs `bun test src/`
 
 ### Build & CI Pipeline
 
-- **`deno task ci`** runs sequentially: lint → fmt:check → check (typecheck) → dts:check (regenerate `mod.d.ts` and
+- **`bun run ci`** runs sequentially: lint → fmt:check → check (typecheck) → dts:check (regenerate `mod.d.ts` and
   verify it's clean) → test
-- **`deno task dts`**: Compiles JSDoc to `.d.ts` files via `tsc`, then bundles into single `mod.d.ts` via
+- **`bun run dts`**: Compiles JSDoc to `.d.ts` files via `tsc`, then bundles into single `mod.d.ts` via
   `dts-bundle-generator`
-- **Publishing**: Pushed to JSR on `v*` tag via GitHub Actions. Pre-publish run: `deno install` → `deno task dts:check`
-  → `deno publish`
-- **`mod.d.ts`**: Lives at `// @ts-self-types="./mod.d.ts"` in `mod.js`. CI validates it's never stale.
+- **Publishing**: npm package `@gandazgul/caper-engine`, published on `v*` tags through GitHub Actions. The workflow
+  runs `bun install --frozen-lockfile` → `bun run ci` → tag/version check → `npm publish` with OIDC trusted publishing.
+- **`mod.d.ts`**: Exposed through `package.json` `exports.types` and `types`. CI checks for stale declarations.
+- **Tools**: Bun runs scripts and tests; Oxlint lints, Oxfmt formats, and `tsc -p tsconfig.check.json` checks source
+  and test types. Phaser `^3.86.0` is a peer dependency; development pins Phaser 3.90.0.
 
 ### Error Handling
 

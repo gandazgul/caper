@@ -110,7 +110,7 @@ function childrenOf(node) {
         return (list || []).map((entry) =>
             typeof entry === "string"
                 ? /** @type {QuestNode} */ ({ id: entry, _collect: { in: inName, selfCombineInto } })
-                : entry
+                : entry,
         );
     }
     return null;
@@ -122,8 +122,10 @@ function nodeDone(node) {
     if (kids) return kids.every(nodeDone);
     if (node._collect) {
         const { in: inName, selfCombineInto } = node._collect;
-        return store.has(inName, /** @type {string} */ (node.id)) ||
-            (!!selfCombineInto && store.has(selfCombineInto, /** @type {string} */ (node.id)));
+        return (
+            store.has(inName, /** @type {string} */ (node.id)) ||
+            (!!selfCombineInto && store.has(selfCombineInto, /** @type {string} */ (node.id)))
+        );
     }
     return evaluateCondition(node.doneWhen);
 }
@@ -217,7 +219,7 @@ export function questWhatsNext(id) {
     const node = questRegistry[id];
     if (!node) return undefined;
     const leaf = firstIncompleteLeaf(node);
-    return leaf ? /** @type {string} */ (leaf.id) ?? null : null;
+    return leaf ? (/** @type {string} */ (leaf.id) ?? null) : null;
 }
 
 /** @param {string} id @returns {QuestNode | null | undefined} the outstanding leaf node (carries its optional `icon`). */

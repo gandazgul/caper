@@ -12,7 +12,7 @@ import {
     showSpeech,
     store,
     transitionIn,
-} from "@caper/engine";
+} from "@gandazgul/caper-engine";
 
 // Every image is local and bundled by Vite; base: './' also supports subdirectory hosting.
 const art = {
@@ -30,7 +30,7 @@ function register() {
         saveKey: "caper-garden-starter",
         saveVersion: 1,
         // The original unversioned starter had the same schema.
-        migrateSave: (saved, from) => from === 0 ? saved : null,
+        migrateSave: (saved, from) => (from === 0 ? saved : null),
         createFreshState: () => ({
             values: { chapter: "arrival", activeCharacter: "hero", foundKey: false, gateOpen: false, finished: false },
             collections: {},
@@ -76,7 +76,12 @@ class Boot extends Phaser.Scene {
     }
 }
 
-const walkable = [{ x: 70, y: 410 }, { x: 880, y: 410 }, { x: 880, y: 510 }, { x: 70, y: 510 }];
+const walkable = [
+    { x: 70, y: 410 },
+    { x: 880, y: 410 },
+    { x: 880, y: 510 },
+    { x: 70, y: 510 },
+];
 
 class Cottage extends AdventureScene {
     constructor() {
@@ -93,12 +98,14 @@ class Cottage extends AdventureScene {
                     x: 385,
                     y: 375,
                     approach: { x: 385, y: 450, facing: "up" },
-                    states: [{
-                        when: { foundKey: false },
-                        frame: "__BASE",
-                        cursor: "pickup",
-                        onClick: [{ pickup: "key" }, { set: { foundKey: true } }],
-                    }],
+                    states: [
+                        {
+                            when: { foundKey: false },
+                            frame: "__BASE",
+                            cursor: "pickup",
+                            onClick: [{ pickup: "key" }, { set: { foundKey: true } }],
+                        },
+                    ],
                 },
                 {
                     id: "gate",
@@ -142,13 +149,15 @@ class Garden extends AdventureScene {
             backgroundsByChapter: { arrival: "garden" },
             walkable,
             activeCharacter: { startPosition: { x: 180, y: 470 } },
-            props: [{
-                id: "return",
-                cursor: "exit",
-                bounds: { x: 30, y: 290, w: 100, h: 140 },
-                approach: { x: 100, y: 450, facing: "left" },
-                states: [{ onClick: [{ goToScene: "Cottage" }] }],
-            }],
+            props: [
+                {
+                    id: "return",
+                    cursor: "exit",
+                    bounds: { x: 30, y: 290, w: 100, h: 140 },
+                    approach: { x: 100, y: 450, facing: "left" },
+                    states: [{ onClick: [{ goToScene: "Cottage" }] }],
+                },
+            ],
         });
     }
     create(data) {

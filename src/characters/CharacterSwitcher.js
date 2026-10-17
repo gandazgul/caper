@@ -82,7 +82,8 @@ export class CharacterSwitcher {
 
         const pos = this.opts.position ?? { x: 50, y: 60 };
         const scale = this.opts.scale ?? 0.36;
-        const sprite = this.scene.add.image(pos.x, pos.y, textureKey)
+        const sprite = this.scene.add
+            .image(pos.x, pos.y, textureKey)
             .setOrigin(0.5)
             .setScale(scale)
             .setScrollFactor(0)
@@ -176,9 +177,9 @@ export class CharacterSwitcher {
         } else {
             engineScene.idleCharacters = engineScene.sceneConfig?.disableIdleCharacter
                 ? []
-                : playables.filter((id) => id !== nextName).map((id) =>
-                    new IdleCharacter(engineScene, { ...idleOpts, characterId: id })
-                );
+                : playables
+                      .filter((id) => id !== nextName)
+                      .map((id) => new IdleCharacter(engineScene, { ...idleOpts, characterId: id }));
         }
 
         // Make the newly inactive character stand where the active character just was

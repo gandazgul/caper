@@ -1,0 +1,53 @@
+{
+    "name": "@gandazgul/caper-engine",
+    "version": "0.5.0",
+    "description": "A point-and-click adventure engine built on Phaser 3.",
+    "license": "MIT",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/gandazgul/caper.git"
+    },
+    "files": [
+        "mod.js",
+        "mod.d.ts",
+        "src/**/*.js",
+        "!src/**/*.test.js"
+    ],
+    "type": "module",
+    "types": "./mod.d.ts",
+    "exports": {
+        ".": {
+            "types": "./mod.d.ts",
+            "default": "./mod.js"
+        }
+    },
+    "publishConfig": {
+        "access": "public"
+    },
+    "scripts": {
+        "lint": "oxlint",
+        "fmt": "oxfmt mod.js src/ docs/ examples/starter/ README.md package.json",
+        "fmt:check": "oxfmt --check mod.js src/ docs/ examples/starter/ README.md package.json",
+        "check": "tsc -p tsconfig.check.json",
+        "types": "tsc -p tsconfig.json",
+        "dts": "bun run types && dts-bundle-generator -o mod.d.ts --project tsconfig.bundle.json --no-check types/mod.d.ts && bun scripts/fix-phaser-dts.ts",
+        "dts:check": "bun run dts && git diff --exit-code mod.d.ts",
+        "test": "bun test src/",
+        "ci": "bun run lint && bun run fmt:check && bun run check && bun run dts:check && bun run test",
+        "starter": "vite --config examples/starter/vite.config.js examples/starter",
+        "starter:build": "vite build --config examples/starter/vite.config.js examples/starter",
+        "starter:preview": "vite preview --config examples/starter/vite.config.js examples/starter"
+    },
+    "devDependencies": {
+        "@types/bun": "1.4.3",
+        "dts-bundle-generator": "9.5.1",
+        "oxfmt": "0.73.0",
+        "oxlint": "1.88.0",
+        "phaser": "3.90.0",
+        "typescript": "6.0.3",
+        "vite": "8.0.8"
+    },
+    "peerDependencies": {
+        "phaser": "^3.86.0"
+    }
+}

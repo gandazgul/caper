@@ -1,4 +1,3 @@
-// @ts-self-types="./mod.d.ts"
 export { AdventureScene } from "./src/scene/AdventureScene.js";
 export { CastDirector } from "./src/cast/CastDirector.js";
 export { castRegistry, registerCast } from "./src/cast/CastRegistry.js";

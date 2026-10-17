@@ -119,10 +119,10 @@ function computeAnchor(char, dx, dy, isLarge, xOffsetSign) {
     if (char.displayHeight !== undefined) {
         const originY = char.originY !== undefined ? char.originY : 0.5;
         const originX = char.originX !== undefined ? char.originX : 0.5;
-        headY = char.y - (originY * char.displayHeight);
+        headY = char.y - originY * char.displayHeight;
         centerX = char.x + (0.5 - originX) * char.displayWidth;
     }
-    return { x: centerX + xOffset + (dx * xOffsetSign), y: headY - yOffset + dy };
+    return { x: centerX + xOffset + dx * xOffsetSign, y: headY - yOffset + dy };
 }
 
 /**
@@ -209,7 +209,8 @@ export class DialogueBubble extends Phaser.GameObjects.Container {
         // The variant selects which game-supplied sprite to use (speech vs thought).
         const bubbleArt = engineAssets.get(opts.variant === "speech" ? "speechBubble" : "thoughtBubble");
         this._bubbleScale = bubbleArt?.scale ?? 1;
-        this.bubble = scene.add.image(0, 0, bubbleArt?.atlas, bubbleArt?.frame)
+        this.bubble = scene.add
+            .image(0, 0, bubbleArt?.atlas, bubbleArt?.frame)
             .setOrigin(0.5, 0.5)
             .setScale(this._bubbleScale);
         this.add(this.bubble);
@@ -227,12 +228,14 @@ export class DialogueBubble extends Phaser.GameObjects.Container {
 
         this.hasText = !!(opts.text && opts.text.length > 0);
         if (this.hasText) {
-            this.label = scene.add.text(0, 0, opts.text ?? "", {
-                fontSize: "20px",
-                color: "#000000",
-                align: "center",
-                wordWrap: { width: 220 },
-            }).setOrigin(0.5);
+            this.label = scene.add
+                .text(0, 0, opts.text ?? "", {
+                    fontSize: "20px",
+                    color: "#000000",
+                    align: "center",
+                    wordWrap: { width: 220 },
+                })
+                .setOrigin(0.5);
             this.add(this.label);
         }
 
@@ -308,13 +311,7 @@ export class DialogueBubble extends Phaser.GameObjects.Container {
         if (!this.active || !this._followChar) return;
 
         let xOffsetSign = this._followXSign;
-        let anchor = computeAnchor(
-            this._followChar,
-            this._followDx,
-            this._followDy,
-            this._followIsLarge,
-            xOffsetSign,
-        );
+        let anchor = computeAnchor(this._followChar, this._followDx, this._followDy, this._followIsLarge, xOffsetSign);
 
         const cam = this.scene.cameras.main;
         if (cam) {
@@ -379,9 +376,11 @@ export class DialogueBubble extends Phaser.GameObjects.Container {
      * @param {IconResolver} [resolver]
      */
     static registerIconType(type, resolver) {
-        ICON_TYPES[type] = resolver || ((scene, id, scale) => {
-            return scene.add.image(0, 0, "ui_elements", id).setOrigin(0.5).setScale(scale);
-        });
+        ICON_TYPES[type] =
+            resolver ||
+            ((scene, id, scale) => {
+                return scene.add.image(0, 0, "ui_elements", id).setOrigin(0.5).setScale(scale);
+            });
         return () => {
             delete ICON_TYPES[type];
         };

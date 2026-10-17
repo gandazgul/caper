@@ -1,26 +1,26 @@
-import { assertEquals } from "@std/assert";
+import { expect, test } from "bun:test";
 import { deriveAsset } from "./assetLoading.js";
 
-Deno.test("deriveAsset keeps legacy default extensions", () => {
-    assertEquals(deriveAsset("bg_kitchen"), { kind: "image", url: "/scenes/kitchen.jpg" });
-    assertEquals(deriveAsset("sprite_props"), {
+test("deriveAsset keeps legacy default extensions", () => {
+    expect(deriveAsset("bg_kitchen")).toStrictEqual({ kind: "image", url: "/scenes/kitchen.jpg" });
+    expect(deriveAsset("sprite_props")).toStrictEqual({
         kind: "atlas",
         url: "/objects/props.png",
         jsonUrl: "/objects/props.json",
     });
-    assertEquals(deriveAsset("object_key"), { kind: "image", url: "/objects/key.png" });
-    assertEquals(deriveAsset("character_hero"), { kind: "image", url: "/characters/hero.png" });
+    expect(deriveAsset("object_key")).toStrictEqual({ kind: "image", url: "/objects/key.png" });
+    expect(deriveAsset("character_hero")).toStrictEqual({ kind: "image", url: "/characters/hero.png" });
 });
 
-Deno.test("deriveAsset supports explicit image extensions", () => {
-    assertEquals(deriveAsset("bg_kitchen.webp"), { kind: "image", url: "/scenes/kitchen.webp" });
-    assertEquals(deriveAsset("bg_corner.svg"), { kind: "image", url: "/scenes/corner.svg" });
-    assertEquals(deriveAsset("object_key.webp"), { kind: "image", url: "/objects/key.webp" });
-    assertEquals(deriveAsset("character_hero.svg"), { kind: "image", url: "/characters/hero.svg" });
+test("deriveAsset supports explicit image extensions", () => {
+    expect(deriveAsset("bg_kitchen.webp")).toStrictEqual({ kind: "image", url: "/scenes/kitchen.webp" });
+    expect(deriveAsset("bg_corner.svg")).toStrictEqual({ kind: "image", url: "/scenes/corner.svg" });
+    expect(deriveAsset("object_key.webp")).toStrictEqual({ kind: "image", url: "/objects/key.webp" });
+    expect(deriveAsset("character_hero.svg")).toStrictEqual({ kind: "image", url: "/characters/hero.svg" });
 });
 
-Deno.test("deriveAsset supports webp sprite atlases with json sidecars", () => {
-    assertEquals(deriveAsset("sprite_props.webp"), {
+test("deriveAsset supports webp sprite atlases with json sidecars", () => {
+    expect(deriveAsset("sprite_props.webp")).toStrictEqual({
         kind: "atlas",
         url: "/objects/props.webp",
         jsonUrl: "/objects/props.json",

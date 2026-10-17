@@ -28,7 +28,8 @@ class MyScene extends AdventureScene {
                 intro: "bg_myroom_intro", // → /scenes/myroom_intro.jpg
                 chapter1: "bg_myroom_chapter1.webp", // → /scenes/myroom_chapter1.webp
             },
-            assets: [ // additional keys
+            assets: [
+                // additional keys
                 "sprite_props", // → /objects/props.png + .json
                 "object_sign.svg", // → /objects/sign.svg
                 "sprite_fall", // → /objects/fall.png + .json
@@ -41,7 +42,7 @@ class MyScene extends AdventureScene {
 ## Loading functions
 
 ```js
-import { loadAssetKeys, loadImageOnce, loadSpritesheetOnce } from "@caper/engine";
+import { loadAssetKeys, loadImageOnce, loadSpritesheetOnce } from "@gandazgul/caper-engine";
 
 // Load by convention keys (guards against duplicates):
 loadAssetKeys(scene, ["bg_myroom", "sprite_props"]);
@@ -64,7 +65,7 @@ intro, and the scene itself only downloads once.
 The engine pre-computes which assets each chapter needs:
 
 ```js
-import { chapterLoadSet, collectChapterAssetKeys } from "@caper/engine";
+import { chapterLoadSet, collectChapterAssetKeys } from "@gandazgul/caper-engine";
 
 // All keys for a given chapter:
 const keys = collectChapterAssetKeys(sceneManager, "chapter1");
@@ -81,7 +82,7 @@ The engine owns several built-in visuals (thought bubbles, back button, falling 
 owns no art. The game supplies the actual texture/atlas keys at boot:
 
 ```js
-import { engineAssets } from "@caper/engine";
+import { engineAssets } from "@gandazgul/caper-engine";
 
 engineAssets.configure({
     thoughtBubble: { atlas: "ui-atlas", frame: "thought-bubble" },

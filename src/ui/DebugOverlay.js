@@ -107,9 +107,10 @@ export class DebugOverlay {
         // the puzzle's perspective. Anything at depth ≥ SUBSCENE_BG_DEPTH (800)
         // counts as "inside the sub-scene"; the bg/back chrome opts out with
         // a `debugSkip` data flag.
-        const inSubscene = /** @type {{ subscenes?: { isOpen: () => boolean } }} */ (
-            /** @type {any} */ (this.scene)
-        ).subscenes?.isOpen?.() === true;
+        const inSubscene =
+            /** @type {{ subscenes?: { isOpen: () => boolean } }} */ (
+                /** @type {any} */ (this.scene)
+            ).subscenes?.isOpen?.() === true;
 
         if (!inSubscene) {
             for (const polygon of walkablePolygons(this.walkable)) {
@@ -206,17 +207,13 @@ export class DebugOverlay {
             if (ENABLE_SPRITE_LABELS) {
                 const key = sprite.texture?.key ?? "?";
                 const frame = sprite.frame?.name && sprite.frame.name !== "__BASE" ? `:${sprite.frame.name}` : "";
-                const label = this.scene.add.text(
-                    b.x,
-                    b.y - 2,
-                    `${key}${frame} ${Math.round(b.width)}×${Math.round(b.height)}`,
-                    {
+                const label = this.scene.add
+                    .text(b.x, b.y - 2, `${key}${frame} ${Math.round(b.width)}×${Math.round(b.height)}`, {
                         fontSize: "11px",
                         color: "#ffffff",
                         backgroundColor: "#000000aa",
                         padding: { x: 3, y: 1 },
-                    },
-                )
+                    })
                     .setOrigin(0, 1)
                     .setDepth(DEBUG_DEPTH + 1);
                 this.labels.push(label);

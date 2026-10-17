@@ -86,7 +86,8 @@ export class SceneEditor {
         // walking. The Zone is interactive at a depth below the handles, so
         // WalkController's `hitTestPointer` finds something on every click
         // and bails — but the handles still get their own drag events.
-        this.clickBlocker = this.scene.add.zone(0, 0, this.scene.scale.width, this.scene.scale.height)
+        this.clickBlocker = this.scene.add
+            .zone(0, 0, this.scene.scale.width, this.scene.scale.height)
             .setOrigin(0, 0)
             .setScrollFactor(0)
             .setDepth(CLICK_BLOCKER_DEPTH)
@@ -300,7 +301,8 @@ export class SceneEditor {
      */
     _createApproachHandle(ap, label) {
         this._editorApproaches.push(ap);
-        const handle = this.scene.add.circle(ap.x, ap.y, 9, 0xffff00, 0.85)
+        const handle = this.scene.add
+            .circle(ap.x, ap.y, 9, 0xffff00, 0.85)
             .setStrokeStyle(2, 0x000000)
             .setDepth(HANDLE_DEPTH)
             .setInteractive({ draggable: true });
@@ -384,18 +386,17 @@ export class SceneEditor {
             // Anchor handle: only when the prop has a live sprite AND some
             // object (state or prop) authored x/y. Pure-zone props (exits,
             // story-time hotspots) have no anchor.
-            const xyTarget = activeState && activeState.x !== undefined && activeState.y !== undefined
-                ? activeState
-                : (item.x !== undefined && item.y !== undefined ? item : null);
+            const xyTarget =
+                activeState && activeState.x !== undefined && activeState.y !== undefined
+                    ? activeState
+                    : item.x !== undefined && item.y !== undefined
+                      ? item
+                      : null;
             if (sprite && xyTarget) {
                 const handle = this._makeSquareHandle(xyTarget.x, xyTarget.y, 0xff8800);
                 handle.on(
                     "drag",
-                    (
-                        /** @type {Phaser.Input.Pointer} */ _p,
-                        /** @type {number} */ dx,
-                        /** @type {number} */ dy,
-                    ) => {
+                    (/** @type {Phaser.Input.Pointer} */ _p, /** @type {number} */ dx, /** @type {number} */ dy) => {
                         const x = Math.round(dx);
                         const y = Math.round(dy);
                         handle.x = x;
@@ -445,11 +446,7 @@ export class SceneEditor {
             const handle = this._makeSquareHandle(spec.x, spec.y, 0x00b3ff);
             handle.on(
                 "drag",
-                (
-                    /** @type {Phaser.Input.Pointer} */ _p,
-                    /** @type {number} */ dx,
-                    /** @type {number} */ dy,
-                ) => {
+                (/** @type {Phaser.Input.Pointer} */ _p, /** @type {number} */ dx, /** @type {number} */ dy) => {
                     const x = Math.round(dx);
                     const y = Math.round(dy);
                     handle.x = x;
@@ -471,7 +468,8 @@ export class SceneEditor {
      * @returns {Phaser.GameObjects.Rectangle}
      */
     _makeSquareHandle(x, y, color) {
-        return this.scene.add.rectangle(x, y, 14, 14, color, 0.85)
+        return this.scene.add
+            .rectangle(x, y, 14, 14, color, 0.85)
             .setStrokeStyle(2, 0x000000)
             .setDepth(HANDLE_DEPTH)
             .setInteractive({ draggable: true });
@@ -565,7 +563,7 @@ export class SceneEditor {
     async _writeClipboard(text) {
         try {
             await navigator.clipboard.writeText(text);
-        } catch (_e) {
+        } catch {
             // Clipboard API can fail (focus, permission, http). Fall back to
             // dumping to the console so the user can still grab the value.
             console.warn("[SceneEditor] Clipboard write failed — dumping to console instead:");
@@ -577,12 +575,13 @@ export class SceneEditor {
     showToast(msg) {
         this.toast?.destroy();
         this.toastTimer?.remove(false);
-        this.toast = this.scene.add.text(this.scene.scale.width / 2, 40, msg, {
-            fontSize: "16px",
-            color: "#ffffff",
-            backgroundColor: "#000000cc",
-            padding: { x: 10, y: 6 },
-        })
+        this.toast = this.scene.add
+            .text(this.scene.scale.width / 2, 40, msg, {
+                fontSize: "16px",
+                color: "#ffffff",
+                backgroundColor: "#000000cc",
+                padding: { x: 10, y: 6 },
+            })
             .setOrigin(0.5, 0)
             .setDepth(TOAST_DEPTH)
             .setScrollFactor(0);
@@ -595,17 +594,13 @@ export class SceneEditor {
     renderHud() {
         this.hud?.destroy();
         const summary = KEYBINDINGS.map((k) => `${k.key}=${shortDesc(k.desc)}`).join(" · ");
-        this.hud = this.scene.add.text(
-            10,
-            this.scene.scale.height - 10,
-            `EDIT MODE — ${summary}`,
-            {
+        this.hud = this.scene.add
+            .text(10, this.scene.scale.height - 10, `EDIT MODE — ${summary}`, {
                 fontSize: "13px",
                 color: "#00ff88",
                 backgroundColor: "#000000aa",
                 padding: { x: 6, y: 4 },
-            },
-        )
+            })
             .setOrigin(0, 1)
             .setDepth(TOAST_DEPTH)
             .setScrollFactor(0);
@@ -639,7 +634,10 @@ function rotateFacing(current) {
  */
 function shortDesc(d) {
     // "copy walkable polygon" → "walkable"
-    return d.replace(/^copy\s+/, "").replace(/^toggle\s+/, "").split(" ")[0];
+    return d
+        .replace(/^copy\s+/, "")
+        .replace(/^toggle\s+/, "")
+        .split(" ")[0];
 }
 
 /** @param {import("../movement/pathfinding.js").WalkableArea} walkable */

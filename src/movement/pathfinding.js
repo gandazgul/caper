@@ -39,8 +39,7 @@ export function pointInPolygon(p, poly) {
         const yi = poly[i].y;
         const xj = poly[j].x;
         const yj = poly[j].y;
-        const intersect = ((yi > p.y) !== (yj > p.y)) &&
-            (p.x < ((xj - xi) * (p.y - yi)) / (yj - yi) + xi);
+        const intersect = yi > p.y !== yj > p.y && p.x < ((xj - xi) * (p.y - yi)) / (yj - yi) + xi;
         if (intersect) inside = !inside;
     }
     return inside;
@@ -103,8 +102,8 @@ export function walkablePolygons(walkable) {
     if (walkable.length > 0 && isPoint(walkable[0])) {
         return /** @type {WalkablePolygon[]} */ ([walkable]).filter((polygon) => polygon.length >= 3);
     }
-    return /** @type {WalkablePolygon[]} */ (walkable).filter((polygon) =>
-        Array.isArray(polygon) && polygon.length >= 3
+    return /** @type {WalkablePolygon[]} */ (walkable).filter(
+        (polygon) => Array.isArray(polygon) && polygon.length >= 3,
     );
 }
 
@@ -113,9 +112,7 @@ export function walkablePolygons(walkable) {
  * @returns {value is Point}
  */
 function isPoint(value) {
-    const point = /** @type {Partial<Point> | null} */ (
-        value && typeof value === "object" ? value : null
-    );
+    const point = /** @type {Partial<Point> | null} */ (value && typeof value === "object" ? value : null);
     return typeof point?.x === "number" && typeof point.y === "number";
 }
 
@@ -222,7 +219,7 @@ function segmentsCrossProperly(a, b, c, d) {
     const o3 = orient(c, d, a);
     const o4 = orient(c, d, b);
     if (o1 === 0 || o2 === 0 || o3 === 0 || o4 === 0) return false;
-    return (o1 > 0) !== (o2 > 0) && (o3 > 0) !== (o4 > 0);
+    return o1 > 0 !== o2 > 0 && o3 > 0 !== o4 > 0;
 }
 
 /**

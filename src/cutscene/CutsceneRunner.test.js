@@ -1,4 +1,4 @@
-import { assert, assertEquals, assertRejects } from "@std/assert";
+import { expect, test } from "bun:test";
 import { CutsceneRunner } from "./CutsceneRunner.js";
 
 /**
@@ -29,7 +29,7 @@ function makeRunner() {
     return { runner, events };
 }
 
-Deno.test("CutsceneRunner: suspends before, resumes after a normal run; respects lockPlayer", async () => {
+test("CutsceneRunner: suspends before, resumes after a normal run; respects lockPlayer", async () => {
     const { runner, events } = makeRunner();
     await runner.run(
         (d) => {
@@ -38,40 +38,37 @@ Deno.test("CutsceneRunner: suspends before, resumes after a normal run; respects
         },
         { lockPlayer: true, cast: ["papa"] },
     );
-    assertEquals(events, ["suspend:papa", "lock", "step:a", "unlock", "resume:papa"]);
-    assert(!runner.active, "no active cutscene after completion");
+    expect(events).toStrictEqual(["suspend:papa", "lock", "step:a", "unlock", "resume:papa"]);
+    expect(!runner.active, "no active cutscene after completion").toBeTruthy();
 });
 
-Deno.test("CutsceneRunner: a non-cancel error propagates but still resumes", async () => {
+test("CutsceneRunner: a non-cancel error propagates but still resumes", async () => {
     const { runner, events } = makeRunner();
-    await assertRejects(
-        () =>
-            runner.run(() => {
-                throw new Error("boom");
-            }),
-        Error,
-        "boom",
-    );
-    assertEquals(events, ["suspend:all", "resume:all"]);
-    assert(!runner.active);
+    const running = runner.run(() => {
+        throw new Error("boom");
+    });
+    await expect(running).rejects.toBeInstanceOf(Error);
+    await expect(running).rejects.toThrow("boom");
+    expect(events).toStrictEqual(["suspend:all", "resume:all"]);
+    expect(!runner.active).toBeTruthy();
 });
 
-Deno.test("CutsceneRunner: shutdown mid-cutscene cancels, unwinds, and resumes once", async () => {
+test("CutsceneRunner: shutdown mid-cutscene cancels, unwinds, and resumes once", async () => {
     const { runner, events } = makeRunner();
     /** @type {Promise<void>} */
     const running = runner.run((d) => d.hang().then(() => d.step("after")), { lockPlayer: true });
     await Promise.resolve();
-    assertEquals(events, ["suspend:all", "lock", "hang:start"]);
+    expect(events).toStrictEqual(["suspend:all", "lock", "hang:start"]);
 
     runner.shutdown();
     await running; // swallows CutsceneCancelled internally
 
     // step:after never ran; resume/unlock happened exactly once.
-    assertEquals(events, ["suspend:all", "lock", "hang:start", "hang:cancel", "unlock", "resume:all"]);
-    assert(!runner.active);
+    expect(events).toStrictEqual(["suspend:all", "lock", "hang:start", "hang:cancel", "unlock", "resume:all"]);
+    expect(!runner.active).toBeTruthy();
 });
 
-Deno.test("CutsceneRunner: a preempting cutscene cancels the running one without double-resume", async () => {
+test("CutsceneRunner: a preempting cutscene cancels the running one without double-resume", async () => {
     const { runner, events } = makeRunner();
     const first = runner.run((d) => d.hang().then(() => d.step("first-after")), { cast: ["papa"] });
     await Promise.resolve();
@@ -86,7 +83,7 @@ Deno.test("CutsceneRunner: a preempting cutscene cancels the running one without
     );
     await first;
 
-    assertEquals(events, [
+    expect(events).toStrictEqual([
         "suspend:papa",
         "hang:start",
         "hang:cancel", // first cancelled by preemption
@@ -95,5 +92,5 @@ Deno.test("CutsceneRunner: a preempting cutscene cancels the running one without
         "resume:mama",
         // first must NOT emit its own resume:papa — it lost ownership
     ]);
-    assert(!runner.active);
+    expect(!runner.active).toBeTruthy();
 });

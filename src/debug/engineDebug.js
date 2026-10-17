@@ -12,7 +12,7 @@ export function readEngineDebugConfig(env) {
         loadSave: rawLoadSave,
         startScene: rawLoadSave ? "" : (env?.START_SCENE ?? ""),
         chapter: rawLoadSave ? "" : (env?.DEBUG_CHAPTER ?? ""),
-        reset: rawLoadSave ? false : (env?.DEBUG_RESET === "true"),
+        reset: rawLoadSave ? false : env?.DEBUG_RESET === "true",
         debugOverlay: env?.DEBUG_OVERLAY === "true",
         timeOfDay: rawLoadSave ? "" : (env?.DEBUG_TIME_OF_DAY ?? ""),
     });

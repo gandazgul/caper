@@ -32,13 +32,20 @@ export function attachQuestHint(scene, opts) {
         iconKey = "";
     };
     const update = () => {
-        const actor = typeof opts.actor === "string"
-            ? opts.actor === "player" ? scene.walk : scene.cast?.get(opts.actor)
-            : opts.actor;
+        const actor =
+            typeof opts.actor === "string"
+                ? opts.actor === "player"
+                    ? scene.walk
+                    : scene.cast?.get(opts.actor)
+                : opts.actor;
         const sprite = actor?.sprite;
         const speaking = sprite?.getData("caper:speaking") || /** @type {any} */ (actor)?.bubble?.active;
         if (
-            !sprite?.active || !sprite.visible || speaking || scene.subscenes?.isOpen() || !evaluateCondition(opts.when)
+            !sprite?.active ||
+            !sprite.visible ||
+            speaking ||
+            scene.subscenes?.isOpen() ||
+            !evaluateCondition(opts.when)
         ) {
             clear();
             return;

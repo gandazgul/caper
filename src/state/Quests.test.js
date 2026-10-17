@@ -1,4 +1,4 @@
-import { assertEquals, assertThrows } from "@std/assert";
+import { expect, test } from "bun:test";
 import { store } from "./Store.js";
 import {
     clearQuests,
@@ -47,131 +47,136 @@ function registerBackpack() {
     });
 }
 
-Deno.test("status: not_started → seen → started → done cascade", () => {
+test("status: not_started → seen → started → done cascade", () => {
     reset();
     registerBackpack();
 
     // Nothing done, intro not seen.
-    assertEquals(questStatus("backpack"), "not_started");
+    expect(questStatus("backpack")).toStrictEqual("not_started");
 
     // Intro seen, still no progress → seen.
     store.set("mamaBackpackIntroSeen", true);
-    assertEquals(questStatus("backpack"), "seen");
+    expect(questStatus("backpack")).toStrictEqual("seen");
 
     // First leaf done (default startWhen = any leaf done) → started.
     store.set("backpackGivenToMama", true);
-    assertEquals(questStatus("backpack"), "started");
+    expect(questStatus("backpack")).toStrictEqual("started");
 
     // Everything done → done.
     for (const id of ["apple", "lunchbox", "notebook", "crayons", "pencil", "eraser", "ruler"]) {
         store.addTo("inventory", id);
     }
     store.set("backpackEquipped", true);
-    assertEquals(questStatus("backpack"), "done");
+    expect(questStatus("backpack")).toStrictEqual("done");
 });
 
-Deno.test("whatsNext: DFS to first incomplete leaf, three levels deep", () => {
+test("whatsNext: DFS to first incomplete leaf, three levels deep", () => {
     reset();
     registerBackpack();
 
     // First blocker is the `give` flag leaf.
-    assertEquals(questWhatsNext("backpack"), "give");
+    expect(questWhatsNext("backpack")).toStrictEqual("give");
 
     store.set("backpackGivenToMama", true);
     // Now the first missing collection member.
-    assertEquals(questWhatsNext("backpack"), "apple");
+    expect(questWhatsNext("backpack")).toStrictEqual("apple");
 
     for (const id of ["apple", "lunchbox", "notebook", "crayons"]) store.addTo("inventory", id);
     // Descends into the nested pencil_case collection.
-    assertEquals(questWhatsNext("backpack"), "pencil");
+    expect(questWhatsNext("backpack")).toStrictEqual("pencil");
 
     store.addTo("inventory", "pencil");
-    assertEquals(questWhatsNext("backpack"), "eraser");
+    expect(questWhatsNext("backpack")).toStrictEqual("eraser");
 
     store.addTo("inventory", "eraser");
     store.addTo("inventory", "ruler");
     // pencil_case complete → last blocker is the equip flag.
-    assertEquals(questWhatsNext("backpack"), "equip");
+    expect(questWhatsNext("backpack")).toStrictEqual("equip");
 
     store.set("backpackEquipped", true);
-    assertEquals(questWhatsNext("backpack"), null);
+    expect(questWhatsNext("backpack")).toStrictEqual(null);
 });
 
-Deno.test("progress: counts done leaves over total", () => {
+test("progress: counts done leaves over total", () => {
     reset();
     registerBackpack();
 
     // 9 leaves: give, apple, lunchbox, notebook, crayons, pencil, eraser, ruler, equip.
-    assertEquals(questProgress("backpack"), { done: 0, total: 9 });
+    expect(questProgress("backpack")).toStrictEqual({ done: 0, total: 9 });
 
     store.set("backpackGivenToMama", true);
     store.addTo("inventory", "apple");
     store.addTo("inventory", "pencil");
-    assertEquals(questProgress("backpack"), { done: 3, total: 9 });
+    expect(questProgress("backpack")).toStrictEqual({ done: 3, total: 9 });
 });
 
-Deno.test("namespace: a `when` reads quest state with plain eq/ops", () => {
+test("namespace: a `when` reads quest state with plain eq/ops", () => {
     reset();
     registerBackpack();
     store.set("mamaBackpackIntroSeen", true);
     store.set("backpackGivenToMama", true);
 
     // status (started) drives a gate.
-    assertEquals(evaluateCondition({ "quest.backpack.status": { eq: "started" } }), true);
-    assertEquals(evaluateCondition({ "quest.backpack.status": "started" }), true); // bare = eq
-    assertEquals(evaluateCondition({ "quest.backpack.status": { eq: "done" } }), false);
+    expect(evaluateCondition({ "quest.backpack.status": { eq: "started" } })).toStrictEqual(true);
+    expect(evaluateCondition({ "quest.backpack.status": "started" })).toStrictEqual(true); // bare = eq
+    expect(evaluateCondition({ "quest.backpack.status": { eq: "done" } })).toStrictEqual(false);
 
     // whatsNext as a value.
-    assertEquals(evaluateCondition({ "quest.backpack.whatsNext": { eq: "apple" } }), true);
+    expect(evaluateCondition({ "quest.backpack.whatsNext": { eq: "apple" } })).toStrictEqual(true);
 
     // progress with a numeric op.
     store.addTo("inventory", "apple");
-    assertEquals(evaluateCondition({ "quest.backpack.progress": { gte: 2 } }), true);
-    assertEquals(evaluateCondition({ "quest.backpack.progress": { gte: 5 } }), false);
+    expect(evaluateCondition({ "quest.backpack.progress": { gte: 2 } })).toStrictEqual(true);
+    expect(evaluateCondition({ "quest.backpack.progress": { gte: 5 } })).toStrictEqual(false);
 
     // descend into a sub-quest's accessor.
-    assertEquals(evaluateCondition({ "quest.backpack.fill.pencil_case.whatsNext": { eq: "pencil" } }), true);
+    expect(evaluateCondition({ "quest.backpack.fill.pencil_case.whatsNext": { eq: "pencil" } })).toStrictEqual(true);
 });
 
-Deno.test("resolveQuestAccessor: unknown paths are undefined; node-terminal defaults to status", () => {
+test("resolveQuestAccessor: unknown paths are undefined; node-terminal defaults to status", () => {
     reset();
     registerBackpack();
-    assertEquals(resolveQuestAccessor("quest.nope.status"), undefined);
-    assertEquals(resolveQuestAccessor("quest.backpack.nope.status"), undefined);
-    assertEquals(resolveQuestAccessor("quest.backpack"), "not_started"); // node-terminal → status
-    assertEquals(resolveQuestAccessor("quest.backpack.fill"), "not_started");
+    expect(resolveQuestAccessor("quest.nope.status")).toStrictEqual(undefined);
+    expect(resolveQuestAccessor("quest.backpack.nope.status")).toStrictEqual(undefined);
+    expect(resolveQuestAccessor("quest.backpack")).toStrictEqual("not_started"); // node-terminal → status
+    expect(resolveQuestAccessor("quest.backpack.fill")).toStrictEqual("not_started");
 });
 
-Deno.test("collection self-combine: item counts as done once moved into the target", () => {
+test("collection self-combine: item counts as done once moved into the target", () => {
     reset();
     registerQuests({
         bag: { collect: { in: "inventory", selfCombineInto: "world", items: ["a", "b"] } },
     });
 
-    assertEquals(questWhatsNext("bag"), "a");
+    expect(questWhatsNext("bag")).toStrictEqual("a");
     store.addTo("inventory", "a"); // collected normally
-    assertEquals(questStatus("bag"), "started");
-    assertEquals(questWhatsNext("bag"), "b");
+    expect(questStatus("bag")).toStrictEqual("started");
+    expect(questWhatsNext("bag")).toStrictEqual("b");
     store.addTo("world", "b"); // collected straight into the combined target still counts
-    assertEquals(questProgress("bag"), { done: 2, total: 2 });
-    assertEquals(questStatus("bag"), "done");
+    expect(questProgress("bag")).toStrictEqual({ done: 2, total: 2 });
+    expect(questStatus("bag")).toStrictEqual("done");
 });
 
-Deno.test("whatsNextNode exposes the node so the bubble can read its icon", () => {
+test("whatsNextNode exposes the node so the bubble can read its icon", () => {
     reset();
     registerQuests({
         chore: { steps: [{ id: "sweep", doneWhen: { swept: { eq: true } }, icon: { type: "task", id: "broom" } }] },
     });
     const node = questWhatsNextNode("chore");
-    assertEquals(node?.id, "sweep");
-    assertEquals(node?.icon, { type: "task", id: "broom" });
+    expect(node?.id).toStrictEqual("sweep");
+    expect(node?.icon).toStrictEqual({ type: "task", id: "broom" });
 });
 
-Deno.test("registerQuests: a step id shadowing a reserved accessor throws", () => {
+test("registerQuests: a step id shadowing a reserved accessor throws", () => {
     reset();
-    assertThrows(
-        () => registerQuests({ bad: { steps: [{ id: "status", doneWhen: { x: { eq: 1 } } }] } }),
-        Error,
-        "reserved accessor",
-    );
+    let thrown;
+    expect(() => {
+        try {
+            registerQuests({ bad: { steps: [{ id: "status", doneWhen: { x: { eq: 1 } } }] } });
+        } catch (error) {
+            thrown = error;
+            throw error;
+        }
+    }).toThrow("reserved accessor");
+    expect(thrown).toBeInstanceOf(Error);
 });

@@ -44,7 +44,10 @@ export { exitApproaches };
 export function getRandomWalkablePoint(scene, walkable, snap, exitClearance = 150) {
     const polygons = walkablePolygons(walkable);
     const polygon = polygons.length > 0 ? Phaser.Utils.Array.GetRandom(polygons) : [];
-    let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+    let minX = Infinity,
+        maxX = -Infinity,
+        minY = Infinity,
+        maxY = -Infinity;
     for (const p of polygon) {
         if (p.x < minX) minX = p.x;
         if (p.x > maxX) maxX = p.x;

@@ -1,132 +1,132 @@
-import { assertEquals } from "@std/assert";
+import { expect, test } from "bun:test";
 import { evaluateCondition } from "./conditions.js";
 import { store } from "../state/Store.js";
 
-Deno.test("evaluateCondition: empty/null", () => {
-    assertEquals(evaluateCondition(null), true);
-    assertEquals(evaluateCondition(undefined), true);
+test("evaluateCondition: empty/null", () => {
+    expect(evaluateCondition(null)).toStrictEqual(true);
+    expect(evaluateCondition(undefined)).toStrictEqual(true);
 });
 
-Deno.test("evaluateCondition: boolean primitives", () => {
-    assertEquals(evaluateCondition(true), true);
-    assertEquals(evaluateCondition(false), false);
+test("evaluateCondition: boolean primitives", () => {
+    expect(evaluateCondition(true)).toStrictEqual(true);
+    expect(evaluateCondition(false)).toStrictEqual(false);
 });
 
-Deno.test("evaluateCondition: array (OR)", () => {
-    assertEquals(evaluateCondition([{ not: true }, { not: false }]), true);
-    assertEquals(evaluateCondition([{ not: true }, { not: true }]), false);
+test("evaluateCondition: array (OR)", () => {
+    expect(evaluateCondition([{ not: true }, { not: false }])).toStrictEqual(true);
+    expect(evaluateCondition([{ not: true }, { not: true }])).toStrictEqual(false);
 });
 
-Deno.test("evaluateCondition: allOf combinator", () => {
-    assertEquals(evaluateCondition({ allOf: [true, true] }), true);
-    assertEquals(evaluateCondition({ allOf: [true, false] }), false);
+test("evaluateCondition: allOf combinator", () => {
+    expect(evaluateCondition({ allOf: [true, true] })).toStrictEqual(true);
+    expect(evaluateCondition({ allOf: [true, false] })).toStrictEqual(false);
 });
 
-Deno.test("evaluateCondition: anyOf combinator", () => {
-    assertEquals(evaluateCondition({ anyOf: [false, true] }), true);
-    assertEquals(evaluateCondition({ anyOf: [false, false] }), false);
+test("evaluateCondition: anyOf combinator", () => {
+    expect(evaluateCondition({ anyOf: [false, true] })).toStrictEqual(true);
+    expect(evaluateCondition({ anyOf: [false, false] })).toStrictEqual(false);
 });
 
-Deno.test("evaluateCondition: not combinator", () => {
-    assertEquals(evaluateCondition({ not: true }), false);
-    assertEquals(evaluateCondition({ not: false }), true);
+test("evaluateCondition: not combinator", () => {
+    expect(evaluateCondition({ not: true })).toStrictEqual(false);
+    expect(evaluateCondition({ not: false })).toStrictEqual(true);
 });
 
-Deno.test("evaluateCondition: scalar flag", () => {
+test("evaluateCondition: scalar flag", () => {
     store.set("testFlag", "apple");
 
     // bare value = eq
-    assertEquals(evaluateCondition({ testFlag: "apple" }), true);
-    assertEquals(evaluateCondition({ testFlag: "banana" }), false);
+    expect(evaluateCondition({ testFlag: "apple" })).toStrictEqual(true);
+    expect(evaluateCondition({ testFlag: "banana" })).toStrictEqual(false);
 
     // ops object
-    assertEquals(evaluateCondition({ testFlag: { eq: "apple" } }), true);
-    assertEquals(evaluateCondition({ testFlag: { ne: "apple" } }), false);
+    expect(evaluateCondition({ testFlag: { eq: "apple" } })).toStrictEqual(true);
+    expect(evaluateCondition({ testFlag: { ne: "apple" } })).toStrictEqual(false);
 });
 
-Deno.test("evaluateCondition: number ops", () => {
+test("evaluateCondition: number ops", () => {
     store.set("testNum", 5);
 
-    assertEquals(evaluateCondition({ testNum: { gt: 4 } }), true);
-    assertEquals(evaluateCondition({ testNum: { gt: 5 } }), false);
+    expect(evaluateCondition({ testNum: { gt: 4 } })).toStrictEqual(true);
+    expect(evaluateCondition({ testNum: { gt: 5 } })).toStrictEqual(false);
 
-    assertEquals(evaluateCondition({ testNum: { gte: 5 } }), true);
-    assertEquals(evaluateCondition({ testNum: { gte: 6 } }), false);
+    expect(evaluateCondition({ testNum: { gte: 5 } })).toStrictEqual(true);
+    expect(evaluateCondition({ testNum: { gte: 6 } })).toStrictEqual(false);
 
-    assertEquals(evaluateCondition({ testNum: { lt: 6 } }), true);
-    assertEquals(evaluateCondition({ testNum: { lt: 5 } }), false);
+    expect(evaluateCondition({ testNum: { lt: 6 } })).toStrictEqual(true);
+    expect(evaluateCondition({ testNum: { lt: 5 } })).toStrictEqual(false);
 
-    assertEquals(evaluateCondition({ testNum: { lte: 5 } }), true);
-    assertEquals(evaluateCondition({ testNum: { lte: 4 } }), false);
+    expect(evaluateCondition({ testNum: { lte: 5 } })).toStrictEqual(true);
+    expect(evaluateCondition({ testNum: { lte: 4 } })).toStrictEqual(false);
 
-    assertEquals(evaluateCondition({ testNum: { eq: 5 } }), true);
-    assertEquals(evaluateCondition({ testNum: { ne: 5 } }), false);
+    expect(evaluateCondition({ testNum: { eq: 5 } })).toStrictEqual(true);
+    expect(evaluateCondition({ testNum: { ne: 5 } })).toStrictEqual(false);
 });
 
-Deno.test("evaluateCondition: collection ops", () => {
+test("evaluateCondition: collection ops", () => {
     // Inventory is an engine-owned Set.
     store.addTo("inventory", "toy_block");
 
     // bare string = membership
-    assertEquals(evaluateCondition({ inventory: "toy_block" }), true);
-    assertEquals(evaluateCondition({ inventory: "toy_car" }), false);
+    expect(evaluateCondition({ inventory: "toy_block" })).toStrictEqual(true);
+    expect(evaluateCondition({ inventory: "toy_car" })).toStrictEqual(false);
 
     // has/not ops
-    assertEquals(evaluateCondition({ inventory: { has: "toy_block" } }), true);
-    assertEquals(evaluateCondition({ inventory: { has: "toy_car" } }), false);
-    assertEquals(evaluateCondition({ inventory: { not: "toy_block" } }), false);
-    assertEquals(evaluateCondition({ inventory: { not: "toy_car" } }), true);
+    expect(evaluateCondition({ inventory: { has: "toy_block" } })).toStrictEqual(true);
+    expect(evaluateCondition({ inventory: { has: "toy_car" } })).toStrictEqual(false);
+    expect(evaluateCondition({ inventory: { not: "toy_block" } })).toStrictEqual(false);
+    expect(evaluateCondition({ inventory: { not: "toy_car" } })).toStrictEqual(true);
 
     // count
     const count = store.collectionSize("inventory");
 
-    assertEquals(evaluateCondition({ inventory: { count: { gt: count - 1 } } }), true);
-    assertEquals(evaluateCondition({ inventory: { count: count } }), true);
-    assertEquals(evaluateCondition({ inventory: { count: { lt: count } } }), false);
+    expect(evaluateCondition({ inventory: { count: { gt: count - 1 } } })).toStrictEqual(true);
+    expect(evaluateCondition({ inventory: { count: count } })).toStrictEqual(true);
+    expect(evaluateCondition({ inventory: { count: { lt: count } } })).toStrictEqual(false);
 });
 
-Deno.test("evaluateCondition: dropped context", () => {
+test("evaluateCondition: dropped context", () => {
     const ctx = { draggedId: "apple" };
 
-    assertEquals(evaluateCondition({ dropped: "apple" }, ctx), true);
-    assertEquals(evaluateCondition({ dropped: "banana" }, ctx), false);
+    expect(evaluateCondition({ dropped: "apple" }, ctx)).toStrictEqual(true);
+    expect(evaluateCondition({ dropped: "banana" }, ctx)).toStrictEqual(false);
 
     // ops
-    assertEquals(evaluateCondition({ dropped: { eq: "apple" } }, ctx), true);
-    assertEquals(evaluateCondition({ dropped: { ne: "apple" } }, ctx), false);
+    expect(evaluateCondition({ dropped: { eq: "apple" } }, ctx)).toStrictEqual(true);
+    expect(evaluateCondition({ dropped: { ne: "apple" } }, ctx)).toStrictEqual(false);
 });
 
-Deno.test("evaluateCondition: item properties", () => {
+test("evaluateCondition: item properties", () => {
     store.setItemState("container", "empty");
 
     const ctx = { selfId: "container" };
 
     // specific item path constraint
     // evaluateCollection processes entries as per-item constraints
-    assertEquals(evaluateCondition({ inventory: { "container.state": "empty" } }, ctx), true);
-    assertEquals(evaluateCondition({ inventory: { "container.state": "full" } }, ctx), false);
+    expect(evaluateCondition({ inventory: { "container.state": "empty" } }, ctx)).toStrictEqual(true);
+    expect(evaluateCondition({ inventory: { "container.state": "full" } }, ctx)).toStrictEqual(false);
 
     // self path constraint
-    assertEquals(evaluateCondition({ inventory: { "state": "empty" } }, ctx), true);
-    assertEquals(evaluateCondition({ inventory: { "state": "full" } }, ctx), false);
+    expect(evaluateCondition({ inventory: { state: "empty" } }, ctx)).toStrictEqual(true);
+    expect(evaluateCondition({ inventory: { state: "full" } }, ctx)).toStrictEqual(false);
 
     // self path constraint without selfId should fail
-    assertEquals(evaluateCondition({ inventory: { "state": "empty" } }, {}), false);
+    expect(evaluateCondition({ inventory: { state: "empty" } }, {})).toStrictEqual(false);
 });
 
-Deno.test("evaluateCondition: AND across multiple keys", () => {
+test("evaluateCondition: AND across multiple keys", () => {
     store.set("key1", 1);
     store.set("key2", 2);
 
-    assertEquals(evaluateCondition({ key1: 1, key2: 2 }), true);
-    assertEquals(evaluateCondition({ key1: 1, key2: 3 }), false);
+    expect(evaluateCondition({ key1: 1, key2: 2 })).toStrictEqual(true);
+    expect(evaluateCondition({ key1: 1, key2: 3 })).toStrictEqual(false);
 });
 
-Deno.test("evaluateCondition: leaf array (OR over same key)", () => {
+test("evaluateCondition: leaf array (OR over same key)", () => {
     store.set("key3", "apple");
-    assertEquals(evaluateCondition({ key3: ["banana", "apple"] }), true);
-    assertEquals(evaluateCondition({ key3: ["banana", "orange"] }), false);
+    expect(evaluateCondition({ key3: ["banana", "apple"] })).toStrictEqual(true);
+    expect(evaluateCondition({ key3: ["banana", "orange"] })).toStrictEqual(false);
 
     // ops inside leaf array
-    assertEquals(evaluateCondition({ key3: [{ eq: "banana" }, { eq: "apple" }] }), true);
+    expect(evaluateCondition({ key3: [{ eq: "banana" }, { eq: "apple" }] })).toStrictEqual(true);
 });

@@ -1,4 +1,4 @@
-import { assert, assertEquals, assertRejects, assertStrictEquals } from "@std/assert";
+import { expect, test } from "bun:test";
 import { Cutscene, CutsceneCancelled } from "./Cutscene.js";
 
 // ── The cancellation contract ──────────────────────────────────────────────
@@ -9,7 +9,7 @@ import { Cutscene, CutsceneCancelled } from "./Cutscene.js";
 // touch an already-destroyed sprite, and after stopping the underlying
 // tween/timer. These tests pin that contract Phaser-free.
 
-Deno.test("Cutscene: wait() resolves when the op completes", async () => {
+test("Cutscene: wait() resolves when the op completes", async () => {
     const cs = new Cutscene();
     /** @type {(value?: any) => void} */
     let fire = () => {};
@@ -17,10 +17,10 @@ Deno.test("Cutscene: wait() resolves when the op completes", async () => {
         fire = done;
     });
     fire("arrived");
-    assertEquals(await p, "arrived");
+    expect(await p).toStrictEqual("arrived");
 });
 
-Deno.test("Cutscene: a pending wait rejects with CutsceneCancelled on cancel, and its onCancel runs", async () => {
+test("Cutscene: a pending wait rejects with CutsceneCancelled on cancel, and its onCancel runs", async () => {
     const cs = new Cutscene();
     let cancelled = false;
     const p = cs.wait(
@@ -30,22 +30,22 @@ Deno.test("Cutscene: a pending wait rejects with CutsceneCancelled on cancel, an
         },
     );
     cs.cancel();
-    await assertRejects(() => p, CutsceneCancelled);
-    assert(cancelled, "onCancel ran to stop the underlying tween/timer");
+    await expect(p).rejects.toThrow(CutsceneCancelled);
+    expect(cancelled, "onCancel ran to stop the underlying tween/timer").toBeTruthy();
 });
 
-Deno.test("Cutscene: wait() after cancel rejects immediately and never starts the op", async () => {
+test("Cutscene: wait() after cancel rejects immediately and never starts the op", async () => {
     const cs = new Cutscene();
     cs.cancel();
     let started = false;
     const p = cs.wait(() => {
         started = true;
     });
-    await assertRejects(() => p, CutsceneCancelled);
-    assert(!started, "the op must not start once cancelled (no touching live objects)");
+    await expect(p).rejects.toThrow(CutsceneCancelled);
+    expect(!started, "the op must not start once cancelled (no touching live objects)").toBeTruthy();
 });
 
-Deno.test("Cutscene: a late done() after cancel is a harmless no-op", async () => {
+test("Cutscene: a late done() after cancel is a harmless no-op", async () => {
     const cs = new Cutscene();
     /** @type {(value?: any) => void} */
     let fire = () => {};
@@ -53,19 +53,19 @@ Deno.test("Cutscene: a late done() after cancel is a harmless no-op", async () =
         fire = done;
     });
     cs.cancel();
-    await assertRejects(() => p, CutsceneCancelled);
+    await expect(p).rejects.toThrow(CutsceneCancelled);
     // The tween's onComplete fires AFTER teardown — must not throw or re-resolve.
     fire("too-late");
 });
 
-Deno.test("Cutscene: cancel is idempotent", () => {
+test("Cutscene: cancel is idempotent", () => {
     const cs = new Cutscene();
     cs.cancel();
     cs.cancel(); // must not throw
-    assert(cs.cancelled);
+    expect(cs.cancelled).toBeTruthy();
 });
 
-Deno.test("Cutscene: throwIfCancelled lets a sequence bail between awaits", () => {
+test("Cutscene: throwIfCancelled lets a sequence bail between awaits", () => {
     const cs = new Cutscene();
     cs.throwIfCancelled(); // no-op while live
     cs.cancel();
@@ -75,12 +75,12 @@ Deno.test("Cutscene: throwIfCancelled lets a sequence bail between awaits", () =
     } catch (e) {
         threw = e;
     }
-    assert(threw instanceof CutsceneCancelled);
+    expect(threw instanceof CutsceneCancelled).toBeTruthy();
 });
 
 // The headline regression: an async cutscene unwinds on shutdown and never
 // touches the destroyed sprite, with the in-flight tween stopped.
-Deno.test("Cutscene: async sequence unwinds on cancel without touching a destroyed sprite", async () => {
+test("Cutscene: async sequence unwinds on cancel without touching a destroyed sprite", async () => {
     const cs = new Cutscene();
     /** @type {string[]} */
     const log = [];
@@ -111,14 +111,14 @@ Deno.test("Cutscene: async sequence unwinds on cancel without touching a destroy
     })();
 
     await Promise.resolve(); // let the first walk start
-    assertEquals(log, ["walk:start"]);
+    expect(log).toStrictEqual(["walk:start"]);
 
     // Scene shutdown mid-cutscene.
     cs.cancel();
     sprite.destroyed = true;
 
-    await assertRejects(() => sequence, CutsceneCancelled);
-    assert(stopped, "the in-flight tween was stopped via onCancel");
-    assertStrictEquals(log.includes("TOUCHED-DEAD"), false);
-    assertEquals(log, ["walk:start", "walk:cancel"]);
+    await expect(sequence).rejects.toThrow(CutsceneCancelled);
+    expect(stopped, "the in-flight tween was stopped via onCancel").toBeTruthy();
+    expect(log.includes("TOUCHED-DEAD")).toBe(false);
+    expect(log).toStrictEqual(["walk:start", "walk:cancel"]);
 });

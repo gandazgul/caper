@@ -21,14 +21,15 @@ export function showSuccessMessage(scene, text, options = {}) {
     const holdMs = options.holdMs !== undefined ? options.holdMs : 1200;
     const onComplete = options.onComplete || null;
 
-    const label = scene.add.text(cx, cy, text, {
-        fontSize: fontSize,
-        color: color,
-        fontStyle: "bold",
-        fontFamily: "Arial",
-        stroke: "#ffffff",
-        strokeThickness: 8,
-    })
+    const label = scene.add
+        .text(cx, cy, text, {
+            fontSize: fontSize,
+            color: color,
+            fontStyle: "bold",
+            fontFamily: "Arial",
+            stroke: "#ffffff",
+            strokeThickness: 8,
+        })
         .setOrigin(0.5)
         .setDepth(3000) // Ensure it draws over all puzzle/inventory layers
         .setScale(0.4)

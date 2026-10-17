@@ -29,7 +29,8 @@ export function cursorFor(type, facing, explicit) {
     const custom = engineAssets.get("cursors")?.[type];
     const directional = type === "exit" && facing ? engineAssets.get("exitCursors")?.[facing] : undefined;
     if (directional || custom) return directional ?? custom;
-    const css = (type === "exit" && facing ? EXIT_CURSORS[facing] : undefined) ??
+    const css =
+        (type === "exit" && facing ? EXIT_CURSORS[facing] : undefined) ??
         /** @type {Record<string, string>} */ (DEFAULT_CURSORS)[type];
     if (!css) return type || "pointer";
     const base = engineAssets.get("cursorBaseUrl") ?? "/objects/";

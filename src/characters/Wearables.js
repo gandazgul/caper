@@ -124,8 +124,9 @@ function resolveOffset(def, hostState) {
     /** @type {WearableOffset} */
     let offset;
     if (
-        /** @type {WearableOffset} */ (charOffsets).x !== undefined && /** @type {WearableOffset} */
-            (charOffsets).y !== undefined
+        /** @type {WearableOffset} */ (charOffsets).x !== undefined &&
+        /** @type {WearableOffset} */
+        (charOffsets).y !== undefined
     ) {
         offset = /** @type {WearableOffset} */ (charOffsets);
     } else {
@@ -158,7 +159,8 @@ export class Wearable {
         this.scene = scene;
 
         const resolvedFrame = typeof def.frame === "function" ? def.frame(hostState) : def.frame;
-        this.sprite = scene.add.sprite(0, 0, def.atlas, resolvedFrame)
+        this.sprite = scene.add
+            .sprite(0, 0, def.atlas, resolvedFrame)
             .setOrigin(def.origin?.x ?? 0.5, def.origin?.y ?? 0.5)
             .setVisible(false);
 
@@ -193,12 +195,9 @@ export class Wearable {
         // When flipWithFacing is true, the offset X sign flips with facing
         // so the wearable stays on the correct side (e.g. a back-worn item
         // stays behind the host as they turn around).
-        const posX = hostState.sprite.x +
-            (offset.flipWithFacing && hostState.facingLeft ? -offset.x : offset.x) * scaleFactor;
-        sprite.setPosition(
-            posX,
-            hostState.sprite.y + offset.y * scaleFactor,
-        );
+        const posX =
+            hostState.sprite.x + (offset.flipWithFacing && hostState.facingLeft ? -offset.x : offset.x) * scaleFactor;
+        sprite.setPosition(posX, hostState.sprite.y + offset.y * scaleFactor);
 
         // Flip
         if (offset.flipWithFacing) {

@@ -34,13 +34,16 @@ function actorFor(npc, scene, cs) {
             let timer;
             /** @type {import("./DialogueBubble.js").DialogueBubble | null} */
             let bubble = null;
-            return cs.wait((done) => {
-                bubble = npc.speak(text, options, variant);
-                timer = scene.time.delayedCall(options, done);
-            }, () => {
-                timer?.remove(false);
-                bubble?.destroy();
-            });
+            return cs.wait(
+                (done) => {
+                    bubble = npc.speak(text, options, variant);
+                    timer = scene.time.delayedCall(options, done);
+                },
+                () => {
+                    timer?.remove(false);
+                    bubble?.destroy();
+                },
+            );
         },
         facePlayer: () => {
             npc.facePlayer();

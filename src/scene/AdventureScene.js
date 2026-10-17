@@ -230,9 +230,7 @@ export class AdventureScene extends Phaser.Scene {
     suppressActiveCharacter() {
         if (!this.walk) return;
         if (this.walk.sprite) {
-            this.walk.sprite
-                .setVisible(false)
-                .setData("debugSkip", true);
+            this.walk.sprite.setVisible(false).setData("debugSkip", true);
         }
         this.walk.wearables?.destroy?.();
         this.walk.wearables = null;

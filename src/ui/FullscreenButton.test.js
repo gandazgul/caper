@@ -1,4 +1,4 @@
-import { assertEquals } from "@std/assert";
+import { expect, test } from "bun:test";
 
 import { FullscreenButton } from "./FullscreenButton.js";
 
@@ -33,7 +33,10 @@ class FakeEvents {
      */
     off(event, handler) {
         const handlers = this.handlers.get(event) ?? [];
-        this.handlers.set(event, handlers.filter((item) => item !== handler));
+        this.handlers.set(
+            event,
+            handlers.filter((item) => item !== handler),
+        );
         return this;
     }
 
@@ -147,7 +150,7 @@ function createScene({ fullscreenAvailable }) {
     };
 }
 
-Deno.test("FullscreenButton uses native fullscreen when the browser supports it", () => {
+test("FullscreenButton uses native fullscreen when the browser supports it", () => {
     const harness = createScene({ fullscreenAvailable: true });
 
     new FullscreenButton(harness.scene, {
@@ -157,11 +160,11 @@ Deno.test("FullscreenButton uses native fullscreen when the browser supports it"
 
     harness.imageEvents.get("pointerup")?.();
 
-    assertEquals(harness.startFullscreenCalls, 1);
-    assertEquals(harness.target.style.position, undefined);
+    expect(harness.startFullscreenCalls).toStrictEqual(1);
+    expect(harness.target.style.position).toStrictEqual(undefined);
 });
 
-Deno.test("FullscreenButton falls back to viewport fullscreen when native fullscreen is unsupported", () => {
+test("FullscreenButton falls back to viewport fullscreen when native fullscreen is unsupported", () => {
     const harness = createScene({ fullscreenAvailable: false });
 
     new FullscreenButton(harness.scene, {
@@ -171,21 +174,21 @@ Deno.test("FullscreenButton falls back to viewport fullscreen when native fullsc
 
     harness.imageEvents.get("pointerup")?.();
 
-    assertEquals(harness.startFullscreenCalls, 0);
-    assertEquals(harness.target.style.position, "fixed");
-    assertEquals(harness.target.style.inset, "0");
-    assertEquals(harness.target.ownerDocument.body.style.overflow, "hidden");
-    assertEquals(harness.image.visible, true);
-    assertEquals(harness.refreshes, 1);
+    expect(harness.startFullscreenCalls).toStrictEqual(0);
+    expect(harness.target.style.position).toStrictEqual("fixed");
+    expect(harness.target.style.inset).toStrictEqual("0");
+    expect(harness.target.ownerDocument.body.style.overflow).toStrictEqual("hidden");
+    expect(harness.image.visible).toStrictEqual(true);
+    expect(harness.refreshes).toStrictEqual(1);
 
     harness.imageEvents.get("pointerup")?.();
 
-    assertEquals(harness.target.style.position, "");
-    assertEquals(harness.target.ownerDocument.body.style.overflow, "");
-    assertEquals(harness.refreshes, 2);
+    expect(harness.target.style.position).toStrictEqual("");
+    expect(harness.target.ownerDocument.body.style.overflow).toStrictEqual("");
+    expect(harness.refreshes).toStrictEqual(2);
 });
 
-Deno.test("FullscreenButton falls back to viewport fullscreen when native fullscreen fails", () => {
+test("FullscreenButton falls back to viewport fullscreen when native fullscreen fails", () => {
     const harness = createScene({ fullscreenAvailable: true });
 
     new FullscreenButton(harness.scene, {
@@ -196,7 +199,7 @@ Deno.test("FullscreenButton falls back to viewport fullscreen when native fullsc
     harness.imageEvents.get("pointerup")?.();
     harness.scaleEvents.emit("fullscreenfailed");
 
-    assertEquals(harness.startFullscreenCalls, 1);
-    assertEquals(harness.target.style.position, "fixed");
-    assertEquals(harness.refreshes, 1);
+    expect(harness.startFullscreenCalls).toStrictEqual(1);
+    expect(harness.target.style.position).toStrictEqual("fixed");
+    expect(harness.refreshes).toStrictEqual(1);
 });

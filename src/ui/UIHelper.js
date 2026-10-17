@@ -172,7 +172,8 @@ export function createBackButton(scene, onClick, options = {}) {
     const baseScale = backArt?.scale ?? 1;
     const hoverScale = baseScale * 1.1;
 
-    const btn = scene.add.image(BACK_BUTTON_POSITION.x, BACK_BUTTON_POSITION.y, backArt?.atlas, backArt?.frame)
+    const btn = scene.add
+        .image(BACK_BUTTON_POSITION.x, BACK_BUTTON_POSITION.y, backArt?.atlas, backArt?.frame)
         .setScale(baseScale)
         .setDepth(UI_DEPTH)
         .setInteractive({ useHandCursor: true });
@@ -269,16 +270,7 @@ function layoutButtonContent(container, opts) {
  * @returns {any}
  */
 export function createChunkyButton(scene, x, y, width, height, options) {
-    const {
-        text,
-        fontSize = "30px",
-        icon,
-        iconDrawFn,
-        iconImage,
-        textAlign,
-        onClick,
-        selected = false,
-    } = options;
+    const { text, fontSize = "30px", icon, iconDrawFn, iconImage, textAlign, onClick, selected = false } = options;
 
     const hw = width / 2;
     const hh = height / 2;
@@ -334,13 +326,15 @@ export function createChunkyButton(scene, x, y, width, height, options) {
     extendedContainer.isSelected = () => isSelected;
 
     const label = text
-        ? scene.add.text(0, 0, text, {
-            fontSize,
-            color: "#ffebd6",
-            fontFamily: "Arial",
-            stroke: "#3d251c",
-            strokeThickness: 3,
-        }).setOrigin(0, 0.5)
+        ? scene.add
+              .text(0, 0, text, {
+                  fontSize,
+                  color: "#ffebd6",
+                  fontFamily: "Arial",
+                  stroke: "#3d251c",
+                  strokeThickness: 3,
+              })
+              .setOrigin(0, 0.5)
         : null;
 
     /** @type {Phaser.GameObjects.GameObject & { displayWidth?: number, displayHeight?: number, width?: number, height?: number, setScale?: (...args: number[]) => any } | null} */
@@ -370,9 +364,7 @@ export function createChunkyButton(scene, x, y, width, height, options) {
 
     container.setDepth(UI_DEPTH);
 
-    const zone = scene.add.zone(0, 0, width, height)
-        .setOrigin(0.5, 0.5)
-        .setInteractive({ useHandCursor: true });
+    const zone = scene.add.zone(0, 0, width, height).setOrigin(0.5, 0.5).setInteractive({ useHandCursor: true });
 
     const baseY = y + hh;
 
