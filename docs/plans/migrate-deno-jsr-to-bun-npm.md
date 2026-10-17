@@ -33,6 +33,12 @@ routingIntent: "PLANNED_CHANGE"
 targetBranch: "main"
 deliveryBranch: "main"
 status: "reviewed"
+validatedCommit: "4b80f14b214368edc3601f49b554c3ac5c47ad86"
+workRecord:
+  status: "generated"
+  recordId: "4549d337-5550-4c42-9e25-82f89688add5"
+  path: "docs/work-records/2026-10-17-bun-development-and-npm-package-configuration.md"
+  lastAttemptAt: "2026-10-17T22:57:04.848Z"
 ---
 
 # Migrate Caper from Deno and JSR to Bun and npm
