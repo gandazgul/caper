@@ -7,3 +7,6 @@ types/
 .DS_Store
 
 .vite/
+# BEGIN RunWield owned runtime state
+.wld/internal/
+# END RunWield owned runtime state
