@@ -1,4 +1,4 @@
 {
-  "verification_command": "deno task ci",
-  "worktree_setup_command": "deno install"
+  "verification_command": "bun run ci",
+  "worktree_setup_command": "bun install --frozen-lockfile"
 }
